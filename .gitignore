@@ -1,0 +1,15 @@
+## Visual Studio Temp & Build Files
+[Bb]in/
+[Oo]bj/
+.vs/
+*.user
+*.suo
+*.sln.docstates
+
+## Compilation Results
+*.exe
+*.dll
+*.pdb
+
+## Task Scheduler Log
+*.log
