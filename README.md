@@ -1,4 +1,5 @@
 # StandbyAndTimer
+![App Screenshot](app_preview.png)
 
 A professional Windows optimization tool developed as a **University Project** to enhance system performance, reduce input latency, and manage memory efficiently.
 
@@ -8,7 +9,6 @@ A professional Windows optimization tool developed as a **University Project** t
 * **Intelligent RAM Purger:** Automatically monitors and clears the Windows Standby List based on user-defined memory limits.
 * **Game Process Optimization:** Automatically sets "High Priority" and optimizes CPU Affinity for added games to ensure maximum performance during gameplay.
 * **Auto-Start & Tray Support:** Can be configured to start with Windows and run quietly in the system tray.
-* ![App Screenshot](app_preview.png)
 
 ## 🛠️ Installation & Usage
 
