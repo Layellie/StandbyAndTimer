@@ -23,7 +23,7 @@ This application is built with **C#** and utilizes **Windows Native APIs** (`ntd
 
 ## 🎓 Academic Project
 
-This project was developed by **Samet Kaşmer (LAYE77IE)** for academic purposes to demonstrate system-level programming and optimization techniques in the Windows environment.
+This project was developed by **(LAYE77IE)** for academic purposes to demonstrate system-level programming and optimization techniques in the Windows environment.
 
 ## 📜 License
 
