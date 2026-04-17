@@ -28,3 +28,5 @@ This project was developed by **Samet Kaşmer (LAYE77IE)** for academic purposes
 ## 📜 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+Note: Use at your own risk. While this tool uses standard Windows APIs, always ensure it complies with your specific game's terms of service.
