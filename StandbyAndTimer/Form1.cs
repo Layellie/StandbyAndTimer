@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
@@ -40,21 +41,31 @@ namespace StandbyAndTimer
         [DllImport("advapi32.dll", ExactSpelling = true, SetLastError = true)]
         internal static extern bool AdjustTokenPrivileges(IntPtr htok, bool disall, ref TOKEN_PRIVILEGES newst, int len, IntPtr prev, IntPtr relen);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool SetProcessInformation(IntPtr hProcess, int processInformationClass, ref uint processInformation, int processInformationSize);
+
+        [DllImport("avrt.dll", SetLastError = true)]
+        public static extern IntPtr AvSetMmThreadCharacteristics(string TaskName, ref uint TaskIndex);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern uint SetThreadExecutionState(uint esFlags);
+
         #endregion
 
         #region Global Variables & Structures
 
-        // Target system timer resolution (5000 = 0.5ms)
         const uint TargetResolution = 5000;
+        const uint ES_CONTINUOUS = 0x80000000;
+        const uint ES_SYSTEM_REQUIRED = 0x00000001;
 
-        // Tracking variables
         int purgeCount = 0;
         PerformanceCounter standbyCounter;
 
-        // Multi-Game Optimization Variables
         List<string> gamePaths = new List<string>();
-        // Tracks optimized process IDs to prevent redundant operations
-        HashSet<int> optimizedPIDs = new HashSet<int>();
+        Dictionary<int, Process> optimizedProcesses = new Dictionary<int, Process>();
+
+        int activeStandbyLimit = 1024;
+        int activeFreeLimit = 1024;
 
         [StructLayout(LayoutKind.Sequential)]
         public struct MEMORYSTATUSEX
@@ -75,34 +86,38 @@ namespace StandbyAndTimer
         public Form1()
         {
             InitializeComponent();
-            this.FormClosing += new FormClosingEventHandler(Form1_FormClosing);
             standbyCounter = new PerformanceCounter("Memory", "Standby Cache Reserve Bytes", null);
-            timer1.Tick += new EventHandler(timer1_Tick);
         }
 
         #region Main Form Events
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            // Set form to start at the center of the screen
             this.StartPosition = FormStartPosition.CenterScreen;
             this.BringToFront();
 
-            // Set process priority to High
             Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High;
 
-            // Lock system timer to 0.5ms globally
+            SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED);
+
+            uint taskIndex = 0;
+            AvSetMmThreadCharacteristics("Pro Audio", ref taskIndex);
+
+            uint bypassFlag = 1;
+            SetProcessInformation(Process.GetCurrentProcess().Handle, 34, ref bypassFlag, sizeof(uint));
+
             uint currentRes;
             NtSetTimerResolution(TargetResolution, true, out currentRes);
 
-            // Load saved user preferences from Windows Registry
             RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\StandbyAndTimer");
             if (key != null)
             {
                 txtStandbyLimit.Text = key.GetValue("StandbyLimit", "1024").ToString();
                 txtFreeLimit.Text = key.GetValue("FreeLimit", "1024").ToString();
 
-                // Restore multi-game list from Registry
+                int.TryParse(txtStandbyLimit.Text, out activeStandbyLimit);
+                int.TryParse(txtFreeLimit.Text, out activeFreeLimit);
+
                 string savedPaths = key.GetValue("GamePaths", "").ToString();
                 if (!string.IsNullOrEmpty(savedPaths))
                 {
@@ -117,52 +132,70 @@ namespace StandbyAndTimer
                 }
             }
 
-            // Attach event handlers for dynamic saving to Registry
-            txtStandbyLimit.TextChanged += new EventHandler(SaveSettingsToRegistry);
-            txtFreeLimit.TextChanged += new EventHandler(SaveSettingsToRegistry);
+            txtStandbyLimit.TextChanged += new EventHandler(UpdateLimits);
+            txtFreeLimit.TextChanged += new EventHandler(UpdateLimits);
+
+            StartEngine();
+        }
+
+        private void UpdateLimits(object sender, EventArgs e)
+        {
+            int.TryParse(txtStandbyLimit.Text, out activeStandbyLimit);
+            int.TryParse(txtFreeLimit.Text, out activeFreeLimit);
+
+            RegistryKey key = Registry.CurrentUser.CreateSubKey("SOFTWARE\\StandbyAndTimer");
+            key.SetValue("StandbyLimit", txtStandbyLimit.Text);
+            key.SetValue("FreeLimit", txtFreeLimit.Text);
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            // This prompt triggers only when the user clicks the Close (X) button
             if (e.CloseReason == CloseReason.UserClosing)
             {
                 DialogResult result = MessageBox.Show(
                     "Do you want to exit the application completely?\n\n" +
-                    "• Select 'Yes' to Close completely.\n" +
-                    "• Select 'No' to Minimize to System Tray (keeps it running).",
+                    "• Click 'Yes' to close completely.\n" +
+                    "• Click 'No' to minimize to the system tray (keeps running in background).",
                     "StandbyAndTimer - Exit Confirmation",
                     MessageBoxButtons.YesNoCancel,
                     MessageBoxIcon.Question);
 
                 if (result == DialogResult.Yes)
                 {
-                    // Allow the application to close
                     e.Cancel = false;
+                    notifyIcon1.Visible = false;
+                    Environment.Exit(0);
                 }
                 else if (result == DialogResult.No)
                 {
-                    // Minimize to system tray
                     e.Cancel = true;
-                    this.Hide();
+                    this.Opacity = 0;
+                    this.ShowInTaskbar = false;
+                    this.Location = new System.Drawing.Point(-32000, -32000);
                     notifyIcon1.Visible = true;
                 }
                 else
                 {
-                    // Cancel clicked, do nothing and stay on the screen
                     e.Cancel = true;
                 }
             }
+        }
+
+        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            notifyIcon1.Visible = false;
+            Environment.Exit(0);
         }
 
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
 
-            // Handle silent startup from Task Scheduler
             if (Environment.GetCommandLineArgs().Contains("-hidden"))
             {
-                this.Hide();
+                this.Opacity = 0;
+                this.ShowInTaskbar = false;
+                this.Location = new System.Drawing.Point(-32000, -32000);
                 notifyIcon1.Visible = true;
                 chkAutoStart.Checked = true;
             }
@@ -170,37 +203,53 @@ namespace StandbyAndTimer
 
         #endregion
 
-        #region Core Optimization Logic (Timer, Memory, CPU Affinity)
+        #region Core Optimization Logic (Background Thread, Memory, CPU Affinity)
 
-        private void timer1_Tick(object sender, EventArgs e)
+        private void StartEngine()
         {
-            // 1. Fetch current memory status
-            MEMORYSTATUSEX memStatus = new MEMORYSTATUSEX();
-            memStatus.dwLength = (uint)Marshal.SizeOf(typeof(MEMORYSTATUSEX));
-            GlobalMemoryStatusEx(ref memStatus);
-
-            long totalRamMB = (long)(memStatus.ullTotalPhys / (1024 * 1024));
-            long freeRamMB = (long)(memStatus.ullAvailPhys / (1024 * 1024));
-            long standbyRamMB = (long)(standbyCounter.NextValue() / (1024 * 1024));
-
-            // Update UI labels
-            lblTotalRAM.Text = totalRamMB.ToString() + " MB";
-            lblStandby.Text = standbyRamMB.ToString() + " MB";
-            lblFreeRAM.Text = freeRamMB.ToString() + " MB";
-
-            // 2. Evaluate auto-purge conditions
-            int limitStandby = 0;
-            int limitFree = 0;
-            int.TryParse(txtStandbyLimit.Text, out limitStandby);
-            int.TryParse(txtFreeLimit.Text, out limitFree);
-
-            if (standbyRamMB >= limitStandby && freeRamMB <= limitFree && limitStandby > 0)
+            Thread engineThread = new Thread(() =>
             {
-                PurgeStandbyList();
-            }
+                uint taskIndex = 0;
+                AvSetMmThreadCharacteristics("Pro Audio", ref taskIndex);
 
-            // 3. Monitor and optimize target game processes
-            CheckAndOptimizeGame();
+                while (true)
+                {
+                    uint currentRes;
+                    NtSetTimerResolution(TargetResolution, true, out currentRes);
+
+                    MEMORYSTATUSEX memStatus = new MEMORYSTATUSEX();
+                    memStatus.dwLength = (uint)Marshal.SizeOf(typeof(MEMORYSTATUSEX));
+                    GlobalMemoryStatusEx(ref memStatus);
+
+                    long totalRamMB = (long)(memStatus.ullTotalPhys / (1024 * 1024));
+                    long freeRamMB = (long)(memStatus.ullAvailPhys / (1024 * 1024));
+                    long standbyRamMB = 0;
+
+                    try { standbyRamMB = (long)(standbyCounter.NextValue() / (1024 * 1024)); } catch { }
+
+                    if (standbyRamMB >= activeStandbyLimit && freeRamMB <= activeFreeLimit && activeStandbyLimit > 0)
+                    {
+                        PurgeStandbyList();
+                    }
+
+                    CheckAndOptimizeGame();
+
+                    if (this.IsHandleCreated && !this.IsDisposed)
+                    {
+                        this.BeginInvoke((MethodInvoker)delegate
+                        {
+                            lblTotalRAM.Text = totalRamMB.ToString() + " MB";
+                            lblStandby.Text = standbyRamMB.ToString() + " MB";
+                            lblFreeRAM.Text = freeRamMB.ToString() + " MB";
+                            lblPurgeCount.Text = purgeCount.ToString();
+                        });
+                    }
+                    Thread.Sleep(1000);
+                }
+            });
+            engineThread.IsBackground = true;
+            engineThread.Priority = ThreadPriority.Highest;
+            engineThread.Start();
         }
 
         private void CheckAndOptimizeGame()
@@ -212,34 +261,31 @@ namespace StandbyAndTimer
                 string procName = Path.GetFileNameWithoutExtension(path);
                 Process[] processes = Process.GetProcessesByName(procName);
 
-                if (processes.Length > 0)
+                foreach (var p in processes)
                 {
-                    foreach (var p in processes)
+                    if (!optimizedProcesses.ContainsKey(p.Id))
                     {
-                        if (!optimizedPIDs.Contains(p.Id))
+                        try
                         {
-                            try
-                            {
-                                p.PriorityClass = ProcessPriorityClass.High;
+                            p.PriorityClass = ProcessPriorityClass.High;
 
-                                // Dynamic CPU Affinity
-                                int cpuCount = Environment.ProcessorCount;
-                                long affinityMask = (1L << cpuCount) - 1;
-                                p.ProcessorAffinity = (IntPtr)affinityMask;
+                            int cpuCount = Environment.ProcessorCount;
+                            long affinityMask = (1L << cpuCount) - 1;
+                            p.ProcessorAffinity = (IntPtr)affinityMask;
 
-                                optimizedPIDs.Add(p.Id);
-                            }
-                            catch { /* Skip if access is denied */ }
+                            optimizedProcesses.Add(p.Id, p);
                         }
+                        catch { }
                     }
                 }
             }
 
-            // Cleanup: Remove terminated processes
-            optimizedPIDs.RemoveWhere(pid => {
-                try { Process.GetProcessById(pid); return false; }
-                catch { return true; }
-            });
+            var deadPIDs = optimizedProcesses.Where(kvp => kvp.Value.HasExited).Select(kvp => kvp.Key).ToList();
+            foreach (var pid in deadPIDs)
+            {
+                optimizedProcesses[pid].Dispose();
+                optimizedProcesses.Remove(pid);
+            }
         }
 
         private void PurgeStandbyList()
@@ -251,12 +297,12 @@ namespace StandbyAndTimer
                 {
                     TOKEN_PRIVILEGES tp = new TOKEN_PRIVILEGES();
                     tp.PrivilegeCount = 1;
-                    tp.Attributes = 2; // SE_PRIVILEGE_ENABLED
+                    tp.Attributes = 2;
                     LookupPrivilegeValue(null, "SeProfileSingleProcessPrivilege", ref tp.Luid);
                     AdjustTokenPrivileges(hToken, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero);
                 }
 
-                int command = 4; // MemoryPurgeStandbyList
+                int command = 4;
                 IntPtr pCommand = Marshal.AllocHGlobal(Marshal.SizeOf(command));
                 Marshal.WriteInt32(pCommand, command);
 
@@ -266,13 +312,9 @@ namespace StandbyAndTimer
                 if (result == 0)
                 {
                     purgeCount++;
-                    lblPurgeCount.Text = purgeCount.ToString();
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Purge Error: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            catch { }
         }
 
         #endregion
@@ -307,19 +349,12 @@ namespace StandbyAndTimer
                 gamePaths.RemoveAt(index);
                 lstGames.Items.RemoveAt(index);
                 SaveGamesToRegistry();
-                MessageBox.Show("Game removed from tracking.", "Success");
+                MessageBox.Show("Game removed from the tracking list.", "Success");
             }
             else
             {
                 MessageBox.Show("Please select a game from the list to remove.", "Warning");
             }
-        }
-
-        private void SaveSettingsToRegistry(object sender, EventArgs e)
-        {
-            RegistryKey key = Registry.CurrentUser.CreateSubKey("SOFTWARE\\StandbyAndTimer");
-            key.SetValue("StandbyLimit", txtStandbyLimit.Text);
-            key.SetValue("FreeLimit", txtFreeLimit.Text);
         }
 
         private void SaveGamesToRegistry()
@@ -335,9 +370,17 @@ namespace StandbyAndTimer
 
         private void button1_Click(object sender, EventArgs e)
         {
+            uint bypassFlag = 1;
+            SetProcessInformation(Process.GetCurrentProcess().Handle, 34, ref bypassFlag, sizeof(uint));
+
             uint currentRes;
             int result = NtSetTimerResolution(TargetResolution, true, out currentRes);
-            if (result == 0) MessageBox.Show("0.5ms Activated!", "Success");
+
+            if (result == 0)
+            {
+                double gercekMs = currentRes / 10000.0;
+                MessageBox.Show($"Timer Active!\nActual Value: {gercekMs} ms", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
         }
 
         private void chkAutoStart_CheckedChanged(object sender, EventArgs e)
@@ -360,20 +403,28 @@ namespace StandbyAndTimer
         {
             string aboutText = "StandbyAndTimer Optimization Tool\n\n" +
                                "1. Locks System Timer to 0.5ms\n" +
-                               "2. Nukes Standby RAM\n" +
+                               "2. Purges Standby Memory\n" +
                                "3. CPU Affinity for Multi-Games\n\n" +
-                               "Dev: [LAYE77IE]";
-            MessageBox.Show(aboutText, "About", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                               "--- Recommended Purge Settings ---\n" +
+                               "• 4 GB RAM: List Size: 512 | Free Memory: 512\n" +
+                               "• 8 GB RAM: List Size: 1024 | Free Memory: 1024\n" +
+                               "• 16 GB RAM: List Size: 2048 | Free Memory: 1024\n" +
+                               "• 32 GB RAM: List Size: 4096 | Free Memory: 2048\n" +
+                               "• 64 GB RAM: List Size: 8192 | Free Memory: 2048\n\n" +
+                               "Developer: [LAYE77IE]";
+            MessageBox.Show(aboutText, "About and Usage Guide", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-            this.Show();
+            this.Opacity = 1;
+            this.ShowInTaskbar = true;
+            this.CenterToScreen();
+            this.BringToFront();
             notifyIcon1.Visible = false;
         }
 
         private void label1_Click(object sender, EventArgs e) { }
-        private void exitToolStripMenuItem_Click(object sender, EventArgs e) => Application.Exit();
         private void contextMenuStrip1_Opening(object sender, System.ComponentModel.CancelEventArgs e) { }
 
         #endregion

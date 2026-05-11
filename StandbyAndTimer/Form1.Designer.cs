@@ -60,12 +60,12 @@
             // button1
             // 
             button1.FlatStyle = FlatStyle.Flat;
-            button1.Font = new Font("Times New Roman", 12F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 162);
+            button1.Font = new Font("Times New Roman", 11.25F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 162);
             button1.ForeColor = Color.Yellow;
-            button1.Location = new Point(307, 347);
+            button1.Location = new Point(271, 347);
             button1.Margin = new Padding(8);
             button1.Name = "button1";
-            button1.Size = new Size(80, 25);
+            button1.Size = new Size(116, 25);
             button1.TabIndex = 0;
             button1.Text = "TIMER";
             button1.UseVisualStyleBackColor = true;
@@ -84,13 +84,13 @@
             // 
             contextMenuStrip1.Items.AddRange(new ToolStripItem[] { çIKIŞToolStripMenuItem });
             contextMenuStrip1.Name = "contextMenuStrip1";
-            contextMenuStrip1.Size = new Size(181, 48);
+            contextMenuStrip1.Size = new Size(98, 26);
             contextMenuStrip1.Opening += contextMenuStrip1_Opening;
             // 
             // çIKIŞToolStripMenuItem
             // 
             çIKIŞToolStripMenuItem.Name = "çIKIŞToolStripMenuItem";
-            çIKIŞToolStripMenuItem.Size = new Size(180, 22);
+            çIKIŞToolStripMenuItem.Size = new Size(97, 22);
             çIKIŞToolStripMenuItem.Text = "EXIT";
             çIKIŞToolStripMenuItem.Click += exitToolStripMenuItem_Click;
             // 
@@ -110,9 +110,9 @@
             lblBaslık2.Font = new Font("Times New Roman", 9.75F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 162);
             lblBaslık2.Location = new Point(12, 43);
             lblBaslık2.Name = "lblBaslık2";
-            lblBaslık2.Size = new Size(185, 16);
+            lblBaslık2.Size = new Size(189, 16);
             lblBaslık2.TabIndex = 2;
-            lblBaslık2.Text = "Standby list & system working set:";
+            lblBaslık2.Text = "Standby list _system working set:";
             // 
             // lblBaslık3
             // 
@@ -149,7 +149,7 @@
             // 
             btnManuelTemizle.BackColor = SystemColors.WindowText;
             btnManuelTemizle.FlatStyle = FlatStyle.Flat;
-            btnManuelTemizle.Location = new Point(221, 167);
+            btnManuelTemizle.Location = new Point(12, 167);
             btnManuelTemizle.Name = "btnManuelTemizle";
             btnManuelTemizle.Size = new Size(163, 25);
             btnManuelTemizle.TabIndex = 6;
@@ -165,7 +165,7 @@
             // lblTotalRAM
             // 
             lblTotalRAM.AutoSize = true;
-            lblTotalRAM.Location = new Point(144, 15);
+            lblTotalRAM.Location = new Point(143, 14);
             lblTotalRAM.Name = "lblTotalRAM";
             lblTotalRAM.Size = new Size(0, 15);
             lblTotalRAM.TabIndex = 7;
@@ -173,7 +173,7 @@
             // lblFreeRAM
             // 
             lblFreeRAM.AutoSize = true;
-            lblFreeRAM.Location = new Point(104, 73);
+            lblFreeRAM.Location = new Point(101, 73);
             lblFreeRAM.Name = "lblFreeRAM";
             lblFreeRAM.Size = new Size(0, 15);
             lblFreeRAM.TabIndex = 9;
@@ -201,7 +201,7 @@
             // lblStandby
             // 
             lblStandby.AutoSize = true;
-            lblStandby.Location = new Point(197, 43);
+            lblStandby.Location = new Point(204, 43);
             lblStandby.Name = "lblStandby";
             lblStandby.Size = new Size(0, 15);
             lblStandby.TabIndex = 14;
@@ -210,7 +210,7 @@
             // 
             lblPurgeCount.AutoSize = true;
             lblPurgeCount.Font = new Font("Times New Roman", 9.75F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 162);
-            lblPurgeCount.Location = new Point(361, 172);
+            lblPurgeCount.Location = new Point(197, 172);
             lblPurgeCount.Name = "lblPurgeCount";
             lblPurgeCount.Size = new Size(14, 16);
             lblPurgeCount.TabIndex = 15;
@@ -220,10 +220,10 @@
             // chkAutoStart
             // 
             chkAutoStart.AutoSize = true;
-            chkAutoStart.Font = new Font("Times New Roman", 9.75F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 162);
-            chkAutoStart.Location = new Point(12, 352);
+            chkAutoStart.Font = new Font("Times New Roman", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 162);
+            chkAutoStart.Location = new Point(12, 353);
             chkAutoStart.Name = "chkAutoStart";
-            chkAutoStart.Size = new Size(199, 20);
+            chkAutoStart.Size = new Size(196, 19);
             chkAutoStart.TabIndex = 16;
             chkAutoStart.Text = "Launch on Startup (Minimized)";
             chkAutoStart.UseVisualStyleBackColor = true;
@@ -235,9 +235,9 @@
             btnBilgi.FlatStyle = FlatStyle.Flat;
             btnBilgi.Font = new Font("Times New Roman", 12F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 162);
             btnBilgi.ForeColor = Color.Yellow;
-            btnBilgi.Location = new Point(224, 347);
+            btnBilgi.Location = new Point(143, 288);
             btnBilgi.Name = "btnBilgi";
-            btnBilgi.Size = new Size(80, 25);
+            btnBilgi.Size = new Size(75, 22);
             btnBilgi.TabIndex = 17;
             btnBilgi.Text = "?";
             btnBilgi.UseVisualStyleBackColor = false;
@@ -289,11 +289,11 @@
             // 
             btnSil.FlatStyle = FlatStyle.Flat;
             btnSil.Font = new Font("Times New Roman", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 162);
-            btnSil.Location = new Point(224, 288);
+            btnSil.Location = new Point(228, 288);
             btnSil.Name = "btnSil";
             btnSil.Size = new Size(75, 22);
             btnSil.TabIndex = 23;
-            btnSil.Text = "DELL";
+            btnSil.Text = "DEL";
             btnSil.UseVisualStyleBackColor = true;
             btnSil.Click += btnSil_Click;
             // 
