@@ -57,9 +57,51 @@ internal sealed class TimerResolutionService : ITimerResolutionService
 
         IsActive = true;
 
-        double ms = _targetUnits / 10_000.0;
-        Logger.Info($"Timer activated: target={_targetUnits} (100-ns) = {ms:F3} ms");
-        return ms;
+        double targetMs   = _targetUnits / 10_000.0;
+        double measuredMs = MeasureActualResolutionMs();
+
+        Logger.Info($"Timer activated: target={targetMs:F3} ms, measured={measuredMs:F3} ms");
+
+        // Return the measured value — that is what the UI surfaces to the user
+        // as "Actual timer". A platform that silently rounds 0.500 down to 0.487
+        // should show 0.487, not the value we asked for.
+        return measuredMs;
+    }
+
+    // Samples the system time and records the deltas between consecutive
+    // distinct values. Because GetSystemTimeAsFileTime is only updated on
+    // timer interrupt, the median delta is the true active timer period.
+    //
+    // Total wall time = samples * actualTick ≈ 60 * 0.5 ms = ~30 ms. Cheap.
+    private static double MeasureActualResolutionMs(int samples = 60)
+    {
+        try
+        {
+            var deltas = new long[samples];
+            NativeMethods.GetSystemTimeAsFileTime(out long prev);
+
+            int collected = 0;
+            while (collected < samples)
+            {
+                long curr;
+                do { NativeMethods.GetSystemTimeAsFileTime(out curr); }
+                while (curr == prev);
+                deltas[collected++] = curr - prev;
+                prev = curr;
+            }
+
+            Array.Sort(deltas);
+            long medianUnits = deltas[samples / 2];   // 100-ns units
+            return medianUnits / 10_000.0;
+        }
+        catch (Exception ex)
+        {
+            // Fallback: report the requested resolution if sampling fails for
+            // any reason — better a slightly optimistic number than crashing
+            // the timer-activate path.
+            Logger.Warn($"MeasureActualResolutionMs failed: {ex.Message}");
+            return NativeMethods.TARGET_TIMER_RESOLUTION / 10_000.0;
+        }
     }
 
     public void Deactivate()

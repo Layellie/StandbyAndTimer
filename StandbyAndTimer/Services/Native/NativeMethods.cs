@@ -54,6 +54,16 @@ internal static class NativeMethods
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     internal static extern uint SetThreadExecutionState(uint esFlags);
 
+    /// <summary>
+    /// Returns the system time updated **only** by the timer interrupt — its
+    /// delta between two distinct values equals the true active tick period.
+    /// Output is 100-ns FILETIME (8 bytes), so we marshal it as a long.
+    /// Do not confuse with <c>GetSystemTimePreciseAsFileTime</c>, which reads
+    /// QPC and would only give us call latency, not the timer rate.
+    /// </summary>
+    [DllImport("kernel32.dll")]
+    internal static extern void GetSystemTimeAsFileTime(out long lpSystemTimeAsFileTime);
+
     /// <summary>Closes a kernel object handle (process token, file, etc.).</summary>
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]

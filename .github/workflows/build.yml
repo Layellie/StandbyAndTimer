@@ -1,0 +1,55 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.github/dependabot.yml'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.github/dependabot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (Release)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore StandbyAndTimer/StandbyAndTimer.csproj
+
+      - name: Build (warnings as errors)
+        run: dotnet build StandbyAndTimer/StandbyAndTimer.csproj -c Release --no-restore -warnaserror
+
+      - name: Publish (smoke check)
+        run: |
+          dotnet publish StandbyAndTimer/StandbyAndTimer.csproj `
+            -p:PublishProfile=win-x64-single `
+            -p:Version=0.0.0-ci `
+            --no-restore
+          Get-Item StandbyAndTimer/bin/publish/win-x64/StandbyAndTimer.exe |
+            Select-Object Name, @{Name='SizeMB'; Expression={[math]::Round($_.Length/1MB,1)}}
