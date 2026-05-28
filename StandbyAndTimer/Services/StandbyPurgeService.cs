@@ -56,15 +56,22 @@ internal sealed class StandbyPurgeService : IStandbyPurgeService
                 ref hToken))
             return;
 
-        long luid = 0;
-        NativeMethods.LookupPrivilegeValue(null, "SeProfileSingleProcessPrivilege", ref luid);
-
-        var tp = new NativeMethods.TOKEN_PRIVILEGES
+        try
         {
-            PrivilegeCount = 1,
-            Luid           = luid,
-            Attributes     = 2  // SE_PRIVILEGE_ENABLED
-        };
-        NativeMethods.AdjustTokenPrivileges(hToken, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero);
+            long luid = 0;
+            NativeMethods.LookupPrivilegeValue(null, "SeProfileSingleProcessPrivilege", ref luid);
+
+            var tp = new NativeMethods.TOKEN_PRIVILEGES
+            {
+                PrivilegeCount = 1,
+                Luid           = luid,
+                Attributes     = 2  // SE_PRIVILEGE_ENABLED
+            };
+            NativeMethods.AdjustTokenPrivileges(hToken, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero);
+        }
+        finally
+        {
+            NativeMethods.CloseHandle(hToken);
+        }
     }
 }

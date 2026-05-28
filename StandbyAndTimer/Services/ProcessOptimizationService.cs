@@ -1,12 +1,17 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using StandbyAndTimer.Core.Interfaces;
+using StandbyAndTimer.Services.Native;
 
 namespace StandbyAndTimer.Services;
 
 internal sealed class ProcessOptimizationService : IProcessOptimizationService
 {
-    // Only PIDs are stored — no Process handles kept alive between calls.
-    private readonly HashSet<int> _optimizedPids = [];
+    // ConcurrentDictionary so overlapping CheckAndOptimizeAsync calls (e.g. the
+    // monitor tick still running when Clear() fires from the UI) cannot corrupt
+    // the set. Only PIDs are stored — no Process handles kept alive between calls.
+    private readonly ConcurrentDictionary<int, byte> _optimizedPids = new();
 
     public Task CheckAndOptimizeAsync(IReadOnlyList<string> executablePaths) =>
         Task.Run(() => CheckAndOptimize(executablePaths));
@@ -25,12 +30,13 @@ internal sealed class ProcessOptimizationService : IProcessOptimizationService
             {
                 using (p) // dispose handle immediately after use — no leaks
                 {
-                    if (_optimizedPids.Contains(p.Id)) continue;
+                    if (_optimizedPids.ContainsKey(p.Id)) continue;
                     try
                     {
                         p.PriorityClass     = ProcessPriorityClass.High;
                         p.ProcessorAffinity = (IntPtr)affinityMask;
-                        _optimizedPids.Add(p.Id);
+                        ApplyTimerResolutionOptOut(p);
+                        _optimizedPids.TryAdd(p.Id, 0);
                     }
                     catch { /* process may exit between enumeration and access */ }
                 }
@@ -38,11 +44,39 @@ internal sealed class ProcessOptimizationService : IProcessOptimizationService
         }
 
         // Prune PIDs whose processes have since exited.
-        _optimizedPids.RemoveWhere(pid =>
+        foreach (int pid in _optimizedPids.Keys)
         {
-            try   { using var p = Process.GetProcessById(pid); return p.HasExited; }
-            catch { return true; }
-        });
+            bool exited;
+            try   { using var p = Process.GetProcessById(pid); exited = p.HasExited; }
+            catch { exited = true; }
+            if (exited) _optimizedPids.TryRemove(pid, out _);
+        }
+    }
+
+    // Tells Windows 11 that this process opts out of EcoQoS / timer-resolution
+    // throttling. Without this, modern Windows clamps the game's timer back to
+    // ~15.6 ms once it loses foreground focus, defeating our 0.5 ms global timer.
+    private static void ApplyTimerResolutionOptOut(Process p)
+    {
+        var state = new NativeMethods.PROCESS_POWER_THROTTLING_STATE
+        {
+            Version     = 1,
+            ControlMask = NativeMethods.PROCESS_POWER_THROTTLING_EXECUTION_SPEED
+                        | NativeMethods.PROCESS_POWER_THROTTLING_IGNORE_TIMER_RESOLUTION,
+            StateMask   = 0  // 0 = disable both throttles
+        };
+        try
+        {
+            NativeMethods.SetProcessInformation(
+                p.Handle,
+                34,  // ProcessPowerThrottling
+                ref state,
+                Marshal.SizeOf<NativeMethods.PROCESS_POWER_THROTTLING_STATE>());
+        }
+        catch (Exception ex)
+        {
+            Logger.Warn($"SetProcessInformation on PID {p.Id} failed: {ex.Message}");
+        }
     }
 
     public void Clear() => _optimizedPids.Clear();

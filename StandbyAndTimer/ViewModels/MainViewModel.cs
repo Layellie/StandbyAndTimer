@@ -18,6 +18,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private readonly ILocalizationService        _localization;
     private readonly CancellationTokenSource     _appCts = new();
 
+    // Debounces registry writes triggered by rapidly-changing TextBox-bound
+    // numeric properties (StandbyLimitMb / FreeLimitMb). Each new change cancels
+    // the previous pending save, so typing "1024" results in one write, not four.
+    private const int PersistDebounceMs = 500;
+    private CancellationTokenSource? _persistDebounceCts;
+    private readonly object _persistDebounceGate = new();
+
     private bool _isInitializing;
     private bool _disposed;
 
@@ -135,6 +142,38 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _settingsService.Save(BuildCurrentSettings());
     }
 
+    private void SchedulePersist()
+    {
+        if (_isInitializing) return;
+
+        CancellationToken token;
+        lock (_persistDebounceGate)
+        {
+            _persistDebounceCts?.Cancel();
+            _persistDebounceCts?.Dispose();
+            _persistDebounceCts = new CancellationTokenSource();
+            token = _persistDebounceCts.Token;
+        }
+
+        _ = Task.Delay(PersistDebounceMs, token).ContinueWith(t =>
+        {
+            if (t.IsCanceled) return;
+            try { PersistSettings(); }
+            catch (Exception ex) { Logger.Error("SchedulePersist", ex); }
+        }, TaskScheduler.Default);
+    }
+
+    private void FlushPendingPersist()
+    {
+        lock (_persistDebounceGate)
+        {
+            if (_persistDebounceCts is null) return;
+            _persistDebounceCts.Cancel();
+            _persistDebounceCts.Dispose();
+            _persistDebounceCts = null;
+        }
+    }
+
     internal AppSettings BuildCurrentSettings() => new()
     {
         StandbyLimitMb        = StandbyLimitMb,
@@ -180,13 +219,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     partial void OnStandbyLimitMbChanged(int value)
     {
         SyncMonitorSettings();
-        PersistSettings();
+        SchedulePersist();  // debounced — TextBox emits a change per keystroke
     }
 
     partial void OnFreeLimitMbChanged(int value)
     {
         SyncMonitorSettings();
-        PersistSettings();
+        SchedulePersist();  // debounced — TextBox emits a change per keystroke
     }
 
     partial void OnGameModeEnabledChanged(bool value)
@@ -309,6 +348,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public async Task ShutdownAsync()
     {
+        // Cancel any pending debounced save — we're about to write the final
+        // snapshot synchronously, so a delayed write would be redundant or stale.
+        FlushPendingPersist();
+
         await _appCts.CancelAsync().ConfigureAwait(false);
         await _memoryService.StopAsync().ConfigureAwait(false);
         _settingsService.Save(BuildCurrentSettings());
@@ -318,6 +361,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         if (_disposed) return;
         _disposed = true;
+
+        FlushPendingPersist();
 
         _memoryService.SnapshotUpdated -= OnSnapshotUpdated;
         _purgeService.PurgeSucceeded   -= OnPurgeSucceeded;

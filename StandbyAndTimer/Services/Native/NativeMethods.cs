@@ -54,6 +54,24 @@ internal static class NativeMethods
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     internal static extern uint SetThreadExecutionState(uint esFlags);
 
+    /// <summary>Closes a kernel object handle (process token, file, etc.).</summary>
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool CloseHandle(IntPtr hObject);
+
+    /// <summary>
+    /// Restricts where LoadLibrary searches for DLLs — used at process start
+    /// to prevent DLL planting attacks (e.g. a malicious version.dll dropped
+    /// next to our admin-elevated exe).
+    /// </summary>
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool SetDefaultDllDirectories(uint DirectoryFlags);
+
+    // LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = AppDir | UserDirs | System32.
+    // Crucially excludes the legacy "current working directory" lookup.
+    internal const uint LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = 0x00001000;
+
     // ── winmm.dll ────────────────────────────────────────────────────────────
 
     /// <summary>Multimedia timer: requests minimum 1 ms system timer period as a backup.</summary>

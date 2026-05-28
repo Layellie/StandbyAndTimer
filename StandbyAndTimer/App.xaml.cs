@@ -37,7 +37,13 @@ public partial class App : Application
 
     protected override async void OnStartup(StartupEventArgs e)
     {
-        // ── 0. Crash-safe restore handlers (timer must be released on exit) ──
+        // ── 0a. DLL planting hardening ───────────────────────────────────────
+        // Run before anything else so that any DLL we (or the WPF/runtime
+        // machinery) delay-load later cannot be spoofed by a binary dropped
+        // next to our admin-elevated exe.
+        HardenDllSearchPath();
+
+        // ── 0b. Crash-safe restore handlers (timer must be released on exit) ─
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         AppDomain.CurrentDomain.ProcessExit        += OnProcessExit;
         DispatcherUnhandledException               += OnDispatcherUnhandledException;
@@ -184,6 +190,21 @@ public partial class App : Application
             (_services?.GetService<ITimerResolutionService>())?.Dispose();
         }
         catch { /* best-effort */ }
+    }
+
+    // ── DLL search-path hardening ─────────────────────────────────────────────
+
+    private static void HardenDllSearchPath()
+    {
+        try
+        {
+            // LOAD_LIBRARY_SEARCH_DEFAULT_DIRS removes the legacy "current dir"
+            // lookup (the planting vector) while still allowing the app dir,
+            // user-added dirs (AddDllDirectory), and System32.
+            if (!NativeMethods.SetDefaultDllDirectories(NativeMethods.LOAD_LIBRARY_SEARCH_DEFAULT_DIRS))
+                Logger.Warn($"SetDefaultDllDirectories failed: {System.Runtime.InteropServices.Marshal.GetLastWin32Error()}");
+        }
+        catch (Exception ex) { Logger.Warn($"HardenDllSearchPath: {ex.Message}"); }
     }
 
     // ── Power Throttling ──────────────────────────────────────────────────────

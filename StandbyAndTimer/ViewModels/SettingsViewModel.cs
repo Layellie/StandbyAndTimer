@@ -39,6 +39,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     private string? _pendingAssetUrl;
     private string? _pendingVersion;
+    private string? _pendingSha256;
 
     public event EventHandler? SettingsChanged;
 
@@ -182,6 +183,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         UpdateAvailable = false;
         _pendingAssetUrl = null;
         _pendingVersion  = null;
+        _pendingSha256   = null;
 
         UpdateStatus = _localization.GetString("Str_Settings_UpdateChecking");
         var result = await _updateService.CheckAsync().ConfigureAwait(true);
@@ -200,6 +202,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         {
             _pendingAssetUrl = result.AssetDownloadUrl;
             _pendingVersion  = result.LatestVersion;
+            _pendingSha256   = result.ExpectedSha256;
             UpdateAvailable  = true;
         }
         else if (!string.IsNullOrWhiteSpace(result.ReleaseUrl))
@@ -230,7 +233,7 @@ public sealed partial class SettingsViewModel : ObservableObject
                     (int)p));
 
             await _updateService
-                .DownloadAsync(_pendingAssetUrl!, targetPath, progress)
+                .DownloadAsync(_pendingAssetUrl!, targetPath, _pendingSha256 ?? string.Empty, progress)
                 .ConfigureAwait(true);
 
             UpdateStatus = _localization.GetString("Str_Settings_LaunchingInstaller");

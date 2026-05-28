@@ -11,12 +11,17 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
     private readonly IStandbyPurgeService       _purgeService;
     private readonly IProcessOptimizationService _processService;
 
-    private PerformanceCounter? _standbyCounter;
+    // The total Windows standby list = Normal Priority + Reserve + Core.
+    // Reading only one bucket (as the original did) understated the value by
+    // an order of magnitude on most systems.
+    private PerformanceCounter? _standbyNormal;
+    private PerformanceCounter? _standbyReserve;
+    private PerformanceCounter? _standbyCore;
+
     private CancellationTokenSource? _cts;
     private Task? _loopTask;
     private bool  _disposed;
 
-    // ── IMemoryMonitorService configuration ──────────────────────────────────
     public int StandbyLimitMb  { get; set; } = 1024;
     public int FreeLimitMb     { get; set; } = 1024;
     public bool GameModeEnabled { get; set; }
@@ -31,12 +36,26 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
         _purgeService   = purgeService;
         _processService = processService;
 
-        // Initialise once — PerformanceCounter is expensive to create repeatedly.
-        _standbyCounter = new PerformanceCounter("Memory", "Standby Cache Reserve Bytes", null);
+        _standbyNormal  = TryCreateCounter("Standby Cache Normal Priority Bytes");
+        _standbyReserve = TryCreateCounter("Standby Cache Reserve Bytes");
+        _standbyCore    = TryCreateCounter("Standby Cache Core Bytes");
+    }
 
-        // PerformanceCounter.NextValue() returns 0 on the very first call; warm
-        // it up here so the first user-visible snapshot already has a real value.
-        try { _ = _standbyCounter.NextValue(); } catch { /* counter unavailable */ }
+    private static PerformanceCounter? TryCreateCounter(string counterName)
+    {
+        try
+        {
+            var c = new PerformanceCounter("Memory", counterName, null);
+            // PerformanceCounter.NextValue() returns 0 on the very first call;
+            // warm it up so the first user-visible snapshot has a real value.
+            try { _ = c.NextValue(); } catch { /* counter unavailable */ }
+            return c;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warn($"MemoryMonitorService: counter '{counterName}' unavailable: {ex.Message}");
+            return null;
+        }
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
@@ -56,11 +75,11 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
 
     private async Task RunLoopAsync(CancellationToken ct)
     {
-        // Register this worker thread as an AVRT "Games" task so Windows never
-        // throttles it, even when the main window is hidden to the system tray.
-        uint taskIndex = 0;
-        IntPtr avrtHandle = NativeMethods.AvSetMmThreadCharacteristics("Games", ref taskIndex);
-
+        // AVRT MMCSS registration is intentionally NOT used here:
+        // it's per-thread and is lost across every `await` (the continuation
+        // resumes on a different ThreadPool worker), so it would only leak
+        // an avrt handle without providing any scheduling benefit for a
+        // 1-second poll. Timer-level MMCSS lives in TimerResolutionService.
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
         try
         {
@@ -81,11 +100,6 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
             }
         }
         catch (OperationCanceledException) { }
-        finally
-        {
-            if (avrtHandle != IntPtr.Zero)
-                NativeMethods.AvRevertMmThreadCharacteristics(avrtHandle);
-        }
     }
 
     private MemorySnapshot ReadSnapshot()
@@ -98,12 +112,25 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
 
         long totalMb   = (long)(mem.ullTotalPhys / (1024 * 1024));
         long freeMb    = (long)(mem.ullAvailPhys  / (1024 * 1024));
-        long standbyMb = 0;
-
-        try   { standbyMb = (long)(_standbyCounter!.NextValue() / (1024 * 1024)); }
-        catch { /* PerformanceCounter may fail transiently; carry last known value */ }
+        long standbyMb = ReadStandbyMb();
 
         return new MemorySnapshot(totalMb, freeMb, standbyMb);
+    }
+
+    private long ReadStandbyMb()
+    {
+        double bytes = 0;
+        bytes += SafeNext(_standbyNormal);
+        bytes += SafeNext(_standbyReserve);
+        bytes += SafeNext(_standbyCore);
+        return (long)(bytes / (1024 * 1024));
+    }
+
+    private static float SafeNext(PerformanceCounter? counter)
+    {
+        if (counter is null) return 0;
+        try   { return counter.NextValue(); }
+        catch { return 0; }
     }
 
     public void Dispose()
@@ -113,7 +140,10 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
 
         _cts?.Cancel();
         _cts?.Dispose();
-        _standbyCounter?.Dispose();
-        _standbyCounter = null;
+
+        _standbyNormal?.Dispose();
+        _standbyReserve?.Dispose();
+        _standbyCore?.Dispose();
+        _standbyNormal = _standbyReserve = _standbyCore = null;
     }
 }

@@ -79,11 +79,30 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $setupExe = Join-Path $root "installer\dist\StandbyAndTimer_Setup_$Version.exe"
-if (Test-Path $setupExe) {
-    $setupMb = [math]::Round((Get-Item $setupExe).Length / 1MB, 1)
-    Write-Host ""
-    Write-Host "Installer ready:" -ForegroundColor Green
-    Write-Host "  $setupExe  ($setupMb MB)"
-} else {
+if (-not (Test-Path $setupExe)) {
     throw "Compilation reported success but output not found at $setupExe"
 }
+
+$setupMb = [math]::Round((Get-Item $setupExe).Length / 1MB, 1)
+Write-Host ""
+Write-Host "Installer ready:" -ForegroundColor Green
+Write-Host "  $setupExe  ($setupMb MB)"
+
+# --- Step 4: emit SHA-256 (consumed by the in-app update verifier) ---------
+# The desktop UpdateService verifies downloaded installers against this hash.
+# Publish the value in the GitHub release body (as "SHA256: <hex>") OR upload
+# the .sha256 sibling file alongside the installer asset — either form is read
+# by UpdateService.ResolveSha256Async.
+$sha = (Get-FileHash $setupExe -Algorithm SHA256).Hash.ToLowerInvariant()
+$shaFile = "$setupExe.sha256"
+"$sha  $(Split-Path $setupExe -Leaf)" | Set-Content -Path $shaFile -Encoding ascii -NoNewline
+
+Write-Host ""
+Write-Host "SHA-256:" -ForegroundColor Green
+Write-Host "  $sha"
+Write-Host "  (also written to $shaFile)"
+Write-Host ""
+Write-Host "Paste this line into the GitHub release body so the in-app update" -ForegroundColor Yellow
+Write-Host "checker can verify integrity:" -ForegroundColor Yellow
+Write-Host ""
+Write-Host "  SHA256: $sha" -ForegroundColor White
