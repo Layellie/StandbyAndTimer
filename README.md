@@ -1,5 +1,6 @@
 # StandbyAndTimer
-
+<img width="427" height="492" alt="Ekran görüntüsü 2026-05-28 162308" src="https://github.com/user-attachments/assets/054c5969-250b-4528-8990-29c3d3f72ca9" />
+<img width="431" height="493" alt="Ekran görüntüsü 2026-05-28 162300" src="https://github.com/user-attachments/assets/f77404e5-8893-4e7f-bc02-250927dc11ed" />
 A Windows desktop utility for reducing input latency and managing system memory — designed for gamers and power users.
 
 > **v2.0.0** — complete rewrite on WPF (.NET 10). The original WinForms version is preserved as [`v1.0.0`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v1.0.0) on the [`winforms-archive`](https://github.com/Layellie/StandbyAndTimer/tree/winforms-archive) branch.
