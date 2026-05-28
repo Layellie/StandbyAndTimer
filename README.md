@@ -1,7 +1,9 @@
 # StandbyAndTimer
 
-<img width="431" height="493" alt="Ekran görüntüsü 2026-05-28 162300" src="https://github.com/user-attachments/assets/f77404e5-8893-4e7f-bc02-250927dc11ed" />
-<img width="427" height="492" alt="Ekran görüntüsü 2026-05-28 162308" src="https://github.com/user-attachments/assets/054c5969-250b-4528-8990-29c3d3f72ca9" />
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/f77404e5-8893-4e7f-bc02-250927dc11ed" width="49%" />
+  <img src="https://github.com/user-attachments/assets/054c5969-250b-4528-8990-29c3d3f72ca9" width="49%" />
+</p>
 
 A Windows desktop utility for reducing input latency and managing system memory — designed for gamers and power users.
 
