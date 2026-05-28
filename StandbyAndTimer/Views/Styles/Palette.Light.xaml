@@ -1,0 +1,35 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Light palette — keeps the same purple accent for brand continuity -->
+    <SolidColorBrush x:Key="AppBg"            Color="#F5F5FA"/>
+    <SolidColorBrush x:Key="SurfaceBg"        Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="Surface2Bg"       Color="#F0F0F8"/>
+    <SolidColorBrush x:Key="AppFg"            Color="#1A1A24"/>
+    <SolidColorBrush x:Key="AppFgDim"         Color="#6A6A85"/>
+    <SolidColorBrush x:Key="AppFgMuted"       Color="#B0B0C5"/>
+    <SolidColorBrush x:Key="AccentPrimary"    Color="#7C6AF7"/>
+    <SolidColorBrush x:Key="AccentHover"      Color="#9585F9"/>
+    <SolidColorBrush x:Key="AccentPressed"    Color="#6455E0"/>
+    <SolidColorBrush x:Key="AccentSubtle"     Color="#E8E5FB"/>
+    <SolidColorBrush x:Key="InputBg"          Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="InputFg"          Color="#2A2A3D"/>
+    <SolidColorBrush x:Key="InputBorder"      Color="#D5D5E0"/>
+    <SolidColorBrush x:Key="InputFocusBorder" Color="#7C6AF7"/>
+    <SolidColorBrush x:Key="BorderColor"      Color="#D5D5E0"/>
+    <SolidColorBrush x:Key="SeparatorBrush"   Color="#E8E8F0"/>
+    <SolidColorBrush x:Key="SelectionBg"      Color="#DDD7FB"/>
+    <SolidColorBrush x:Key="SelectionFg"      Color="#1A1A24"/>
+    <SolidColorBrush x:Key="HoverBg"          Color="#EFEEF7"/>
+    <SolidColorBrush x:Key="SuccessColor"     Color="#16A34A"/>
+    <SolidColorBrush x:Key="DangerColor"      Color="#DC2626"/>
+
+    <!-- Overlay backgrounds — lighter, soft white tint for light theme -->
+    <SolidColorBrush x:Key="DimOverlayBrush"  Color="#CCEDEDF5"/>
+    <SolidColorBrush x:Key="ModalOverlayBrush" Color="#C0EDEDF5"/>
+
+    <!-- Title bar DWM mode hint: 1 = dark, 0 = light -->
+    <sys:Int32 x:Key="DwmDarkMode" xmlns:sys="clr-namespace:System;assembly=System.Runtime">0</sys:Int32>
+
+</ResourceDictionary>

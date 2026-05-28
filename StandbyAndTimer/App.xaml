@@ -1,0 +1,17 @@
+<Application x:Class="StandbyAndTimer.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnExplicitShutdown">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Slot 0: control styles — never swapped -->
+                <ResourceDictionary Source="Views/Styles/Theme.xaml"/>
+                <!-- Slot 1: active palette (swapped at runtime by ThemeService) -->
+                <ResourceDictionary Source="Views/Styles/Palette.Dark.xaml"/>
+                <!-- Slot 2: active language strings (swapped by LocalizationService) -->
+                <ResourceDictionary Source="Views/Strings/Strings.en-US.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

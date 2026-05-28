@@ -1,0 +1,36 @@
+# ── .NET build output ─────────────────────────────────────────────────────────
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+*.user
+*.suo
+*.userprefs
+
+# ── Visual Studio / IDE ───────────────────────────────────────────────────────
+.vs/
+.vscode/
+*.swp
+
+# ── NuGet ─────────────────────────────────────────────────────────────────────
+*.nupkg
+*.snupkg
+.nuget/
+
+# ── Published self-contained binary ───────────────────────────────────────────
+publish/
+StandbyAndTimer/bin/publish/
+
+# ── Installer build output (shipped via GitHub Releases, not git) ────────────
+installer/dist/
+
+# ── Code-signing artifacts (never commit secrets) ────────────────────────────
+*.pfx
+*.cer
+*.snk
+
+# ── Logs / temp ──────────────────────────────────────────────────────────────
+*.log
+*.tmp
+
+# ── Tooling local state ──────────────────────────────────────────────────────
+.claude/

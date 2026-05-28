@@ -1,0 +1,102 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- Bellek bölümü -->
+    <sys:String x:Key="Str_Memory_TotalLabel">Toplam sistem belleği:</sys:String>
+    <sys:String x:Key="Str_Memory_StandbyLabel">Standby liste / çalışma kümesi:</sys:String>
+    <sys:String x:Key="Str_Memory_FreeLabel">Serbest Bellek:</sys:String>
+
+    <!-- Temizleme bölümü -->
+    <sys:String x:Key="Str_Purge_StandbyLimitLabel">Liste boyutu en az (MB):</sys:String>
+    <sys:String x:Key="Str_Purge_FreeLimitLabel">Serbest bellek altında (MB):</sys:String>
+    <sys:String x:Key="Str_Purge_Button">Standby Temizle</sys:String>
+
+    <!-- Oyun modu -->
+    <sys:String x:Key="Str_Game_Mode">OYUN MODU</sys:String>
+    <sys:String x:Key="Str_Game_Add">EKLE</sys:String>
+    <sys:String x:Key="Str_Game_Del">SİL</sys:String>
+    <sys:String x:Key="Str_Game_FileDialogTitle">Oyun Çalıştırılabilir Dosyasını Seç</sys:String>
+    <sys:String x:Key="Str_Game_FileDialogFilter">Yürütülebilir Dosyalar (*.exe)|*.exe</sys:String>
+    <sys:String x:Key="Str_Game_DropHint">.exe dosyalarını buraya sürükleyin</sys:String>
+
+    <!-- Alt kontroller -->
+    <sys:String x:Key="Str_Timer_Inactive">TIMER</sys:String>
+    <sys:String x:Key="Str_Timer_Active">TIMER ✓</sys:String>
+    <sys:String x:Key="Str_About_Button">?</sys:String>
+    <sys:String x:Key="Str_Settings_Button">⚙</sys:String>
+
+    <!-- Ayarlar paneli -->
+    <sys:String x:Key="Str_Settings_Title">AYARLAR</sys:String>
+    <sys:String x:Key="Str_Settings_LaunchOnStartup">Başlangıçta Başlat (Simge Durumunda)</sys:String>
+    <sys:String x:Key="Str_Settings_Language">Dil</sys:String>
+    <sys:String x:Key="Str_Settings_Theme">Tema</sys:String>
+    <sys:String x:Key="Str_Theme_Dark">Koyu</sys:String>
+    <sys:String x:Key="Str_Theme_Light">Açık</sys:String>
+    <sys:String x:Key="Str_Theme_System">Sistem</sys:String>
+    <sys:String x:Key="Str_Settings_Close">✕</sys:String>
+    <sys:String x:Key="Str_Settings_Export">Ayarları Dışa Aktar</sys:String>
+    <sys:String x:Key="Str_Settings_Import">Ayarları İçe Aktar</sys:String>
+    <sys:String x:Key="Str_Settings_CheckUpdate">Güncellemeleri Kontrol Et</sys:String>
+    <sys:String x:Key="Str_Settings_UpdateAvailable">Yeni sürüm var: {0}</sys:String>
+    <sys:String x:Key="Str_Settings_UpdateNone">En güncel sürümdesiniz</sys:String>
+    <sys:String x:Key="Str_Settings_UpdateChecking">Kontrol ediliyor…</sys:String>
+    <sys:String x:Key="Str_Settings_DownloadInstall">İndir ve Kur</sys:String>
+    <sys:String x:Key="Str_Settings_Downloading">İndiriliyor… %{0}</sys:String>
+    <sys:String x:Key="Str_Settings_LaunchingInstaller">Yükleyici başlatılıyor…</sys:String>
+    <sys:String x:Key="Str_Settings_DownloadFailed">İndirme başarısız</sys:String>
+    <sys:String x:Key="Str_Settings_ExportOk">Ayarlar dışa aktarıldı</sys:String>
+    <sys:String x:Key="Str_Settings_ImportOk">Ayarlar yüklendi — uygulamayı yeniden başlatın</sys:String>
+    <sys:String x:Key="Str_Settings_ImportFail">İçe aktarma başarısız</sys:String>
+    <sys:String x:Key="Str_Settings_BackupSection">Yedekleme ve Bakım</sys:String>
+    <sys:String x:Key="Str_Settings_OpenLog">Log Klasörünü Aç</sys:String>
+
+    <!-- Dil isimleri -->
+    <sys:String x:Key="Str_Lang_English">English</sys:String>
+    <sys:String x:Key="Str_Lang_Turkish">Türkçe</sys:String>
+
+    <!-- Tray menü -->
+    <sys:String x:Key="Str_Tray_Show">Göster</sys:String>
+    <sys:String x:Key="Str_Tray_TimerEnable">Timer'ı Aç</sys:String>
+    <sys:String x:Key="Str_Tray_TimerDisable">Timer'ı Kapat</sys:String>
+    <sys:String x:Key="Str_Tray_PurgeNow">Standby'ı Temizle</sys:String>
+    <sys:String x:Key="Str_Tray_Exit">Çıkış</sys:String>
+
+    <!-- Tray balloon / tooltip -->
+    <sys:String x:Key="Str_Tray_TooltipFormat">StandbyAndTimer&#x0a;Timer: {0}  •  Temizleme: {1}</sys:String>
+    <sys:String x:Key="Str_Tray_TimerStateOn">AÇIK</sys:String>
+    <sys:String x:Key="Str_Tray_TimerStateOff">KAPALI</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyPurgeTitle">Standby bellek temizlendi</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyPurgeBody">Toplam temizleme: {0}</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyTimerOnTitle">Timer aktif</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyTimerOnBody">Sistem saati {0:F3} ms olarak kilitlendi</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyTimerOffTitle">Timer devre dışı</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyTimerOffBody">Sistem saati varsayılana döndü</sys:String>
+
+    <!-- Durum mesajları -->
+    <sys:String x:Key="Str_Status_Ready">Hazır</sys:String>
+    <sys:String x:Key="Str_Status_Purging">Temizleniyor…</sys:String>
+    <sys:String x:Key="Str_Status_PurgeOk">Temizleme başarılı</sys:String>
+    <sys:String x:Key="Str_Status_PurgeFail">Temizleme başarısız (yönetici yetkisi gerekli)</sys:String>
+    <sys:String x:Key="Str_Status_TimerActive">Timer aktif — gerçek değer: {0:F3} ms</sys:String>
+    <sys:String x:Key="Str_Status_TimerOff">Timer devre dışı</sys:String>
+    <sys:String x:Key="Str_Status_GameAdded">Oyun eklendi</sys:String>
+    <sys:String x:Key="Str_Status_GameExists">Bu oyun zaten listede</sys:String>
+    <sys:String x:Key="Str_Status_GameRemoved">Oyun kaldırıldı</sys:String>
+
+    <!-- Hakkında penceresi -->
+    <sys:String x:Key="Str_About_Title">Hakkında ve Kullanım Kılavuzu</sys:String>
+    <sys:String x:Key="Str_About_Text">StandbyAndTimer — Sistem Optimizasyon Aracı&#x0a;&#x0a;1. Sistem timer'ını 0.5 ms'ye kilitler (NtSetTimerResolution)&#x0a;2. Standby bellek listesini otomatik/manuel temizler (NtSetSystemInformation)&#x0a;3. Oyunlar için Yüksek Öncelik + CPU Affinity ayarlar&#x0a;&#x0a;─── Önerilen Purge Eşikleri ───&#x0a;•  4 GB RAM → Liste: 512 MB  | Serbest: 512 MB&#x0a;•  8 GB RAM → Liste: 1024 MB | Serbest: 1024 MB&#x0a;• 16 GB RAM → Liste: 2048 MB | Serbest: 1024 MB&#x0a;• 32 GB RAM → Liste: 4096 MB | Serbest: 2048 MB&#x0a;• 64 GB RAM → Liste: 8192 MB | Serbest: 2048 MB&#x0a;&#x0a;Geliştirici: LAYE77IE</sys:String>
+    <sys:String x:Key="Str_About_Close">Kapat</sys:String>
+
+    <!-- Tek instance uyarısı -->
+    <sys:String x:Key="Str_AlreadyRunning">Uygulama zaten arka planda çalışıyor.&#x0a;Sistem tepsisindeki simgeye bakın.</sys:String>
+
+    <!-- Kapatma onay ekranı -->
+    <sys:String x:Key="Str_Close_Title">Uygulamayı Kapat</sys:String>
+    <sys:String x:Key="Str_Close_Message">Uygulama sistem tepsisinde çalışmaya devam edebilir ve sisteminizi optimize etmeyi sürdürebilir.</sys:String>
+    <sys:String x:Key="Str_Close_Minimize">Arka Planda Çalıştır</sys:String>
+    <sys:String x:Key="Str_Close_Exit">Tamamen Kapat</sys:String>
+
+</ResourceDictionary>

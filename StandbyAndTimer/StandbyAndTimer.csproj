@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>app_icon.ico</ApplicationIcon>
+    <AssemblyTitle>StandbyAndTimer</AssemblyTitle>
+    <AssemblyName>StandbyAndTimer</AssemblyName>
+    <RootNamespace>StandbyAndTimer</RootNamespace>
+    <Company>LAYE77IE</Company>
+    <Authors>LAYE77IE</Authors>
+    <Product>StandbyAndTimer</Product>
+    <Copyright>Copyright © LAYE77IE</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="app_icon.ico" />
+  </ItemGroup>
+
+  <!--
+    UseWindowsForms=true is enabled so we can use System.Windows.Forms.NotifyIcon
+    (most reliable tray-icon API). Globally hide its namespace so WPF's
+    Application / UserControl / etc. don't become ambiguous; the one file that
+    needs WinForms types uses the `WinForms` alias instead.
+  -->
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="app_icon.ico" />
+  </ItemGroup>
+
+</Project>

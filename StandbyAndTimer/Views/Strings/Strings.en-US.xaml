@@ -1,0 +1,102 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- Memory section -->
+    <sys:String x:Key="Str_Memory_TotalLabel">Total system memory:</sys:String>
+    <sys:String x:Key="Str_Memory_StandbyLabel">Standby list / working set:</sys:String>
+    <sys:String x:Key="Str_Memory_FreeLabel">Free Memory:</sys:String>
+
+    <!-- Purge section -->
+    <sys:String x:Key="Str_Purge_StandbyLimitLabel">List size at least (MB):</sys:String>
+    <sys:String x:Key="Str_Purge_FreeLimitLabel">Free memory lower than (MB):</sys:String>
+    <sys:String x:Key="Str_Purge_Button">Purge Standby</sys:String>
+
+    <!-- Game mode -->
+    <sys:String x:Key="Str_Game_Mode">GAME MODE</sys:String>
+    <sys:String x:Key="Str_Game_Add">ADD</sys:String>
+    <sys:String x:Key="Str_Game_Del">DEL</sys:String>
+    <sys:String x:Key="Str_Game_FileDialogTitle">Select Game Executable</sys:String>
+    <sys:String x:Key="Str_Game_FileDialogFilter">Executable Files (*.exe)|*.exe</sys:String>
+    <sys:String x:Key="Str_Game_DropHint">Drag &amp; drop .exe files here</sys:String>
+
+    <!-- Bottom controls -->
+    <sys:String x:Key="Str_Timer_Inactive">TIMER</sys:String>
+    <sys:String x:Key="Str_Timer_Active">TIMER ✓</sys:String>
+    <sys:String x:Key="Str_About_Button">?</sys:String>
+    <sys:String x:Key="Str_Settings_Button">⚙</sys:String>
+
+    <!-- Settings panel -->
+    <sys:String x:Key="Str_Settings_Title">SETTINGS</sys:String>
+    <sys:String x:Key="Str_Settings_LaunchOnStartup">Launch on Startup (Minimized)</sys:String>
+    <sys:String x:Key="Str_Settings_Language">Language</sys:String>
+    <sys:String x:Key="Str_Settings_Theme">Theme</sys:String>
+    <sys:String x:Key="Str_Theme_Dark">Dark</sys:String>
+    <sys:String x:Key="Str_Theme_Light">Light</sys:String>
+    <sys:String x:Key="Str_Theme_System">System</sys:String>
+    <sys:String x:Key="Str_Settings_Close">✕</sys:String>
+    <sys:String x:Key="Str_Settings_Export">Export Settings</sys:String>
+    <sys:String x:Key="Str_Settings_Import">Import Settings</sys:String>
+    <sys:String x:Key="Str_Settings_CheckUpdate">Check for Updates</sys:String>
+    <sys:String x:Key="Str_Settings_UpdateAvailable">New version available: {0}</sys:String>
+    <sys:String x:Key="Str_Settings_UpdateNone">You are up to date</sys:String>
+    <sys:String x:Key="Str_Settings_UpdateChecking">Checking…</sys:String>
+    <sys:String x:Key="Str_Settings_DownloadInstall">Download &amp; Install</sys:String>
+    <sys:String x:Key="Str_Settings_Downloading">Downloading… {0}%</sys:String>
+    <sys:String x:Key="Str_Settings_LaunchingInstaller">Launching installer…</sys:String>
+    <sys:String x:Key="Str_Settings_DownloadFailed">Download failed</sys:String>
+    <sys:String x:Key="Str_Settings_ExportOk">Settings exported</sys:String>
+    <sys:String x:Key="Str_Settings_ImportOk">Settings imported — restart to apply</sys:String>
+    <sys:String x:Key="Str_Settings_ImportFail">Import failed</sys:String>
+    <sys:String x:Key="Str_Settings_BackupSection">Backup &amp; Maintenance</sys:String>
+    <sys:String x:Key="Str_Settings_OpenLog">Open Log Folder</sys:String>
+
+    <!-- Language names -->
+    <sys:String x:Key="Str_Lang_English">English</sys:String>
+    <sys:String x:Key="Str_Lang_Turkish">Türkçe</sys:String>
+
+    <!-- Tray menu -->
+    <sys:String x:Key="Str_Tray_Show">Show</sys:String>
+    <sys:String x:Key="Str_Tray_TimerEnable">Enable Timer</sys:String>
+    <sys:String x:Key="Str_Tray_TimerDisable">Disable Timer</sys:String>
+    <sys:String x:Key="Str_Tray_PurgeNow">Purge Standby Now</sys:String>
+    <sys:String x:Key="Str_Tray_Exit">Exit</sys:String>
+
+    <!-- Tray balloon / tooltip -->
+    <sys:String x:Key="Str_Tray_TooltipFormat">StandbyAndTimer&#x0a;Timer: {0}  •  Purges: {1}</sys:String>
+    <sys:String x:Key="Str_Tray_TimerStateOn">ON</sys:String>
+    <sys:String x:Key="Str_Tray_TimerStateOff">OFF</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyPurgeTitle">Standby cache purged</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyPurgeBody">Total purges: {0}</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyTimerOnTitle">Timer activated</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyTimerOnBody">System clock locked to {0:F3} ms</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyTimerOffTitle">Timer disabled</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyTimerOffBody">System clock restored to default</sys:String>
+
+    <!-- Status messages -->
+    <sys:String x:Key="Str_Status_Ready">Ready</sys:String>
+    <sys:String x:Key="Str_Status_Purging">Purging…</sys:String>
+    <sys:String x:Key="Str_Status_PurgeOk">Purge successful</sys:String>
+    <sys:String x:Key="Str_Status_PurgeFail">Purge failed (requires administrator)</sys:String>
+    <sys:String x:Key="Str_Status_TimerActive">Timer active — actual value: {0:F3} ms</sys:String>
+    <sys:String x:Key="Str_Status_TimerOff">Timer disabled</sys:String>
+    <sys:String x:Key="Str_Status_GameAdded">Game added</sys:String>
+    <sys:String x:Key="Str_Status_GameExists">Game is already in the list</sys:String>
+    <sys:String x:Key="Str_Status_GameRemoved">Game removed</sys:String>
+
+    <!-- About dialog -->
+    <sys:String x:Key="Str_About_Title">About &amp; Usage Guide</sys:String>
+    <sys:String x:Key="Str_About_Text">StandbyAndTimer — System Optimization Tool&#x0a;&#x0a;1. Locks system timer to 0.5 ms (NtSetTimerResolution)&#x0a;2. Auto/manual purge of standby memory (NtSetSystemInformation)&#x0a;3. Sets High Priority + CPU Affinity for configured games&#x0a;&#x0a;─── Recommended Purge Thresholds ───&#x0a;•  4 GB RAM → List: 512 MB  | Free: 512 MB&#x0a;•  8 GB RAM → List: 1024 MB | Free: 1024 MB&#x0a;• 16 GB RAM → List: 2048 MB | Free: 1024 MB&#x0a;• 32 GB RAM → List: 4096 MB | Free: 2048 MB&#x0a;• 64 GB RAM → List: 8192 MB | Free: 2048 MB&#x0a;&#x0a;Developer: LAYE77IE</sys:String>
+    <sys:String x:Key="Str_About_Close">Close</sys:String>
+
+    <!-- Single instance guard -->
+    <sys:String x:Key="Str_AlreadyRunning">Application is already running in the background.&#x0a;Look for the icon in the system tray.</sys:String>
+
+    <!-- Close confirmation overlay -->
+    <sys:String x:Key="Str_Close_Title">Close Application</sys:String>
+    <sys:String x:Key="Str_Close_Message">The application can keep running in the system tray and continue optimizing your system.</sys:String>
+    <sys:String x:Key="Str_Close_Minimize">Run in Background</sys:String>
+    <sys:String x:Key="Str_Close_Exit">Exit Completely</sys:String>
+
+</ResourceDictionary>
