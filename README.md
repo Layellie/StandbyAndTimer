@@ -2,7 +2,7 @@
 
 A Windows desktop utility for reducing input latency and managing system memory — designed for gamers and power users.
 
-> Complete rewrite of the original WinForms version (now archived at the [`winforms-archive`](https://github.com/Layellie/StandbyAndTimer/tree/winforms-archive) branch).
+> **v2.0.0** — complete rewrite on WPF (.NET 10). The original WinForms version is preserved as [`v1.0.0`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v1.0.0) on the [`winforms-archive`](https://github.com/Layellie/StandbyAndTimer/tree/winforms-archive) branch.
 
 ## Features
 
@@ -38,10 +38,17 @@ dotnet run --project StandbyAndTimer/StandbyAndTimer.csproj
 To produce a redistributable installer ([Inno Setup 6](https://jrsoftware.org/isdl.php) required):
 
 ```powershell
-.\build-installer.ps1 -Version 1.0.0
+.\build-installer.ps1 -Version 2.0.0
 ```
 
-Output: `installer/dist/StandbyAndTimer_Setup_1.0.0.exe` (~72 MB self-contained).
+Output: `installer/dist/StandbyAndTimer_Setup_2.0.0.exe` (~72 MB self-contained).
+
+## Version history
+
+| Tag | Stack | Notes |
+|---|---|---|
+| [`v2.0.0`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.0) | WPF (.NET 10) | Current release — full MVVM rewrite, in-app update checker, self-contained installer |
+| [`v1.0.0`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v1.0.0) | WinForms (.NET Framework) | Original — archived on the [`winforms-archive`](https://github.com/Layellie/StandbyAndTimer/tree/winforms-archive) branch |
 
 ## License
 

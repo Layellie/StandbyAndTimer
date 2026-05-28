@@ -5,11 +5,11 @@
 
 .PARAMETER Version
     Version string written to the assembly and the installer filename.
-    Default: 1.0.0
+    Default: 2.0.0
 
 .EXAMPLE
     .\build-installer.ps1
-    .\build-installer.ps1 -Version 1.2.3
+    .\build-installer.ps1 -Version 2.0.1
 
 .NOTES
     Requirements:
@@ -22,7 +22,7 @@
 
 [CmdletBinding()]
 param(
-    [string]$Version = "1.0.0"
+    [string]$Version = "2.0.0"
 )
 
 $ErrorActionPreference = "Stop"
