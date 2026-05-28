@@ -46,10 +46,12 @@ jobs:
         run: dotnet build StandbyAndTimer/StandbyAndTimer.csproj -c Release --no-restore -warnaserror
 
       - name: Publish (smoke check)
+        # No --no-restore: the publish profile pins RuntimeIdentifier=win-x64,
+        # which needs a RID-aware restore. The first restore above is RID-less
+        # so its assets file would be rejected here.
         run: |
           dotnet publish StandbyAndTimer/StandbyAndTimer.csproj `
             -p:PublishProfile=win-x64-single `
-            -p:Version=0.0.0-ci `
-            --no-restore
+            -p:Version=0.0.0-ci
           Get-Item StandbyAndTimer/bin/publish/win-x64/StandbyAndTimer.exe |
             Select-Object Name, @{Name='SizeMB'; Expression={[math]::Round($_.Length/1MB,1)}}
