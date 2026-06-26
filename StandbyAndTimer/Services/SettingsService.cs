@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Win32;
 using StandbyAndTimer.Core.Interfaces;
 using StandbyAndTimer.Core.Models;
@@ -56,8 +57,11 @@ internal sealed class SettingsService : ISettingsService
         try
         {
             using var key = Registry.CurrentUser.CreateSubKey(RegKey);
-            key.SetValue("StandbyLimitMb",        settings.StandbyLimitMb.ToString());
-            key.SetValue("FreeLimitMb",            settings.FreeLimitMb.ToString());
+            // Persist with InvariantCulture so the registry contents stay
+            // portable across locales — e.g. a value written under tr-TR
+            // must round-trip cleanly when the user later switches to en-US.
+            key.SetValue("StandbyLimitMb", settings.StandbyLimitMb.ToString(CultureInfo.InvariantCulture));
+            key.SetValue("FreeLimitMb",    settings.FreeLimitMb.ToString(CultureInfo.InvariantCulture));
             key.SetValue("GameModeEnabled",        settings.GameModeEnabled        ? "1" : "0");
             key.SetValue("AutoStartEnabled",       settings.AutoStartEnabled       ? "1" : "0");
             key.SetValue("TimerResolutionActive",  settings.TimerResolutionActive  ? "1" : "0");
@@ -78,7 +82,8 @@ internal sealed class SettingsService : ISettingsService
     }
 
     private static int GetInt(RegistryKey key, string name, int fallback) =>
-        int.TryParse(key.GetValue(name)?.ToString(), out int v) ? v : fallback;
+        int.TryParse(key.GetValue(name)?.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int v)
+            ? v : fallback;
 
     private static bool GetBool(RegistryKey key, string name, bool defaultValue = false)
     {

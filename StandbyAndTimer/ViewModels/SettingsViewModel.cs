@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -13,6 +14,10 @@ namespace StandbyAndTimer.ViewModels;
 
 public sealed partial class SettingsViewModel : ObservableObject
 {
+    // Cached so we don't allocate a fresh options instance on every export.
+    private static readonly JsonSerializerOptions ExportJsonOptions =
+        new() { WriteIndented = true };
+
     private readonly IAutoStartService    _autoStartService;
     private readonly ILocalizationService _localization;
     private readonly ISettingsService     _settingsService;
@@ -137,10 +142,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         try
         {
             var snapshot = SnapshotProvider();
-            var json = JsonSerializer.Serialize(snapshot, new JsonSerializerOptions
-            {
-                WriteIndented = true
-            });
+            var json = JsonSerializer.Serialize(snapshot, ExportJsonOptions);
             File.WriteAllText(dlg.FileName, json);
             UpdateStatus = _localization.GetString("Str_Settings_ExportOk");
             Logger.Info($"Settings exported to {dlg.FileName}");
@@ -195,6 +197,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
 
         UpdateStatus = string.Format(
+            CultureInfo.CurrentCulture,
             _localization.GetString("Str_Settings_UpdateAvailable"),
             result.LatestVersion);
 
@@ -229,6 +232,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
             var progress = new Progress<double>(p =>
                 UpdateStatus = string.Format(
+                    CultureInfo.CurrentCulture,
                     _localization.GetString("Str_Settings_Downloading"),
                     (int)p));
 
@@ -272,7 +276,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void OpenLogFolder()
+    private static void OpenLogFolder()
     {
         try
         {
