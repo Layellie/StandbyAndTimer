@@ -13,10 +13,15 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
 
     // The total Windows standby list = Normal Priority + Reserve + Core.
     // Reading only one bucket (as the original did) understated the value by
-    // an order of magnitude on most systems.
+    // an order of magnitude on most systems. Counters are created lazily on
+    // the loop thread because their constructor is expensive (~1 s on a cold
+    // process). Building them in the service ctor blocked the UI thread for
+    // ~4.8 s during app startup, since this service is resolved by DI before
+    // the window is shown.
     private PerformanceCounter? _standbyNormal;
     private PerformanceCounter? _standbyReserve;
     private PerformanceCounter? _standbyCore;
+    private bool _countersInitialized;
 
     private CancellationTokenSource? _cts;
     private Task? _loopTask;
@@ -35,10 +40,16 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
     {
         _purgeService   = purgeService;
         _processService = processService;
+        // Counters are created in EnsureCountersInitialized on the loop thread.
+    }
 
+    private void EnsureCountersInitialized()
+    {
+        if (_countersInitialized) return;
         _standbyNormal  = TryCreateCounter("Standby Cache Normal Priority Bytes");
         _standbyReserve = TryCreateCounter("Standby Cache Reserve Bytes");
         _standbyCore    = TryCreateCounter("Standby Cache Core Bytes");
+        _countersInitialized = true;
     }
 
     private static PerformanceCounter? TryCreateCounter(string counterName)
@@ -60,8 +71,12 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _cts      = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _loopTask = RunLoopAsync(_cts.Token);
+        _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        // Run the loop on a thread-pool thread so that
+        // EnsureCountersInitialized — which can take ~1 s for the first
+        // PerformanceCounter construction on a cold process — never touches
+        // the UI thread or the synchronous StartAsync caller.
+        _loopTask = Task.Run(() => RunLoopAsync(_cts.Token), _cts.Token);
         return Task.CompletedTask;
     }
 
@@ -80,6 +95,13 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
         // resumes on a different ThreadPool worker), so it would only leak
         // an avrt handle without providing any scheduling benefit for a
         // 1-second poll. Timer-level MMCSS lives in TimerResolutionService.
+
+        // First call after construction; runs off the UI thread because
+        // StartAsync queued us via Task.Run. Cancellation between Start and
+        // the first tick is honoured.
+        EnsureCountersInitialized();
+        if (ct.IsCancellationRequested) return;
+
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
         try
         {

@@ -12,7 +12,7 @@
 
 #define AppName        "StandbyAndTimer"
 #ifndef AppVersion
-  #define AppVersion   "2.0.0"
+  #define AppVersion   "2.0.3"
 #endif
 #define AppPublisher   "LAYE77IE"
 #define AppExeName     "StandbyAndTimer.exe"

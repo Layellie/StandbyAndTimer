@@ -205,6 +205,18 @@ internal sealed partial class UpdateService : IUpdateService
     private static Version ParseVersion(string tag)
     {
         var s = tag.TrimStart('v', 'V').Trim();
-        return Version.TryParse(s, out var v) ? v : new Version(0, 0, 0, 0);
+        if (!Version.TryParse(s, out var v))
+            return new Version(0, 0, 0, 0);
+        // A 3-part tag (e.g. "v2.0.2") parses to Version(2,0,2) with
+        // Revision = -1. Assembly versions always have 4 parts
+        // (Version(2,0,2,0)), and Version comparison treats -1 < 0, so the
+        // tag would compare as *less* than its own assembly even when both
+        // are nominally "2.0.2". Normalise undefined components to 0 so the
+        // comparison reflects real version equality.
+        return new Version(
+            v.Major,
+            v.Minor,
+            Math.Max(v.Build,    0),
+            Math.Max(v.Revision, 0));
     }
 }

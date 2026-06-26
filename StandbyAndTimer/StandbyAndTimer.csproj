@@ -16,6 +16,13 @@
     <Authors>LAYE77IE</Authors>
     <Product>StandbyAndTimer</Product>
     <Copyright>Copyright © LAYE77IE</Copyright>
+    <!-- Baseline version embedded in dev / CI builds. The release pipeline
+         passes -p:Version=X.Y.Z to dotnet publish, which overrides this so
+         the binary on GitHub Releases always carries the right tag. Without
+         this default, dev builds defaulted to AssemblyVersion 1.0.0.0 and
+         the in-app update checker reported a phantom "new version" against
+         the current release. -->
+    <Version>2.0.3</Version>
   </PropertyGroup>
 
   <ItemGroup>
