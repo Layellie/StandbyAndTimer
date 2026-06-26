@@ -80,9 +80,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         Settings.SettingsChanged += (_, _) => PersistSettings();
         Settings.SnapshotProvider = BuildCurrentSettings;
 
-        _memoryService.SnapshotUpdated += OnSnapshotUpdated;
-        _purgeService.PurgeSucceeded   += OnPurgeSucceeded;
-        _localization.LanguageChanged  += OnLanguageChanged;
+        _memoryService.SnapshotUpdated     += OnSnapshotUpdated;
+        _purgeService.PurgeSucceeded       += OnPurgeSucceeded;
+        _localization.LanguageChanged      += OnLanguageChanged;
+        _timerService.ResolutionMeasured   += OnTimerResolutionMeasured;
     }
 
     // ── Initialisation (called once from App.OnStartup) ───────────────────────
@@ -96,7 +97,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             System.Diagnostics.ProcessPriorityClass.High;
 
         if (settings.TimerResolutionActive)
-            ActivateTimerInternal(silent: true);
+            await ActivateTimerInternalAsync(silent: true).ConfigureAwait(true);
 
         StatusMessage = _localization.GetString("Str_Status_Ready");
 
@@ -214,6 +215,15 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(AboutClose));
         });
 
+    private void OnTimerResolutionMeasured(object? sender, double measuredMs) =>
+        Application.Current.Dispatcher.InvokeAsync(() =>
+        {
+            if (!TimerActive) return;
+            ActualTimerMs = measuredMs;
+            StatusMessage = string.Format(
+                _localization.GetString("Str_Status_TimerActive"), measuredMs);
+        });
+
     // ── Property-change side effects ──────────────────────────────────────────
 
     partial void OnStandbyLimitMbChanged(int value)
@@ -252,7 +262,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private void ToggleTimerResolution()
+    private async Task ToggleTimerResolutionAsync()
     {
         if (TimerActive)
         {
@@ -264,7 +274,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
         else
         {
-            ActivateTimerInternal(silent: false);
+            await ActivateTimerInternalAsync(silent: false).ConfigureAwait(true);
         }
         PersistSettings();
     }
@@ -333,9 +343,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
-    private void ActivateTimerInternal(bool silent)
+    private async Task ActivateTimerInternalAsync(bool silent)
     {
-        double ms = _timerService.Activate();
+        double ms = await _timerService.ActivateAsync(_appCts.Token).ConfigureAwait(true);
         ActualTimerMs = ms;
         TimerActive   = true;
         StatusMessage = string.Format(_localization.GetString("Str_Status_TimerActive"), ms);
@@ -364,9 +374,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
         FlushPendingPersist();
 
-        _memoryService.SnapshotUpdated -= OnSnapshotUpdated;
-        _purgeService.PurgeSucceeded   -= OnPurgeSucceeded;
-        _localization.LanguageChanged  -= OnLanguageChanged;
+        _memoryService.SnapshotUpdated     -= OnSnapshotUpdated;
+        _purgeService.PurgeSucceeded       -= OnPurgeSucceeded;
+        _localization.LanguageChanged      -= OnLanguageChanged;
+        _timerService.ResolutionMeasured   -= OnTimerResolutionMeasured;
 
         _timerService.Dispose();
         _memoryService.Dispose();

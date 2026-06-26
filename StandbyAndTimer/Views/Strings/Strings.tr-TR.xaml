@@ -7,6 +7,20 @@
     <sys:String x:Key="Str_Memory_TotalLabel">Toplam sistem belleği:</sys:String>
     <sys:String x:Key="Str_Memory_StandbyLabel">Standby liste / çalışma kümesi:</sys:String>
     <sys:String x:Key="Str_Memory_FreeLabel">Serbest Bellek:</sys:String>
+    <sys:String x:Key="Str_Memory_TotalShort">Toplam</sys:String>
+    <sys:String x:Key="Str_Memory_FreeShort">Serbest</sys:String>
+
+    <!-- Yeni kart başlıkları ve mikro-etiketler (modern tasarım) -->
+    <sys:String x:Key="Str_TitleBar_Admin">Yönetici</sys:String>
+    <sys:String x:Key="Str_Card_TimerTitle">TIMER ÇÖZÜNÜRLÜĞÜ</sys:String>
+    <sys:String x:Key="Str_Card_TimerLocked">KİLİT</sys:String>
+    <sys:String x:Key="Str_Card_StandbyTitle">STANDBY BELLEK</sys:String>
+    <sys:String x:Key="Str_Card_StandbyClearable">Temizlenebilir</sys:String>
+    <sys:String x:Key="Str_Card_PurgeTitle">STANDBY TEMİZLE</sys:String>
+    <sys:String x:Key="Str_Card_GameModeTitle">OYUN MODU</sys:String>
+    <sys:String x:Key="Str_Card_GameModeOn">Açık</sys:String>
+    <sys:String x:Key="Str_Card_GameModeOff">Kapalı</sys:String>
+    <sys:String x:Key="Str_Card_GameModeDesc">Yüksek öncelik · Tam affinity</sys:String>
 
     <!-- Temizleme bölümü -->
     <sys:String x:Key="Str_Purge_StandbyLimitLabel">Liste boyutu en az (MB):</sys:String>

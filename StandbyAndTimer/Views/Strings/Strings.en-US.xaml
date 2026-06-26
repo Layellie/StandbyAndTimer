@@ -7,6 +7,20 @@
     <sys:String x:Key="Str_Memory_TotalLabel">Total system memory:</sys:String>
     <sys:String x:Key="Str_Memory_StandbyLabel">Standby list / working set:</sys:String>
     <sys:String x:Key="Str_Memory_FreeLabel">Free Memory:</sys:String>
+    <sys:String x:Key="Str_Memory_TotalShort">Total</sys:String>
+    <sys:String x:Key="Str_Memory_FreeShort">Free</sys:String>
+
+    <!-- Card titles &amp; micro-labels (modern design) -->
+    <sys:String x:Key="Str_TitleBar_Admin">Administrator</sys:String>
+    <sys:String x:Key="Str_Card_TimerTitle">TIMER RESOLUTION</sys:String>
+    <sys:String x:Key="Str_Card_TimerLocked">LOCKED</sys:String>
+    <sys:String x:Key="Str_Card_StandbyTitle">STANDBY MEMORY</sys:String>
+    <sys:String x:Key="Str_Card_StandbyClearable">Clearable</sys:String>
+    <sys:String x:Key="Str_Card_PurgeTitle">STANDBY PURGE</sys:String>
+    <sys:String x:Key="Str_Card_GameModeTitle">GAME MODE</sys:String>
+    <sys:String x:Key="Str_Card_GameModeOn">On</sys:String>
+    <sys:String x:Key="Str_Card_GameModeOff">Off</sys:String>
+    <sys:String x:Key="Str_Card_GameModeDesc">High priority · Full affinity</sys:String>
 
     <!-- Purge section -->
     <sys:String x:Key="Str_Purge_StandbyLimitLabel">List size at least (MB):</sys:String>

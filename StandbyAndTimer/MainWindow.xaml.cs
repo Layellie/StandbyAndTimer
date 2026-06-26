@@ -141,6 +141,12 @@ public partial class MainWindow : Window
             Dispatcher.BeginInvoke(new Action(HideOffscreen));
     }
 
+    // ── Title bar window controls ────────────────────────────────────────────
+
+    private void OnMinimizeClick(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+
+    private void OnCloseClick(object sender, RoutedEventArgs e) => Close();
+
     // ── Game list drag-and-drop ──────────────────────────────────────────────
 
     private void GamesList_DragEnter(object sender, DragEventArgs e)
