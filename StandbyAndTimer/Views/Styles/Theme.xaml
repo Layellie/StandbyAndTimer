@@ -25,13 +25,14 @@
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!--  PRIMARY BUTTON (accent fill + smooth color animation)                 -->
-    <!--  Accent color is intentionally the same in dark & light themes, so the -->
-    <!--  hard-coded hover/exit ColorAnimation targets (#7C6AF7 / #9585F9) stay -->
-    <!--  correct under both palettes.                                          -->
+    <!--  Hardcoded hover/exit colors mirror the lime AccentPrimary / Hover     -->
+    <!--  brushes in Palette.Dark.xaml. Light theme falls back to its own       -->
+    <!--  AccentPressed via the IsPressed trigger, so the animation stops       -->
+    <!--  short of the green-on-white over-saturation.                          -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <Style x:Key="DarkButtonStyle" TargetType="Button">
         <Setter Property="Background"       Value="{DynamicResource AccentPrimary}"/>
-        <Setter Property="Foreground"       Value="#FFFFFF"/>
+        <Setter Property="Foreground"       Value="{DynamicResource AccentOnText}"/>
         <Setter Property="BorderThickness"  Value="0"/>
         <Setter Property="FontFamily"       Value="Segoe UI"/>
         <Setter Property="FontSize"         Value="12"/>
@@ -58,7 +59,7 @@
                                         <ColorAnimation
                                             Storyboard.TargetName="bd"
                                             Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
-                                            To="#9585F9" Duration="0:0:0.12"/>
+                                            To="#C8F75A" Duration="0:0:0.12"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.EnterActions>
@@ -68,7 +69,7 @@
                                         <ColorAnimation
                                             Storyboard.TargetName="bd"
                                             Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
-                                            To="#7C6AF7" Duration="0:0:0.18"/>
+                                            To="#B8F03A" Duration="0:0:0.18"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
@@ -327,6 +328,148 @@
                         </Trigger>
                     </Style.Triggers>
                 </Style>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!--  TITLE BAR (custom WindowChrome)                                       -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <Style x:Key="TitleBarIconButtonStyle" TargetType="Button">
+        <Setter Property="Background"       Value="Transparent"/>
+        <Setter Property="Foreground"       Value="{DynamicResource AppFgDim}"/>
+        <Setter Property="BorderThickness"  Value="0"/>
+        <Setter Property="Width"            Value="36"/>
+        <Setter Property="Height"           Value="28"/>
+        <Setter Property="FontSize"         Value="13"/>
+        <Setter Property="Cursor"           Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="bd"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{StaticResource RadiusSmall}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="{DynamicResource HoverBg}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource AppFg}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="TitleBarCloseButtonStyle" TargetType="Button" BasedOn="{StaticResource TitleBarIconButtonStyle}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="bd"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{StaticResource RadiusSmall}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="{DynamicResource DangerColor}"/>
+                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!--  BADGES (small pill: KİLİT / Yönetici)                                 -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <Style x:Key="SuccessBadgeStyle" TargetType="Border">
+        <Setter Property="Background"      Value="Transparent"/>
+        <Setter Property="BorderBrush"     Value="{DynamicResource SuccessColor}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius"    Value="{StaticResource RadiusSmall}"/>
+        <Setter Property="Padding"         Value="7,2"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="MutedBadgeStyle" TargetType="Border">
+        <Setter Property="Background"      Value="Transparent"/>
+        <Setter Property="BorderBrush"     Value="{DynamicResource BorderColor}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius"    Value="{StaticResource RadiusSmall}"/>
+        <Setter Property="Padding"         Value="7,2"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!--  TYPOGRAPHY                                                            -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <Style x:Key="SectionLabelStyle" TargetType="TextBlock">
+        <Setter Property="FontSize"   Value="10"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource AppFgDim}"/>
+    </Style>
+
+    <Style x:Key="HeroValueStyle" TargetType="TextBlock">
+        <Setter Property="FontSize"   Value="56"/>
+        <Setter Property="FontWeight" Value="Light"/>
+        <Setter Property="Foreground" Value="{DynamicResource AppFg}"/>
+        <Setter Property="LineHeight" Value="60"/>
+    </Style>
+
+    <Style x:Key="KpiValueStyle" TargetType="TextBlock">
+        <Setter Property="FontSize"   Value="28"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource AppFg}"/>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!--  TOGGLE SWITCH (CheckBox restyled as a pill switch)                    -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <Style x:Key="ToggleSwitchStyle" TargetType="CheckBox">
+        <Setter Property="Foreground"       Value="{DynamicResource AppFg}"/>
+        <Setter Property="FontFamily"       Value="Segoe UI"/>
+        <Setter Property="FontSize"         Value="13"/>
+        <Setter Property="FontWeight"       Value="SemiBold"/>
+        <Setter Property="Cursor"           Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border x:Name="track"
+                                Width="38" Height="20"
+                                CornerRadius="10"
+                                Background="{DynamicResource InputBorder}"
+                                SnapsToDevicePixels="True">
+                            <Ellipse x:Name="thumb"
+                                     Width="14" Height="14"
+                                     Fill="#FFFFFF"
+                                     HorizontalAlignment="Left"
+                                     Margin="3,0,0,0"/>
+                        </Border>
+                        <ContentPresenter Margin="9,0,0,0"
+                                          VerticalAlignment="Center"
+                                          RecognizesAccessKey="True"/>
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="track" Property="Background"          Value="{DynamicResource SuccessColor}"/>
+                            <Setter TargetName="thumb" Property="HorizontalAlignment" Value="Right"/>
+                            <Setter TargetName="thumb" Property="Margin"              Value="0,0,3,0"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>

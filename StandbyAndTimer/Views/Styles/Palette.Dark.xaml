@@ -2,32 +2,33 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Dark palette -->
-    <SolidColorBrush x:Key="AppBg"            Color="#0D0D12"/>
-    <SolidColorBrush x:Key="SurfaceBg"        Color="#13131A"/>
-    <SolidColorBrush x:Key="Surface2Bg"       Color="#1C1C27"/>
-    <SolidColorBrush x:Key="AppFg"            Color="#E2E2F0"/>
-    <SolidColorBrush x:Key="AppFgDim"         Color="#7070A0"/>
-    <SolidColorBrush x:Key="AppFgMuted"       Color="#4A4A6A"/>
-    <SolidColorBrush x:Key="AccentPrimary"    Color="#7C6AF7"/>
-    <SolidColorBrush x:Key="AccentHover"      Color="#9585F9"/>
-    <SolidColorBrush x:Key="AccentPressed"    Color="#6455E0"/>
-    <SolidColorBrush x:Key="AccentSubtle"     Color="#2A2450"/>
-    <SolidColorBrush x:Key="InputBg"          Color="#1C1C27"/>
-    <SolidColorBrush x:Key="InputFg"          Color="#C8C8E0"/>
-    <SolidColorBrush x:Key="InputBorder"      Color="#2A2A3D"/>
-    <SolidColorBrush x:Key="InputFocusBorder" Color="#7C6AF7"/>
-    <SolidColorBrush x:Key="BorderColor"      Color="#2A2A3D"/>
-    <SolidColorBrush x:Key="SeparatorBrush"   Color="#1E1E2E"/>
-    <SolidColorBrush x:Key="SelectionBg"      Color="#3D3670"/>
-    <SolidColorBrush x:Key="SelectionFg"      Color="#E2E2F0"/>
-    <SolidColorBrush x:Key="HoverBg"          Color="#1E1E2E"/>
-    <SolidColorBrush x:Key="SuccessColor"     Color="#4ADE80"/>
+    <!-- Dark palette — lime accent (matches the mockup) -->
+    <SolidColorBrush x:Key="AppBg"            Color="#0A0C12"/>
+    <SolidColorBrush x:Key="SurfaceBg"        Color="#12141A"/>
+    <SolidColorBrush x:Key="Surface2Bg"       Color="#1A1D24"/>
+    <SolidColorBrush x:Key="AppFg"            Color="#E8E8F0"/>
+    <SolidColorBrush x:Key="AppFgDim"         Color="#7A7E88"/>
+    <SolidColorBrush x:Key="AppFgMuted"       Color="#4A4E58"/>
+    <SolidColorBrush x:Key="AccentPrimary"    Color="#B8F03A"/>
+    <SolidColorBrush x:Key="AccentHover"      Color="#C8F75A"/>
+    <SolidColorBrush x:Key="AccentPressed"    Color="#98C92E"/>
+    <SolidColorBrush x:Key="AccentSubtle"     Color="#1F2E0A"/>
+    <SolidColorBrush x:Key="AccentOnText"     Color="#0A140A"/>
+    <SolidColorBrush x:Key="InputBg"          Color="#1A1D24"/>
+    <SolidColorBrush x:Key="InputFg"          Color="#C8C8D0"/>
+    <SolidColorBrush x:Key="InputBorder"      Color="#26282E"/>
+    <SolidColorBrush x:Key="InputFocusBorder" Color="#B8F03A"/>
+    <SolidColorBrush x:Key="BorderColor"      Color="#26282E"/>
+    <SolidColorBrush x:Key="SeparatorBrush"   Color="#1E2026"/>
+    <SolidColorBrush x:Key="SelectionBg"      Color="#2E4515"/>
+    <SolidColorBrush x:Key="SelectionFg"      Color="#E8E8F0"/>
+    <SolidColorBrush x:Key="HoverBg"          Color="#1E2026"/>
+    <SolidColorBrush x:Key="SuccessColor"     Color="#B8F03A"/>
     <SolidColorBrush x:Key="DangerColor"      Color="#F87171"/>
 
     <!-- DimOverlay background — semi-transparent black; same for both themes -->
-    <SolidColorBrush x:Key="DimOverlayBrush"  Color="#CC0D0D12"/>
-    <SolidColorBrush x:Key="ModalOverlayBrush" Color="#C00D0D12"/>
+    <SolidColorBrush x:Key="DimOverlayBrush"  Color="#CC0A0C12"/>
+    <SolidColorBrush x:Key="ModalOverlayBrush" Color="#C00A0C12"/>
 
     <!-- Title bar DWM mode hint: 1 = dark, 0 = light (used by MainWindow) -->
     <sys:Int32 x:Key="DwmDarkMode" xmlns:sys="clr-namespace:System;assembly=System.Runtime">1</sys:Int32>

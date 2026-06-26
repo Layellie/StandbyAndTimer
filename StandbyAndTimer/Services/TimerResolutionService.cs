@@ -17,12 +17,46 @@ internal sealed class TimerResolutionService : ITimerResolutionService
     // 0.5ms but some systems accept 4900 ≈ 0.49ms).
 
     private System.Threading.Timer? _watchdog;
-    private uint  _targetUnits = NativeMethods.TARGET_TIMER_RESOLUTION;
-    private bool  _disposed;
+    private uint   _targetUnits = NativeMethods.TARGET_TIMER_RESOLUTION;
+    private double _lastReportedMs;     // dedupe: don't fire event when sample didn't move
+    private bool   _disposed;
 
     public bool IsActive { get; private set; }
 
+    public event EventHandler<double>? ResolutionMeasured;
+
     public double Activate()
+    {
+        uint actualUnits = ApplyTimerRequest();
+        double reportedMs = actualUnits / 10_000.0;
+        _lastReportedMs   = reportedMs;
+        Logger.Info($"Timer activated (sync): target={_targetUnits / 10_000.0:F3} ms, actual={reportedMs:F3} ms");
+        return reportedMs;
+    }
+
+    public async Task<double> ActivateAsync(CancellationToken ct = default)
+    {
+        uint actualUnits = ApplyTimerRequest();
+
+        // Short warm-up. The kernel sometimes publishes a transitional value
+        // on the very first Set after a cold process start; re-querying after
+        // a brief delay returns the steady-state value the watchdog will then
+        // keep refreshing.
+        await Task.Delay(150, ct).ConfigureAwait(false);
+
+        if (NativeMethods.NtQueryTimerResolution(out _, out _, out uint current) == 0 && current > 0)
+            actualUnits = current;
+
+        double reportedMs = actualUnits / 10_000.0;
+        _lastReportedMs   = reportedMs;
+        Logger.Info($"Timer activated (async): target={_targetUnits / 10_000.0:F3} ms, actual={reportedMs:F3} ms");
+        return reportedMs;
+    }
+
+    // Centralises the kernel-level setup so Activate / ActivateAsync stay in sync.
+    // Returns the "current" resolution the kernel reports right after Set, in
+    // 100-ns units (≈ 5000 for 0.5 ms when honored).
+    private uint ApplyTimerRequest()
     {
         // 1. Discover the most aggressive resolution this chipset supports.
         //    NtQueryTimerResolution returns 100-ns units; the *maximum*
@@ -33,39 +67,37 @@ internal sealed class TimerResolutionService : ITimerResolutionService
             _targetUnits = Math.Min(maxRes, NativeMethods.TARGET_TIMER_RESOLUTION);
         }
 
-        // 2. winmm fallback — guarantees at least 1 ms even without Nt success.
-        NativeMethods.TimeBeginPeriod(1);
+        // 2. Nt high-resolution request (typically 0.5 ms). On Windows 10/11
+        //    timer requests are per-process and coalesced to the most
+        //    aggressive value. We intentionally do NOT call timeBeginPeriod(1)
+        //    here: on Win 11 the legacy 1 ms request can clamp the process's
+        //    effective minimum to 1 ms even when Nt asked for 0.5 ms, which
+        //    is what caused the auto-start "1 ms instead of 0.5 ms" bug.
+        //    IGNORE_TIMER_RESOLUTION opt-out is set once at App.OnStartup so
+        //    this request survives minimize/hide.
+        int status = NativeMethods.NtSetTimerResolution(_targetUnits, true, out uint actualUnits);
+        Logger.Info($"NtSetTimerResolution: requested={_targetUnits} actual={actualUnits} status=0x{status:X8}");
 
-        // 3. Nt high-resolution request (typically 0.5 ms).
-        //    IGNORE_TIMER_RESOLUTION opt-out is set once at App.OnStartup so this
-        //    request survives minimize / hide / background.
-        NativeMethods.NtSetTimerResolution(_targetUnits, true, out _);
-
-        // 4. Prevent system sleep while timer is active.
+        // 3. Prevent system sleep while timer is active.
         NativeMethods.SetThreadExecutionState(
             NativeMethods.ES_CONTINUOUS | NativeMethods.ES_SYSTEM_REQUIRED);
 
-        // 5. AVRT multimedia scheduling for this thread.
+        // 4. AVRT multimedia scheduling for this thread.
         uint taskIndex = 0;
         NativeMethods.AvSetMmThreadCharacteristics("Pro Audio", ref taskIndex);
 
-        // 6. Self-heal watchdog — every 1 second, query the current resolution;
+        // 5. Self-heal watchdog — every 1 second, query the current resolution;
         //    if it drifted away from our target (e.g. another process released
-        //    its request and the OS rolled back), force-Set again.
+        //    its request and the OS rolled back), force-Set again. Re-creating
+        //    the watchdog on each Activate is harmless because Deactivate
+        //    disposes it.
+        _watchdog?.Dispose();
         _watchdog = new System.Threading.Timer(_ => SelfHeal(), null,
             TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
 
         IsActive = true;
-
-        double targetMs   = _targetUnits / 10_000.0;
-        double measuredMs = MeasureActualResolutionMs();
-
-        Logger.Info($"Timer activated: target={targetMs:F3} ms, measured={measuredMs:F3} ms");
-
-        // Return the measured value — that is what the UI surfaces to the user
-        // as "Actual timer". A platform that silently rounds 0.500 down to 0.487
-        // should show 0.487, not the value we asked for.
-        return measuredMs;
+        _lastReportedMs = 0;
+        return actualUnits;
     }
 
     // Samples the system time and records the deltas between consecutive
@@ -112,10 +144,10 @@ internal sealed class TimerResolutionService : ITimerResolutionService
         _watchdog = null;
 
         NativeMethods.NtSetTimerResolution(_targetUnits, false, out _);
-        NativeMethods.TimeEndPeriod(1);
         NativeMethods.SetThreadExecutionState(NativeMethods.ES_CONTINUOUS);
 
         IsActive = false;
+        _lastReportedMs = 0;
         Logger.Info("Timer deactivated");
     }
 
@@ -138,7 +170,23 @@ internal sealed class TimerResolutionService : ITimerResolutionService
             // Allow ±1 unit of tolerance — OS occasionally reports the rounded value.
             if (current == 0 || Math.Abs((long)current - _targetUnits) > 1)
             {
-                NativeMethods.NtSetTimerResolution(_targetUnits, true, out _);
+                NativeMethods.NtSetTimerResolution(_targetUnits, true, out current);
+            }
+
+            // Surface the kernel's authoritative period to the UI. We deliberately
+            // prefer this over sample-based measurement: GetSystemTimeAsFileTime
+            // has its own granularity (16 ms cadence on Win 11 for non-multimedia
+            // threads) and frequently reports a value larger than what the kernel
+            // is actually firing the timer at, which made the UI show 1 ms even
+            // when the timer was honoured at 0.5 ms.
+            if (current > 0)
+            {
+                double measured = current / 10_000.0;
+                if (Math.Abs(measured - _lastReportedMs) > 0.005)
+                {
+                    _lastReportedMs = measured;
+                    ResolutionMeasured?.Invoke(this, measured);
+                }
             }
         }
         catch { /* watchdog must never throw */ }

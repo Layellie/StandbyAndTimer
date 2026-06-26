@@ -110,9 +110,18 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
         };
         NativeMethods.GlobalMemoryStatusEx(ref mem);
 
-        long totalMb   = (long)(mem.ullTotalPhys / (1024 * 1024));
-        long freeMb    = (long)(mem.ullAvailPhys  / (1024 * 1024));
-        long standbyMb = ReadStandbyMb();
+        long totalMb     = (long)(mem.ullTotalPhys / (1024 * 1024));
+        long availableMb = (long)(mem.ullAvailPhys / (1024 * 1024));
+        long standbyMb   = ReadStandbyMb();
+
+        // GlobalMemoryStatusEx.ullAvailPhys is "Available" = standby + free + zero.
+        // Surfacing that as "Free" makes the UI double-count cache memory and
+        // — when standby is the dominant bucket — makes Free track Standby
+        // almost 1:1 (the "saçma değer" the user reported). Subtract standby
+        // to expose the truly free + zero portion. Clamp at 0 to guard against
+        // the race where standby was read just before a purge dropped it
+        // below the value still cached in mem.ullAvailPhys.
+        long freeMb = Math.Max(0, availableMb - standbyMb);
 
         return new MemorySnapshot(totalMb, freeMb, standbyMb);
     }

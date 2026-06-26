@@ -218,9 +218,16 @@ public partial class App : Application
                         | NativeMethods.PROCESS_POWER_THROTTLING_IGNORE_TIMER_RESOLUTION,
             StateMask   = 0
         };
+        // PROCESS_INFORMATION_CLASS::ProcessPowerThrottling = 4.
+        // The previous value (34) didn't match any class and SetProcessInformation
+        // returned ERROR_INVALID_PARAMETER (87), which silently left
+        // PROCESS_POWER_THROTTLING_IGNORE_TIMER_RESOLUTION at its default — and
+        // that default caused the kernel to ignore our NtSetTimerResolution(0.5 ms)
+        // request, so the timer sat at the OS default (~15.6 ms / 1 ms) until the
+        // user toggled it manually.
         bool ok = NativeMethods.SetProcessInformation(
             Process.GetCurrentProcess().Handle,
-            34,
+            4,
             ref state,
             System.Runtime.InteropServices.Marshal.SizeOf<NativeMethods.PROCESS_POWER_THROTTLING_STATE>());
 
