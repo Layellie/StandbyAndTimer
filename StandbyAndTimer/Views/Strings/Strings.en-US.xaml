@@ -17,6 +17,7 @@
     <sys:String x:Key="Str_Card_StandbyTitle">STANDBY MEMORY</sys:String>
     <sys:String x:Key="Str_Card_StandbyClearable">Clearable</sys:String>
     <sys:String x:Key="Str_Card_PurgeTitle">STANDBY PURGE</sys:String>
+    <sys:String x:Key="Str_Card_AutoPurgeLabel">AUTO PURGE</sys:String>
     <sys:String x:Key="Str_Card_GameModeTitle">GAME MODE</sys:String>
     <sys:String x:Key="Str_Card_GameModeOn">On</sys:String>
     <sys:String x:Key="Str_Card_GameModeOff">Off</sys:String>

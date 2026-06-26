@@ -27,9 +27,10 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
     private Task? _loopTask;
     private bool  _disposed;
 
-    public int StandbyLimitMb  { get; set; } = 1024;
-    public int FreeLimitMb     { get; set; } = 1024;
-    public bool GameModeEnabled { get; set; }
+    public int  StandbyLimitMb   { get; set; }
+    public int  FreeLimitMb      { get; set; }
+    public bool AutoPurgeEnabled { get; set; }
+    public bool GameModeEnabled  { get; set; }
     public IReadOnlyList<string> GamePaths { get; set; } = [];
 
     public event EventHandler<MemorySnapshot>? SnapshotUpdated;
@@ -110,7 +111,12 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
                 var snapshot = ReadSnapshot();
                 SnapshotUpdated?.Invoke(this, snapshot);
 
-                bool purgeNeeded = StandbyLimitMb > 0
+                // Master switch: AutoPurgeEnabled must be ON, and both thresholds
+                // must be > 0. Defaults ship as OFF + 0/0 so a fresh install never
+                // touches the standby list until the user explicitly opts in.
+                bool purgeNeeded = AutoPurgeEnabled
+                    && StandbyLimitMb > 0
+                    && FreeLimitMb    > 0
                     && snapshot.StandbyMb >= StandbyLimitMb
                     && snapshot.FreeMb    <= FreeLimitMb;
 

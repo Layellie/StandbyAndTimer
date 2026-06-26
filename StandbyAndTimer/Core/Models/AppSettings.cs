@@ -2,8 +2,9 @@ namespace StandbyAndTimer.Core.Models;
 
 public sealed class AppSettings
 {
-    public int         StandbyLimitMb        { get; set; } = 1024;
-    public int         FreeLimitMb           { get; set; } = 1024;
+    public int         StandbyLimitMb        { get; set; }
+    public int         FreeLimitMb           { get; set; }
+    public bool        AutoPurgeEnabled      { get; set; }
     public bool        GameModeEnabled       { get; set; }
     public bool        AutoStartEnabled      { get; set; }
     public bool        TimerResolutionActive { get; set; }
