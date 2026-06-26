@@ -272,6 +272,35 @@
                                 </StackPanel>
                             </Grid>
 
+                            <!-- AUTO PURGE master toggle — when off, both thresholds
+                                 are ignored and no automatic purge ever fires. -->
+                            <Grid Margin="0,0,0,8">
+                                <TextBlock Text="{DynamicResource Str_Card_AutoPurgeLabel}"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AppFgDim}"
+                                           VerticalAlignment="Center"/>
+                                <CheckBox Style="{StaticResource ToggleSwitchStyle}"
+                                          IsChecked="{Binding AutoPurgeEnabled}"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Center">
+                                    <CheckBox.Content>
+                                        <TextBlock>
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="{DynamicResource Str_Card_GameModeOff}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding AutoPurgeEnabled}" Value="True">
+                                                            <Setter Property="Text" Value="{DynamicResource Str_Card_GameModeOn}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </CheckBox.Content>
+                                </CheckBox>
+                            </Grid>
+
                             <Grid Margin="0,0,0,6">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>

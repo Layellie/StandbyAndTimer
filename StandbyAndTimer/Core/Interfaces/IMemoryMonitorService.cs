@@ -8,9 +8,10 @@ public interface IMemoryMonitorService : IDisposable
     event EventHandler<MemorySnapshot>? SnapshotUpdated;
 
     // Configurable thresholds — updated live from the ViewModel without restart.
-    int StandbyLimitMb { get; set; }
-    int FreeLimitMb    { get; set; }
-    bool GameModeEnabled { get; set; }
+    int  StandbyLimitMb   { get; set; }
+    int  FreeLimitMb      { get; set; }
+    bool AutoPurgeEnabled { get; set; }
+    bool GameModeEnabled  { get; set; }
     IReadOnlyList<string> GamePaths { get; set; }
 
     Task StartAsync(CancellationToken cancellationToken);

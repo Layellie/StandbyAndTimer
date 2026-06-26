@@ -7,10 +7,19 @@ internal sealed class TimerResolutionService : ITimerResolutionService
 {
     // ── Triple-lock strategy ──────────────────────────────────────────────────
     //  1. NtSetTimerResolution(min, true)     ← per-process modern API
-    //  2. timeBeginPeriod(1) (winmm)          ← legacy MMTimer double-binding
-    //  3. PROCESS_POWER_THROTTLING_IGNORE_TIMER_RESOLUTION (set once in App)
-    //  4. Self-heal watchdog (1 s tick)       ← if OS drift, NtQuery returns
-    //                                            a value != target → re-Set.
+    //  2. PROCESS_POWER_THROTTLING_IGNORE_TIMER_RESOLUTION (set once in App)
+    //  3. Self-heal watchdog (100 ms tick)    ← re-Set unconditionally every
+    //                                            tick. NtSetTimerResolution is
+    //                                            a cheap idempotent syscall, so
+    //                                            re-asserting closes the window
+    //                                            where another process releasing
+    //                                            its own high-res request would
+    //                                            have rolled the OS back to
+    //                                            ~1 ms until our next check.
+    //                                            At 100 ms the drift window is
+    //                                            shorter than one display frame
+    //                                            at 60 Hz, so any "1 ms blip"
+    //                                            is invisible in-game.
     //
     // `MinimumResolution` is read from NtQueryTimerResolution at Activate time,
     // so we always request the chipset's most aggressive value (often 5000 =
@@ -90,14 +99,16 @@ internal sealed class TimerResolutionService : ITimerResolutionService
         uint taskIndex = 0;
         NativeMethods.AvSetMmThreadCharacteristics("Pro Audio", ref taskIndex);
 
-        // 5. Self-heal watchdog — every 1 second, query the current resolution;
-        //    if it drifted away from our target (e.g. another process released
-        //    its request and the OS rolled back), force-Set again. Re-creating
-        //    the watchdog on each Activate is harmless because Deactivate
-        //    disposes it.
+        // 5. Self-heal watchdog — every 100 ms, re-assert the request. The Set
+        //    syscall is cheap and idempotent when the kernel already holds our
+        //    request, so calling it unconditionally is cheaper than gating on a
+        //    Query call and shortens the worst-case "stuck at 1 ms" window to
+        //    ≤100 ms — under one 60 Hz frame, so any drift is invisible in-game.
+        //    Cost: 10 syscalls/sec, each ~µs, negligible CPU. Re-creating the
+        //    watchdog on each Activate is harmless because Deactivate disposes it.
         _watchdog?.Dispose();
         _watchdog = new System.Threading.Timer(_ => SelfHeal(), null,
-            TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+            TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(100));
 
         IsActive = true;
         _lastReportedMs = 0;
@@ -165,20 +176,20 @@ internal sealed class TimerResolutionService : ITimerResolutionService
         Deactivate();
     }
 
-    // ── Self-heal: re-assert only when actual ≠ target (cheap NtQuery first) ─
+    // ── Self-heal: unconditional re-assert each tick ─────────────────────────
     private void SelfHeal()
     {
         if (!IsActive) return;
         try
         {
-            if (NativeMethods.NtQueryTimerResolution(out _, out _, out uint current) != 0)
+            // Re-assert without a Query gate. NtSetTimerResolution returns the
+            // kernel's *current* (post-Set) resolution in `current`, so a single
+            // syscall gives us both the re-assert AND the authoritative reading
+            // we need for the UI — half the syscalls of the old query-then-set
+            // path. If another process released its request between ticks, this
+            // Set immediately reclaims the 0.5 ms slot before the next interrupt.
+            if (NativeMethods.NtSetTimerResolution(_targetUnits, true, out uint current) != 0)
                 return;
-
-            // Allow ±1 unit of tolerance — OS occasionally reports the rounded value.
-            if (current == 0 || Math.Abs((long)current - _targetUnits) > 1)
-            {
-                _ = NativeMethods.NtSetTimerResolution(_targetUnits, true, out current);
-            }
 
             // Surface the kernel's authoritative period to the UI. We deliberately
             // prefer this over sample-based measurement: GetSystemTimeAsFileTime

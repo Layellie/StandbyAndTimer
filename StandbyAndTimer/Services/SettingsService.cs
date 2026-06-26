@@ -19,8 +19,12 @@ internal sealed class SettingsService : ISettingsService
 
             var settings = new AppSettings
             {
-                StandbyLimitMb        = GetInt(key,      "StandbyLimitMb",  1024),
-                FreeLimitMb           = GetInt(key,      "FreeLimitMb",      1024),
+                // Defaults intentionally 0 / false so an upgrade *or* fresh install
+                // never auto-purges until the user explicitly opts in via the
+                // AUTO PURGE toggle and sets non-zero thresholds.
+                StandbyLimitMb        = GetInt(key,      "StandbyLimitMb",      0),
+                FreeLimitMb           = GetInt(key,      "FreeLimitMb",         0),
+                AutoPurgeEnabled      = GetBool(key,     "AutoPurgeEnabled"),
                 GameModeEnabled       = GetBool(key,     "GameModeEnabled"),
                 AutoStartEnabled      = GetBool(key,     "AutoStartEnabled"),
                 TimerResolutionActive = GetBool(key,     "TimerResolutionActive"),
@@ -62,6 +66,7 @@ internal sealed class SettingsService : ISettingsService
             // must round-trip cleanly when the user later switches to en-US.
             key.SetValue("StandbyLimitMb", settings.StandbyLimitMb.ToString(CultureInfo.InvariantCulture));
             key.SetValue("FreeLimitMb",    settings.FreeLimitMb.ToString(CultureInfo.InvariantCulture));
+            key.SetValue("AutoPurgeEnabled",       settings.AutoPurgeEnabled       ? "1" : "0");
             key.SetValue("GameModeEnabled",        settings.GameModeEnabled        ? "1" : "0");
             key.SetValue("AutoStartEnabled",       settings.AutoStartEnabled       ? "1" : "0");
             key.SetValue("TimerResolutionActive",  settings.TimerResolutionActive  ? "1" : "0");

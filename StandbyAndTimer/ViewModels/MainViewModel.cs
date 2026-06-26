@@ -35,8 +35,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private long    _freeRamMb;
     [ObservableProperty] private long    _standbyRamMb;
     [ObservableProperty] private int     _purgeCount;
-    [ObservableProperty] private int     _standbyLimitMb = 1024;
-    [ObservableProperty] private int     _freeLimitMb    = 1024;
+    [ObservableProperty] private int     _standbyLimitMb;
+    [ObservableProperty] private int     _freeLimitMb;
+    [ObservableProperty] private bool    _autoPurgeEnabled;
     [ObservableProperty] private bool    _gameModeEnabled;
     [ObservableProperty] private bool    _timerActive;
     [ObservableProperty] private double  _actualTimerMs;
@@ -114,6 +115,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             StandbyLimitMb   = s.StandbyLimitMb;
             FreeLimitMb      = s.FreeLimitMb;
+            AutoPurgeEnabled = s.AutoPurgeEnabled;
             GameModeEnabled  = s.GameModeEnabled;
             TimerActive      = s.TimerResolutionActive;
 
@@ -132,10 +134,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     private void SyncMonitorSettings()
     {
-        _memoryService.StandbyLimitMb  = StandbyLimitMb;
-        _memoryService.FreeLimitMb     = FreeLimitMb;
-        _memoryService.GameModeEnabled = GameModeEnabled;
-        _memoryService.GamePaths       = Games.Select(g => g.ExecutablePath).ToList();
+        _memoryService.StandbyLimitMb   = StandbyLimitMb;
+        _memoryService.FreeLimitMb      = FreeLimitMb;
+        _memoryService.AutoPurgeEnabled = AutoPurgeEnabled;
+        _memoryService.GameModeEnabled  = GameModeEnabled;
+        _memoryService.GamePaths        = Games.Select(g => g.ExecutablePath).ToList();
     }
 
     private void PersistSettings()
@@ -180,6 +183,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         StandbyLimitMb        = StandbyLimitMb,
         FreeLimitMb           = FreeLimitMb,
+        AutoPurgeEnabled      = AutoPurgeEnabled,
         GameModeEnabled       = GameModeEnabled,
         AutoStartEnabled      = Settings.AutoStartEnabled,
         TimerResolutionActive = TimerActive,
@@ -238,6 +242,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         SyncMonitorSettings();
         SchedulePersist();  // debounced — TextBox emits a change per keystroke
+    }
+
+    partial void OnAutoPurgeEnabledChanged(bool value)
+    {
+        SyncMonitorSettings();
+        PersistSettings();
     }
 
     partial void OnGameModeEnabledChanged(bool value)

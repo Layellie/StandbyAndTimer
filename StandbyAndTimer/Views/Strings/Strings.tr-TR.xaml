@@ -17,6 +17,7 @@
     <sys:String x:Key="Str_Card_StandbyTitle">STANDBY BELLEK</sys:String>
     <sys:String x:Key="Str_Card_StandbyClearable">Temizlenebilir</sys:String>
     <sys:String x:Key="Str_Card_PurgeTitle">STANDBY TEMİZLE</sys:String>
+    <sys:String x:Key="Str_Card_AutoPurgeLabel">OTO TEMİZLE</sys:String>
     <sys:String x:Key="Str_Card_GameModeTitle">OYUN MODU</sys:String>
     <sys:String x:Key="Str_Card_GameModeOn">Açık</sys:String>
     <sys:String x:Key="Str_Card_GameModeOff">Kapalı</sys:String>
