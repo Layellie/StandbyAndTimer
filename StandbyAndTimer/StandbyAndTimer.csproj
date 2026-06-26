@@ -24,7 +24,7 @@
          this default, dev builds defaulted to AssemblyVersion 1.0.0.0 and
          the in-app update checker reported a phantom "new version" against
          the current release. -->
-    <Version>2.0.3</Version>
+    <Version>2.0.4</Version>
   </PropertyGroup>
 
   <ItemGroup>
