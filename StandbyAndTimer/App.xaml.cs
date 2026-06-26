@@ -275,7 +275,7 @@ public partial class App : Application
         // user toggled it manually.
         bool ok = NativeMethods.SetProcessInformation(
             Process.GetCurrentProcess().Handle,
-            4,
+            NativeMethods.ProcessPowerThrottling,
             ref state,
             System.Runtime.InteropServices.Marshal.SizeOf<NativeMethods.PROCESS_POWER_THROTTLING_STATE>());
 

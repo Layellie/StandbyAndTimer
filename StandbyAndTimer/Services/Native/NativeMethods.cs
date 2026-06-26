@@ -40,8 +40,8 @@ internal static class NativeMethods
     internal static extern bool GlobalMemoryStatusEx(ref MEMORYSTATUSEX lpBuffer);
 
     /// <summary>
-    /// processInformationClass 34 = ProcessPowerThrottling.
-    /// Use PROCESS_POWER_THROTTLING_STATE (12 bytes) to disable EcoQoS / timer throttling.
+    /// Pass <see cref="ProcessPowerThrottling"/> (4) for processInformationClass with
+    /// PROCESS_POWER_THROTTLING_STATE (12 bytes) to disable EcoQoS / timer throttling.
     /// </summary>
     [DllImport("kernel32.dll", SetLastError = true)]
     internal static extern bool SetProcessInformation(
@@ -53,16 +53,6 @@ internal static class NativeMethods
     /// <summary>Prevents the system from sleeping while the app is running.</summary>
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     internal static extern uint SetThreadExecutionState(uint esFlags);
-
-    /// <summary>
-    /// Returns the system time updated **only** by the timer interrupt — its
-    /// delta between two distinct values equals the true active tick period.
-    /// Output is 100-ns FILETIME (8 bytes), so we marshal it as a long.
-    /// Do not confuse with <c>GetSystemTimePreciseAsFileTime</c>, which reads
-    /// QPC and would only give us call latency, not the timer rate.
-    /// </summary>
-    [DllImport("kernel32.dll")]
-    internal static extern void GetSystemTimeAsFileTime(out long lpSystemTimeAsFileTime);
 
     /// <summary>Closes a kernel object handle (process token, file, etc.).</summary>
     [DllImport("kernel32.dll", SetLastError = true)]
@@ -81,15 +71,6 @@ internal static class NativeMethods
     // LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = AppDir | UserDirs | System32.
     // Crucially excludes the legacy "current working directory" lookup.
     internal const uint LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = 0x00001000;
-
-    // ── winmm.dll ────────────────────────────────────────────────────────────
-
-    /// <summary>Multimedia timer: requests minimum 1 ms system timer period as a backup.</summary>
-    [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod")]
-    internal static extern uint TimeBeginPeriod(uint uPeriod);
-
-    [DllImport("winmm.dll", EntryPoint = "timeEndPeriod")]
-    internal static extern uint TimeEndPeriod(uint uPeriod);
 
     // ── avrt.dll ─────────────────────────────────────────────────────────────
 
@@ -170,7 +151,7 @@ internal static class NativeMethods
     }
 
     /// <summary>
-    /// Passed to SetProcessInformation(processInformationClass=34). Version=1.
+    /// Passed to SetProcessInformation with processInformationClass = <see cref="ProcessPowerThrottling"/> (4). Version=1.
     /// ControlMask = OR of bits this process wants to override (EXECUTION_SPEED,
     /// IGNORE_TIMER_RESOLUTION). For each controlled bit, StateMask=0 disables
     /// that throttle, bit set enables it. Bits absent from ControlMask follow
@@ -189,6 +170,13 @@ internal static class NativeMethods
     internal const uint TARGET_TIMER_RESOLUTION = 5000;   // 0.5 ms in 100-ns units
     internal const uint ES_CONTINUOUS           = 0x80000000;
     internal const uint ES_SYSTEM_REQUIRED      = 0x00000001;
+
+    // PROCESS_INFORMATION_CLASS enum value for ProcessPowerThrottling (winnt.h).
+    // Used as the processInformationClass arg to SetProcessInformation. A prior
+    // typo used 34 here — that value matches no class, so SetProcessInformation
+    // silently returned ERROR_INVALID_PARAMETER and the throttling state was
+    // never applied. Keep callers using this constant, never a literal.
+    internal const int  ProcessPowerThrottling = 4;
 
     // PROCESS_POWER_THROTTLING_STATE flags (winnt.h)
     internal const uint PROCESS_POWER_THROTTLING_EXECUTION_SPEED         = 0x1;

@@ -62,7 +62,7 @@
     <sys:String x:Key="Str_Settings_LaunchingInstaller">Yükleyici başlatılıyor…</sys:String>
     <sys:String x:Key="Str_Settings_DownloadFailed">İndirme başarısız</sys:String>
     <sys:String x:Key="Str_Settings_ExportOk">Ayarlar dışa aktarıldı</sys:String>
-    <sys:String x:Key="Str_Settings_ImportOk">Ayarlar yüklendi — uygulamayı yeniden başlatın</sys:String>
+    <sys:String x:Key="Str_Settings_ImportOk">Ayarlar yüklendi</sys:String>
     <sys:String x:Key="Str_Settings_ImportFail">İçe aktarma başarısız</sys:String>
     <sys:String x:Key="Str_Settings_BackupSection">Yedekleme ve Bakım</sys:String>
     <sys:String x:Key="Str_Settings_OpenLog">Log Klasörünü Aç</sys:String>

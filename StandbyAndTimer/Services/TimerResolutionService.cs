@@ -94,11 +94,7 @@ internal sealed class TimerResolutionService : ITimerResolutionService
         _ = NativeMethods.SetThreadExecutionState(
             NativeMethods.ES_CONTINUOUS | NativeMethods.ES_SYSTEM_REQUIRED);
 
-        // 4. AVRT multimedia scheduling for this thread.
-        uint taskIndex = 0;
-        NativeMethods.AvSetMmThreadCharacteristics("Pro Audio", ref taskIndex);
-
-        // 5. Self-heal watchdog — dedicated Thread (NOT ThreadPool) that
+        // 4. Self-heal watchdog — dedicated Thread (NOT ThreadPool) that
         //    re-asserts the request every 50 ms. The dedicated thread is the
         //    key win over System.Threading.Timer: under heavy game load the
         //    ThreadPool can briefly starve, delaying the callback by tens of
@@ -119,42 +115,6 @@ internal sealed class TimerResolutionService : ITimerResolutionService
         IsActive = true;
         _lastReportedMs = 0;
         return actualUnits;
-    }
-
-    // Samples the system time and records the deltas between consecutive
-    // distinct values. Because GetSystemTimeAsFileTime is only updated on
-    // timer interrupt, the median delta is the true active timer period.
-    //
-    // Total wall time = samples * actualTick ≈ 60 * 0.5 ms = ~30 ms. Cheap.
-    private static double MeasureActualResolutionMs(int samples = 60)
-    {
-        try
-        {
-            var deltas = new long[samples];
-            NativeMethods.GetSystemTimeAsFileTime(out long prev);
-
-            int collected = 0;
-            while (collected < samples)
-            {
-                long curr;
-                do { NativeMethods.GetSystemTimeAsFileTime(out curr); }
-                while (curr == prev);
-                deltas[collected++] = curr - prev;
-                prev = curr;
-            }
-
-            Array.Sort(deltas);
-            long medianUnits = deltas[samples / 2];   // 100-ns units
-            return medianUnits / 10_000.0;
-        }
-        catch (Exception ex)
-        {
-            // Fallback: report the requested resolution if sampling fails for
-            // any reason — better a slightly optimistic number than crashing
-            // the timer-activate path.
-            Logger.Warn($"MeasureActualResolutionMs failed: {ex.Message}");
-            return NativeMethods.TARGET_TIMER_RESOLUTION / 10_000.0;
-        }
     }
 
     public void Deactivate()

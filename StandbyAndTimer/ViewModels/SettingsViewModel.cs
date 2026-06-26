@@ -48,6 +48,11 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public event EventHandler? SettingsChanged;
 
+    // Raised after a successful ImportSettings — payload is the freshly loaded
+    // AppSettings. MainViewModel subscribes to re-apply values to the running
+    // session so the user doesn't have to restart for the import to take effect.
+    public event EventHandler<AppSettings>? SettingsImported;
+
     public Language[] LanguageOptions { get; } = [Language.English, Language.Turkish];
     public Theme[]    ThemeOptions    { get; } = [Theme.Dark, Theme.Light, Theme.System];
 
@@ -167,6 +172,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             if (imported is null) throw new InvalidDataException("Empty settings file");
 
             _settingsService.Save(imported);
+            SettingsImported?.Invoke(this, imported);
             UpdateStatus = _localization.GetString("Str_Settings_ImportOk");
             Logger.Info($"Settings imported from {dlg.FileName}");
         }
