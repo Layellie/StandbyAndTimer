@@ -33,8 +33,16 @@ internal sealed class ProcessOptimizationService : IProcessOptimizationService
                     if (_optimizedPids.ContainsKey(p.Id)) continue;
                     try
                     {
-                        p.PriorityClass     = ProcessPriorityClass.High;
+                        p.PriorityClass = ProcessPriorityClass.High;
+                        // affinityMask is bounded by ProcessorCount (≤ 64). On a
+                        // 64-CPU host the top bit is set, which makes the signed
+                        // IntPtr cast nominally overflow — but we *want* the bit
+                        // pattern preserved, so suppress CA2020 here rather than
+                        // wrapping in checked() (which would throw) or unchecked()
+                        // (which the analyzer still flags).
+#pragma warning disable CA2020
                         p.ProcessorAffinity = (IntPtr)affinityMask;
+#pragma warning restore CA2020
                         ApplyTimerResolutionOptOut(p);
                         _optimizedPids.TryAdd(p.Id, 0);
                     }

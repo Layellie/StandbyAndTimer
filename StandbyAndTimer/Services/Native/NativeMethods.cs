@@ -94,9 +94,9 @@ internal static class NativeMethods
     // ── avrt.dll ─────────────────────────────────────────────────────────────
 
     /// <summary>Registers this thread as a real-time multimedia task ("Pro Audio").</summary>
-    [DllImport("avrt.dll", SetLastError = true)]
+    [DllImport("avrt.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     internal static extern IntPtr AvSetMmThreadCharacteristics(
-        string TaskName,
+        [MarshalAs(UnmanagedType.LPWStr)] string TaskName,
         ref uint TaskIndex);
 
     /// <summary>Reverts the thread characteristic set by AvSetMmThreadCharacteristics.</summary>
@@ -129,10 +129,11 @@ internal static class NativeMethods
     [DllImport("advapi32.dll", ExactSpelling = true, SetLastError = true)]
     internal static extern bool OpenProcessToken(IntPtr h, int acc, ref IntPtr phtok);
 
-    [DllImport("advapi32.dll", SetLastError = true)]
+    [DllImport("advapi32.dll", CharSet = CharSet.Unicode, EntryPoint = "LookupPrivilegeValueW", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool LookupPrivilegeValue(
-        string? host,
-        string  name,
+        [MarshalAs(UnmanagedType.LPWStr)] string? host,
+        [MarshalAs(UnmanagedType.LPWStr)] string  name,
         ref long pluid);
 
     [DllImport("advapi32.dll", ExactSpelling = true, SetLastError = true)]

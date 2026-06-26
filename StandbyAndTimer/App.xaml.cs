@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Threading;
@@ -14,6 +15,14 @@ using WinForms = System.Windows.Forms;
 
 namespace StandbyAndTimer;
 
+// CA1001: App owns disposable WinForms fields (tray icon, menu items). The
+// WPF Application's lifetime is the process; OnExit() releases everything,
+// and the runtime never calls IDisposable.Dispose() on Application. Adding
+// IDisposable here would mislead readers more than it would help.
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "Microsoft.Usage",
+    "CA1001:Types that own disposable fields should be disposable",
+    Justification = "Application lifetime is the process; cleanup happens in OnExit.")]
 public partial class App : Application
 {
     private static Mutex? _singleInstanceMutex;
@@ -368,7 +377,7 @@ public partial class App : Application
         }
     }
 
-    private static System.Windows.Media.ImageSource IconToImageSource(System.Drawing.Icon icon)
+    private static System.Windows.Media.Imaging.BitmapSource IconToImageSource(System.Drawing.Icon icon)
     {
         return System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(
             icon.Handle,
@@ -470,6 +479,7 @@ public partial class App : Application
     {
         string title = _localization?.GetString("Str_Tray_NotifyPurgeTitle") ?? "Standby cache purged";
         string body  = string.Format(
+            CultureInfo.CurrentCulture,
             _localization?.GetString("Str_Tray_NotifyPurgeBody") ?? "Total purges: {0}",
             totalPurges);
         ShowBalloon(title, body);
@@ -481,7 +491,9 @@ public partial class App : Application
             ? _localization?.GetString("Str_Tray_NotifyTimerOnTitle")  ?? "Timer activated"
             : _localization?.GetString("Str_Tray_NotifyTimerOffTitle") ?? "Timer disabled";
         string body  = args.IsActive
-            ? string.Format(_localization?.GetString("Str_Tray_NotifyTimerOnBody") ?? "Locked to {0:F3} ms", args.ActualMs)
+            ? string.Format(CultureInfo.CurrentCulture,
+                _localization?.GetString("Str_Tray_NotifyTimerOnBody") ?? "Locked to {0:F3} ms",
+                args.ActualMs)
             : _localization?.GetString("Str_Tray_NotifyTimerOffBody") ?? "Restored to default";
 
         ShowBalloon(title, body);
@@ -537,7 +549,7 @@ public partial class App : Application
             string fmt   = _localization?.GetString("Str_Tray_TooltipFormat")
                            ?? "StandbyAndTimer\nTimer: {0}  •  Purges: {1}";
 
-            string tip = string.Format(fmt, state, _viewModel?.PurgeCount ?? 0);
+            string tip = string.Format(CultureInfo.CurrentCulture, fmt, state, _viewModel?.PurgeCount ?? 0);
             if (tip.Length > 127) tip = tip[..127]; // NotifyIcon.Text limit
             _trayIcon.Text = tip;
         }

@@ -76,10 +76,14 @@ internal sealed class TimerResolutionService : ITimerResolutionService
         //    IGNORE_TIMER_RESOLUTION opt-out is set once at App.OnStartup so
         //    this request survives minimize/hide.
         int status = NativeMethods.NtSetTimerResolution(_targetUnits, true, out uint actualUnits);
-        Logger.Info($"NtSetTimerResolution: requested={_targetUnits} actual={actualUnits} status=0x{status:X8}");
+        Logger.Info(FormattableString.Invariant(
+            $"NtSetTimerResolution: requested={_targetUnits} actual={actualUnits} status=0x{status:X8}"));
 
-        // 3. Prevent system sleep while timer is active.
-        NativeMethods.SetThreadExecutionState(
+        // 3. Prevent system sleep while timer is active. Return value is the
+        // previous state — irrelevant here; we only care that the flags got
+        // applied. SetThreadExecutionState returns 0 only on bad-arg, which
+        // we cover by passing well-known constants.
+        _ = NativeMethods.SetThreadExecutionState(
             NativeMethods.ES_CONTINUOUS | NativeMethods.ES_SYSTEM_REQUIRED);
 
         // 4. AVRT multimedia scheduling for this thread.
@@ -143,8 +147,11 @@ internal sealed class TimerResolutionService : ITimerResolutionService
         _watchdog?.Dispose();
         _watchdog = null;
 
-        NativeMethods.NtSetTimerResolution(_targetUnits, false, out _);
-        NativeMethods.SetThreadExecutionState(NativeMethods.ES_CONTINUOUS);
+        // Shutdown path: both calls are best-effort — by the time we get
+        // here we're about to lose the process, so a failed return is logged
+        // but otherwise non-actionable.
+        _ = NativeMethods.NtSetTimerResolution(_targetUnits, false, out _);
+        _ = NativeMethods.SetThreadExecutionState(NativeMethods.ES_CONTINUOUS);
 
         IsActive = false;
         _lastReportedMs = 0;
@@ -170,7 +177,7 @@ internal sealed class TimerResolutionService : ITimerResolutionService
             // Allow ±1 unit of tolerance — OS occasionally reports the rounded value.
             if (current == 0 || Math.Abs((long)current - _targetUnits) > 1)
             {
-                NativeMethods.NtSetTimerResolution(_targetUnits, true, out current);
+                _ = NativeMethods.NtSetTimerResolution(_targetUnits, true, out current);
             }
 
             // Surface the kernel's authoritative period to the UI. We deliberately

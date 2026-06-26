@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -221,6 +222,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             if (!TimerActive) return;
             ActualTimerMs = measuredMs;
             StatusMessage = string.Format(
+                CultureInfo.CurrentCulture,
                 _localization.GetString("Str_Status_TimerActive"), measuredMs);
         });
 
@@ -348,10 +350,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         double ms = await _timerService.ActivateAsync(_appCts.Token).ConfigureAwait(true);
         ActualTimerMs = ms;
         TimerActive   = true;
-        StatusMessage = string.Format(_localization.GetString("Str_Status_TimerActive"), ms);
+        StatusMessage = string.Format(
+            CultureInfo.CurrentCulture,
+            _localization.GetString("Str_Status_TimerActive"), ms);
         if (!silent)
             TimerToggledNotification?.Invoke(this, new TimerToggledArgs(true, ms));
-        Logger.Info($"Timer activated (silent={silent}, actual={ms:F3} ms)");
+        Logger.Info(FormattableString.Invariant($"Timer activated (silent={silent}, actual={ms:F3} ms)"));
     }
 
     // ── Shutdown (called from App.OnExit) ─────────────────────────────────────

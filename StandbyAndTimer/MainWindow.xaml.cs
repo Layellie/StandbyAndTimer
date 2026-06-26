@@ -40,7 +40,9 @@ public partial class MainWindow : Window
     {
         if (hwnd == IntPtr.Zero) return;
         int dark = (Application.Current?.Resources["DwmDarkMode"] as int?) ?? 1;
-        NativeMethods.DwmSetWindowAttribute(hwnd, 20, ref dark, sizeof(int));
+        // Cosmetic-only; if the OS happens to refuse the attribute (older
+        // Win10 builds, RDP, etc.) we simply get a default title bar.
+        _ = NativeMethods.DwmSetWindowAttribute(hwnd, 20, ref dark, sizeof(int));
     }
 
     // ── Close → "run in background / exit" overlay ───────────────────────────
