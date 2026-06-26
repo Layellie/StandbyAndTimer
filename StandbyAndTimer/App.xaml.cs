@@ -37,10 +37,16 @@ public partial class App : Application
 
     protected override async void OnStartup(StartupEventArgs e)
     {
+        var sw = Stopwatch.StartNew();
+        long prev = 0;
+        void Mark(string step)
+        {
+            long now = sw.ElapsedMilliseconds;
+            Logger.Info($"  startup +{now - prev,4} ms (total {now,5} ms) — {step}");
+            prev = now;
+        }
+
         // ── 0a. DLL planting hardening ───────────────────────────────────────
-        // Run before anything else so that any DLL we (or the WPF/runtime
-        // machinery) delay-load later cannot be spoofed by a binary dropped
-        // next to our admin-elevated exe.
         HardenDllSearchPath();
 
         // ── 0b. Crash-safe restore handlers (timer must be released on exit) ─
@@ -50,6 +56,7 @@ public partial class App : Application
         System.Threading.Tasks.TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
         Logger.Info($"=== Application starting (PID {Environment.ProcessId}) ===");
+        Mark("crash handlers + hardening");
 
         // ── 1. Single-instance guard ──────────────────────────────────────────
         _singleInstanceMutex = new Mutex(true, @"Global\StandbyAndTimer_v1", out bool isNewInstance);
@@ -65,22 +72,32 @@ public partial class App : Application
         }
 
         base.OnStartup(e);
+        Mark("single-instance + base.OnStartup");
 
         // ── 2. Disable Windows Power Throttling / EcoQoS for this process ────
         DisablePowerThrottling();
+        Mark("DisablePowerThrottling");
 
         // ── 3. Build DI container ─────────────────────────────────────────────
         _services     = AppBootstrapper.Build();
+        Mark("DI container build");
+
         _viewModel    = _services.GetRequiredService<MainViewModel>();
+        Mark("resolve MainViewModel (chain instantiation)");
+
         _localization = _services.GetRequiredService<ILocalizationService>();
         _themeService = _services.GetRequiredService<IThemeService>();
+        Mark("resolve localization + theme");
 
         // ── 4. Apply persisted language + theme before window is created ─────
         var savedSettings = _services.GetRequiredService<ISettingsService>().Load();
+        Mark("settings load");
+
         if (savedSettings.Language != Core.Models.Language.English)
             _localization.SetLanguage(savedSettings.Language);
         if (savedSettings.Theme != Core.Models.Theme.Dark)
             _themeService.SetTheme(savedSettings.Theme);
+        Mark("apply language + theme");
 
         _localization.LanguageChanged             += OnLanguageChanged;
         _themeService.ThemeChanged                += OnThemeChanged;
@@ -90,29 +107,51 @@ public partial class App : Application
 
         // ── 5. Build window and tray ──────────────────────────────────────────
         _iconBase   = LoadAppIcon();
+        Mark("LoadAppIcon");
         _iconActive = BuildActiveIcon(_iconBase);
+        Mark("BuildActiveIcon");
         _mainWindow = new MainWindow(_viewModel);
+        Mark("new MainWindow");
         _mainWindow.Icon = IconToImageSource(_iconBase);
         SetupTray(_iconBase);
+        Mark("SetupTray");
 
-        await _viewModel.InitializeAsync();
-
-        // Refresh tray now that ViewModel has loaded state (timer / purge count).
-        UpdateTrayVisuals();
+        // Show the window FIRST so the user gets immediate visual feedback,
+        // then kick off the (potentially-slow) viewmodel initialisation in
+        // parallel. Timer activation includes a 150 ms warm-up which used to
+        // run before the window appeared.
+        if (e.Args.Contains("-hidden"))
+            _mainWindow.HideOffscreen();
+        else
+            _mainWindow.Show();
+        Mark("window shown");
 
         // Live tooltip updater — every 3 s, refresh icon and text. Cheap.
         _tooltipTicker = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
         _tooltipTicker.Tick += (_, _) => UpdateTrayVisuals();
         _tooltipTicker.Start();
 
-        if (e.Args.Contains("-hidden"))
-            _mainWindow.HideOffscreen();
-        else
-            _mainWindow.Show();
+        // Run viewmodel init in the background; refresh the tray once it
+        // settles so the icon reflects timer/purge state.
+        _ = InitializeViewModelAsync(sw);
 
         // Auto-update check (silent, non-blocking)
         if (savedSettings.UpdateCheckEnabled)
             _ = SilentUpdateCheckAsync();
+    }
+
+    private async Task InitializeViewModelAsync(Stopwatch sw)
+    {
+        try
+        {
+            await _viewModel!.InitializeAsync().ConfigureAwait(true);
+            Logger.Info($"  startup    background  (total {sw.ElapsedMilliseconds,5} ms) — ViewModel.InitializeAsync done");
+            UpdateTrayVisuals();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("InitializeViewModelAsync", ex);
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)
