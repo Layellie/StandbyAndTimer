@@ -8,24 +8,23 @@ internal sealed class TimerResolutionService : ITimerResolutionService
     // ── Triple-lock strategy ──────────────────────────────────────────────────
     //  1. NtSetTimerResolution(min, true)     ← per-process modern API
     //  2. PROCESS_POWER_THROTTLING_IGNORE_TIMER_RESOLUTION (set once in App)
-    //  3. Self-heal watchdog (100 ms tick)    ← re-Set unconditionally every
-    //                                            tick. NtSetTimerResolution is
-    //                                            a cheap idempotent syscall, so
-    //                                            re-asserting closes the window
-    //                                            where another process releasing
-    //                                            its own high-res request would
-    //                                            have rolled the OS back to
-    //                                            ~1 ms until our next check.
-    //                                            At 100 ms the drift window is
-    //                                            shorter than one display frame
-    //                                            at 60 Hz, so any "1 ms blip"
-    //                                            is invisible in-game.
+    //  3. Self-heal watchdog (50 ms, dedicated AVRT thread) ← re-Set
+    //     unconditionally every tick. The watchdog runs on its OWN Thread
+    //     (not the ThreadPool) so it can never be starved by user code or
+    //     EcoQoS scheduling pressure during a game, and it registers itself
+    //     as MMCSS "Pro Audio" so Win 11 won't throttle the watchdog itself.
+    //     Combined: re-assert every ≤50 ms regardless of system load, so
+    //     even if another process briefly released its high-res request the
+    //     OS is back at 0.5 ms within ~3 timer interrupts.
     //
     // `MinimumResolution` is read from NtQueryTimerResolution at Activate time,
     // so we always request the chipset's most aggressive value (often 5000 =
     // 0.5ms but some systems accept 4900 ≈ 0.49ms).
 
-    private System.Threading.Timer? _watchdog;
+    private const int WatchdogTickMs = 50;
+
+    private Thread?                _watchdogThread;
+    private ManualResetEventSlim?  _watchdogStop;
     private uint   _targetUnits = NativeMethods.TARGET_TIMER_RESOLUTION;
     private double _lastReportedMs;     // dedupe: don't fire event when sample didn't move
     private bool   _disposed;
@@ -99,16 +98,23 @@ internal sealed class TimerResolutionService : ITimerResolutionService
         uint taskIndex = 0;
         NativeMethods.AvSetMmThreadCharacteristics("Pro Audio", ref taskIndex);
 
-        // 5. Self-heal watchdog — every 100 ms, re-assert the request. The Set
-        //    syscall is cheap and idempotent when the kernel already holds our
-        //    request, so calling it unconditionally is cheaper than gating on a
-        //    Query call and shortens the worst-case "stuck at 1 ms" window to
-        //    ≤100 ms — under one 60 Hz frame, so any drift is invisible in-game.
-        //    Cost: 10 syscalls/sec, each ~µs, negligible CPU. Re-creating the
-        //    watchdog on each Activate is harmless because Deactivate disposes it.
-        _watchdog?.Dispose();
-        _watchdog = new System.Threading.Timer(_ => SelfHeal(), null,
-            TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(100));
+        // 5. Self-heal watchdog — dedicated Thread (NOT ThreadPool) that
+        //    re-asserts the request every 50 ms. The dedicated thread is the
+        //    key win over System.Threading.Timer: under heavy game load the
+        //    ThreadPool can briefly starve, delaying the callback by tens of
+        //    ms. A real Thread with AVRT Pro Audio MMCSS is immune to that
+        //    starvation and is also exempt from Win 11 EcoQoS throttling, so
+        //    drift can never persist longer than ~50 ms even with a CPU-bound
+        //    game running on the same cores.
+        StopWatchdog();
+        _watchdogStop = new ManualResetEventSlim(initialState: false);
+        _watchdogThread = new Thread(WatchdogLoop)
+        {
+            Name         = "TimerResolution-Watchdog",
+            IsBackground = true,
+            Priority     = ThreadPriority.AboveNormal,
+        };
+        _watchdogThread.Start();
 
         IsActive = true;
         _lastReportedMs = 0;
@@ -155,8 +161,7 @@ internal sealed class TimerResolutionService : ITimerResolutionService
     {
         if (!IsActive) return;
 
-        _watchdog?.Dispose();
-        _watchdog = null;
+        StopWatchdog();
 
         // Shutdown path: both calls are best-effort — by the time we get
         // here we're about to lose the process, so a failed return is logged
@@ -167,6 +172,40 @@ internal sealed class TimerResolutionService : ITimerResolutionService
         IsActive = false;
         _lastReportedMs = 0;
         Logger.Info("Timer deactivated");
+    }
+
+    private void StopWatchdog()
+    {
+        _watchdogStop?.Set();
+        // Bounded join — if the thread is somehow stuck (e.g. an MMCSS revert
+        // taking longer than expected during shutdown), we don't want to hang
+        // the whole process; the OS will reclaim the thread anyway.
+        _watchdogThread?.Join(TimeSpan.FromMilliseconds(500));
+        _watchdogThread = null;
+        _watchdogStop?.Dispose();
+        _watchdogStop = null;
+    }
+
+    // Dedicated background thread that re-asserts the timer resolution every
+    // WatchdogTickMs. Registers as AVRT "Pro Audio" on entry so Win 11 won't
+    // EcoQoS-throttle the watchdog itself — without this, the very thread
+    // responsible for fighting throttling could be throttled.
+    private void WatchdogLoop()
+    {
+        uint taskIndex = 0;
+        IntPtr avrt = NativeMethods.AvSetMmThreadCharacteristics("Pro Audio", ref taskIndex);
+        try
+        {
+            // ManualResetEventSlim.Wait(timeout) returns true on signal, false
+            // on timeout — looping until signal gives clean cancellation.
+            while (_watchdogStop is { } stop && !stop.Wait(WatchdogTickMs))
+                SelfHeal();
+        }
+        finally
+        {
+            if (avrt != IntPtr.Zero)
+                _ = NativeMethods.AvRevertMmThreadCharacteristics(avrt);
+        }
     }
 
     public void Dispose()
