@@ -79,8 +79,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _localization    = localization;
 
         Settings = settingsViewModel;
-        Settings.SettingsChanged += (_, _) => PersistSettings();
-        Settings.SnapshotProvider = BuildCurrentSettings;
+        Settings.SettingsChanged   += (_, _) => PersistSettings();
+        Settings.SettingsImported  += (_, imported) => ApplySettings(imported);
+        Settings.SnapshotProvider  = BuildCurrentSettings;
 
         _memoryService.SnapshotUpdated     += OnSnapshotUpdated;
         _purgeService.PurgeSucceeded       += OnPurgeSucceeded;
@@ -129,16 +130,26 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             _isInitializing = false;
         }
-        SyncMonitorSettings();
+        SyncMonitorThresholds();
+        SyncMonitorGames();
     }
 
-    private void SyncMonitorSettings()
+    // Pushes only the threshold / flag state to the monitor — does NOT rebuild
+    // the GamePaths list. Called on every TextBox keystroke, so the per-tick
+    // LINQ + List allocation that GamePaths rebuilding would cost is wasted.
+    private void SyncMonitorThresholds()
     {
         _memoryService.StandbyLimitMb   = StandbyLimitMb;
         _memoryService.FreeLimitMb      = FreeLimitMb;
         _memoryService.AutoPurgeEnabled = AutoPurgeEnabled;
         _memoryService.GameModeEnabled  = GameModeEnabled;
-        _memoryService.GamePaths        = Games.Select(g => g.ExecutablePath).ToList();
+    }
+
+    // Pushes the executable-path list to the monitor. Called only when the
+    // Games collection actually mutates (add / remove / settings load / import).
+    private void SyncMonitorGames()
+    {
+        _memoryService.GamePaths = Games.Select(g => g.ExecutablePath).ToList();
     }
 
     private void PersistSettings()
@@ -234,25 +245,25 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnStandbyLimitMbChanged(int value)
     {
-        SyncMonitorSettings();
+        SyncMonitorThresholds();
         SchedulePersist();  // debounced — TextBox emits a change per keystroke
     }
 
     partial void OnFreeLimitMbChanged(int value)
     {
-        SyncMonitorSettings();
+        SyncMonitorThresholds();
         SchedulePersist();  // debounced — TextBox emits a change per keystroke
     }
 
     partial void OnAutoPurgeEnabledChanged(bool value)
     {
-        SyncMonitorSettings();
+        SyncMonitorThresholds();
         PersistSettings();
     }
 
     partial void OnGameModeEnabledChanged(bool value)
     {
-        SyncMonitorSettings();
+        SyncMonitorThresholds();
         PersistSettings();
     }
 
@@ -322,7 +333,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             DisplayName    = Path.GetFileNameWithoutExtension(path),
             ExecutablePath = path
         });
-        SyncMonitorSettings();
+        SyncMonitorGames();
         PersistSettings();
         StatusMessage = _localization.GetString("Str_Status_GameAdded");
         Logger.Info($"Game added: {path}");
@@ -334,7 +345,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (SelectedGame is null) return;
         Games.Remove(SelectedGame);
         SelectedGame  = null;
-        SyncMonitorSettings();
+        SyncMonitorGames();
         PersistSettings();
         StatusMessage = _localization.GetString("Str_Status_GameRemoved");
     }

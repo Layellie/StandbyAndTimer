@@ -77,7 +77,7 @@ internal sealed class ProcessOptimizationService : IProcessOptimizationService
         {
             NativeMethods.SetProcessInformation(
                 p.Handle,
-                34,  // ProcessPowerThrottling
+                NativeMethods.ProcessPowerThrottling,
                 ref state,
                 Marshal.SizeOf<NativeMethods.PROCESS_POWER_THROTTLING_STATE>());
         }
