@@ -92,6 +92,30 @@ internal static class NativeMethods
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool DestroyIcon(IntPtr hIcon);
 
+    /// <summary>Window the user is currently interacting with — used by game auto-detect.</summary>
+    [DllImport("user32.dll")]
+    internal static extern IntPtr GetForegroundWindow();
+
+    /// <summary>Returns the bounding rectangle of a window in screen coordinates.</summary>
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+    /// <summary>Identifies the process that owns a window.</summary>
+    [DllImport("user32.dll", SetLastError = true)]
+    internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    /// <summary>Looks up the monitor that contains a window — needed to compare against the right resolution on multi-monitor setups.</summary>
+    [DllImport("user32.dll")]
+    internal static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+    /// <summary>Reads monitor geometry; we need rcMonitor to know whether a window covers the full screen.</summary>
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
+    internal const uint MONITOR_DEFAULTTONEAREST = 0x00000002;
+
     // ── dwmapi.dll ───────────────────────────────────────────────────────────
 
     /// <summary>
@@ -140,6 +164,24 @@ internal static class NativeMethods
         internal ulong ullTotalVirtual;
         internal ulong ullAvailVirtual;
         internal ulong ullAvailExtendedVirtual;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct RECT
+    {
+        internal int Left;
+        internal int Top;
+        internal int Right;
+        internal int Bottom;
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    internal struct MONITORINFO
+    {
+        internal int  cbSize;
+        internal RECT rcMonitor;
+        internal RECT rcWork;
+        internal uint dwFlags;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]

@@ -116,4 +116,27 @@
     <sys:String x:Key="Str_Close_Minimize">Arka Planda Çalıştır</sys:String>
     <sys:String x:Key="Str_Close_Exit">Tamamen Kapat</sys:String>
 
+    <!-- İlk açılış sihirbazı -->
+    <sys:String x:Key="Str_Wizard_Title">StandbyAndTimer'a hoş geldin</sys:String>
+    <sys:String x:Key="Str_Wizard_Body">30 saniyelik mini tur:&#x0a;&#x0a;1. Büyük Timer butonuna basıp sistem saatini 0.5 ms'ye kilitle — daha düşük input lag, daha pürüzsüz ses.&#x0a;&#x0a;2. AUTO PURGE varsayılan olarak KAPALI. Sadece oyunlarda standby cache şişiyorsa aç ve eşikleri ayarla. Çoğu kullanıcının buna ihtiyacı yok.&#x0a;&#x0a;3. Game Mode listesine bir oyun .exe'sini sürükle — çalıştığında ona High öncelik + tüm CPU affinity verilir.&#x0a;&#x0a;Her şey tepsiden çalışır — pencereyi kapatmak uygulamayı kapatmaz.</sys:String>
+    <sys:String x:Key="Str_Wizard_Finish">Anladım</sys:String>
+
+    <!-- Çökme raporu -->
+    <sys:String x:Key="Str_Crash_Title">Bir şeyler ters gitti</sys:String>
+    <sys:String x:Key="Str_Crash_Body">StandbyAndTimer beklenmedik bir hatayla karşılaştı. Sistem timer'ı geri yüklendi. Tekrarlayabiliyorsan GitHub'da bir issue açar mısın — gerçekten yardımcı oluyor.</sys:String>
+    <sys:String x:Key="Str_Crash_CopyDetails">Detayları kopyala</sys:String>
+    <sys:String x:Key="Str_Crash_OpenIssue">GitHub issue aç</sys:String>
+    <sys:String x:Key="Str_Crash_Close">Kapat</sys:String>
+    <sys:String x:Key="Str_Crash_Copied">Detaylar panoya kopyalandı</sys:String>
+
+    <!-- Log görüntüleyici -->
+    <sys:String x:Key="Str_Settings_LogsSection">Son loglar</sys:String>
+    <sys:String x:Key="Str_Settings_LogsRefresh">Yenile</sys:String>
+    <sys:String x:Key="Str_Settings_LogsEmpty">Henüz log girdisi yok.</sys:String>
+
+    <!-- Oyun otomatik tespit -->
+    <sys:String x:Key="Str_Detect_NotifyTitle">Tam ekran uygulama tespit edildi</sys:String>
+    <sys:String x:Key="Str_Detect_NotifyBody">"{0}" Game Mode listesine eklensin mi?</sys:String>
+    <sys:String x:Key="Str_Status_GameAutoAdded">Otomatik eklendi: {0}</sys:String>
+
 </ResourceDictionary>

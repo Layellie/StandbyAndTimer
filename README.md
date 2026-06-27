@@ -6,7 +6,7 @@
 
 A Windows desktop utility for reducing input latency and managing system memory — designed for gamers and power users.
 
-> **v2.0.3** — UI redesign, lime accent, sub-500 ms startup, and the timer now locks to 0.5 ms immediately at launch. The original WinForms release is preserved as [`v1.0.0`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v1.0.0) on the [`winforms-archive`](https://github.com/Layellie/StandbyAndTimer/tree/winforms-archive) branch.
+> **v2.0.6** — First-run wizard, in-app crash reporter with one-click GitHub issue, in-panel logs viewer, fullscreen game auto-detect, and a winget manifest for `winget install`. The original WinForms release is preserved as [`v1.0.0`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v1.0.0) on the [`winforms-archive`](https://github.com/Layellie/StandbyAndTimer/tree/winforms-archive) branch.
 
 ## Features
 
@@ -42,16 +42,29 @@ dotnet run --project StandbyAndTimer/StandbyAndTimer.csproj
 To produce a redistributable installer ([Inno Setup 6](https://jrsoftware.org/isdl.php) required):
 
 ```powershell
-.\build-installer.ps1 -Version 2.0.3
+.\build-installer.ps1 -Version 2.0.6
 ```
 
-Output: `installer/dist/StandbyAndTimer_Setup_2.0.3.exe` (~72 MB self-contained).
+Output: `installer/dist/StandbyAndTimer_Setup_2.0.6.exe` (~72 MB self-contained).
+
+## Install via winget
+
+Once the package is published to the community repository:
+
+```powershell
+winget install Layellie.StandbyAndTimer
+```
+
+The manifest lives at [`winget-manifests/`](winget-manifests/) and is submitted to [microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs) with each release.
 
 ## Version history
 
 | Tag | Stack | Notes |
 |---|---|---|
-| [`v2.0.3`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.3) | WPF (.NET 10) | Current — sub-500 ms startup, accurate Free-RAM accounting, timer auto-lock on launch |
+| [`v2.0.6`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.6) | WPF (.NET 10) | Current — first-run wizard, crash reporter, logs viewer, game auto-detect, winget manifest |
+| [`v2.0.5`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.5) | WPF (.NET 10) | Game Mode EcoQoS opt-out fix, dedicated AVRT watchdog thread for tighter 0.5 ms lock |
+| [`v2.0.4`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.4) | WPF (.NET 10) | AUTO PURGE master switch + safer defaults (0 MB thresholds) |
+| [`v2.0.3`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.3) | WPF (.NET 10) | Sub-500 ms startup, accurate Free-RAM accounting, timer auto-lock on launch |
 | [`v2.0.2`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.2) | WPF (.NET 10) | Card UI + lime accent, timer auto-start fix |
 | [`v2.0.1`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.1) | WPF (.NET 10) | P0 fixes + update integrity verification |
 | [`v2.0.0`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.0) | WPF (.NET 10) | Initial WPF release |

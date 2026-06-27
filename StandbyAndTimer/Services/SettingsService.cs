@@ -30,6 +30,7 @@ internal sealed class SettingsService : ISettingsService
                 Language              = GetEnum(key, "Language", Language.English),
                 Theme                 = GetEnum(key, "Theme",    Theme.Dark),
                 UpdateCheckEnabled    = GetBool(key,     "UpdateCheckEnabled", defaultValue: true),
+                FirstRunCompleted     = GetBool(key,     "FirstRunCompleted"),
             };
 
             string pathsRaw = key.GetValue("GamePaths")?.ToString() ?? string.Empty;
@@ -73,6 +74,7 @@ internal sealed class SettingsService : ISettingsService
             key.SetValue("AutoStartEnabled",       settings.AutoStartEnabled       ? "1" : "0");
             key.SetValue("TimerResolutionActive",  settings.TimerResolutionActive  ? "1" : "0");
             key.SetValue("UpdateCheckEnabled",     settings.UpdateCheckEnabled     ? "1" : "0");
+            key.SetValue("FirstRunCompleted",      settings.FirstRunCompleted      ? "1" : "0");
 
             key.SetValue("Language", settings.Language.ToString());
             key.SetValue("Theme",    settings.Theme.ToString());

@@ -116,4 +116,27 @@
     <sys:String x:Key="Str_Close_Minimize">Run in Background</sys:String>
     <sys:String x:Key="Str_Close_Exit">Exit Completely</sys:String>
 
+    <!-- First-run wizard -->
+    <sys:String x:Key="Str_Wizard_Title">Welcome to StandbyAndTimer</sys:String>
+    <sys:String x:Key="Str_Wizard_Body">Quick 30-second tour:&#x0a;&#x0a;1. Tap the big Timer button to lock the system clock to 0.5 ms — lower input lag, smoother audio.&#x0a;&#x0a;2. AUTO PURGE is OFF by default. Turn it on and set thresholds only if your standby cache regularly bloats during games. Most people don't need it.&#x0a;&#x0a;3. Drag a game .exe into the Game Mode list to give it High priority + full CPU affinity when it launches.&#x0a;&#x0a;Everything runs from the tray — closing the window keeps it alive.</sys:String>
+    <sys:String x:Key="Str_Wizard_Finish">Got it</sys:String>
+
+    <!-- Crash reporter -->
+    <sys:String x:Key="Str_Crash_Title">Something went wrong</sys:String>
+    <sys:String x:Key="Str_Crash_Body">StandbyAndTimer hit an unhandled error. The system timer has been restored. If you can reproduce this, please open an issue on GitHub — it really helps.</sys:String>
+    <sys:String x:Key="Str_Crash_CopyDetails">Copy details</sys:String>
+    <sys:String x:Key="Str_Crash_OpenIssue">Open GitHub issue</sys:String>
+    <sys:String x:Key="Str_Crash_Close">Close</sys:String>
+    <sys:String x:Key="Str_Crash_Copied">Details copied to clipboard</sys:String>
+
+    <!-- Logs viewer -->
+    <sys:String x:Key="Str_Settings_LogsSection">Recent logs</sys:String>
+    <sys:String x:Key="Str_Settings_LogsRefresh">Refresh</sys:String>
+    <sys:String x:Key="Str_Settings_LogsEmpty">No log entries yet.</sys:String>
+
+    <!-- Game auto-detect -->
+    <sys:String x:Key="Str_Detect_NotifyTitle">Fullscreen app detected</sys:String>
+    <sys:String x:Key="Str_Detect_NotifyBody">Add "{0}" to the Game Mode list?</sys:String>
+    <sys:String x:Key="Str_Status_GameAutoAdded">Auto-added game: {0}</sys:String>
+
 </ResourceDictionary>
