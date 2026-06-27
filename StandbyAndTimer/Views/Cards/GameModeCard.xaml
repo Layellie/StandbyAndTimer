@@ -1,0 +1,95 @@
+<UserControl x:Class="StandbyAndTimer.Views.Cards.GameModeCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:StandbyAndTimer.Views.Converters"
+             FontFamily="Segoe UI" FontSize="13">
+    <UserControl.Resources>
+        <conv:GameIconConverter x:Key="GameIconConv"/>
+    </UserControl.Resources>
+
+    <!-- Game Mode toggle + executable list with drag-drop and add/remove
+         buttons. Binds to GameModeEnabled / Games / SelectedGame /
+         RemoveGameCommand / AddGameCommand on MainViewModel. Dropped
+         file paths are forwarded via the GameDropped event so the host
+         can call MainViewModel.AddGameFromPath. -->
+    <Border Style="{StaticResource SectionBorderStyle}" Padding="16,14">
+        <StackPanel>
+            <Grid Margin="0,0,0,4">
+                <TextBlock Text="{DynamicResource Str_Card_GameModeTitle}"
+                           Style="{StaticResource SectionLabelStyle}"
+                           VerticalAlignment="Center"/>
+                <CheckBox Style="{StaticResource ToggleSwitchStyle}"
+                          IsChecked="{Binding GameModeEnabled}"
+                          HorizontalAlignment="Right"
+                          VerticalAlignment="Center">
+                    <CheckBox.Content>
+                        <TextBlock>
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="{DynamicResource Str_Card_GameModeOff}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding GameModeEnabled}" Value="True">
+                                            <Setter Property="Text" Value="{DynamicResource Str_Card_GameModeOn}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </CheckBox.Content>
+                </CheckBox>
+            </Grid>
+
+            <TextBlock Text="{DynamicResource Str_Card_GameModeDesc}"
+                       FontSize="10"
+                       Foreground="{DynamicResource AppFgDim}"
+                       Margin="0,0,0,10"/>
+
+            <ListBox x:Name="GamesList"
+                     ItemsSource="{Binding Games}"
+                     SelectedItem="{Binding SelectedGame}"
+                     Style="{StaticResource GameListBoxStyle}"
+                     Height="60"
+                     Margin="0,0,0,8"
+                     AllowDrop="True"
+                     DragEnter="GamesList_DragEnter"
+                     DragOver="GamesList_DragEnter"
+                     Drop="GamesList_Drop"
+                     ToolTip="{DynamicResource Str_Game_DropHint}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="{Binding ExecutablePath, Converter={StaticResource GameIconConv}}"
+                                   Width="16" Height="16"
+                                   Margin="0,0,8,0"/>
+                            <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="66"/>
+                    <ColumnDefinition Width="66"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="{DynamicResource Str_Game_DropHint}"
+                           FontSize="10"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource AppFgDim}"/>
+                <Button Grid.Column="1"
+                        Content="{DynamicResource Str_Game_Del}"
+                        Command="{Binding RemoveGameCommand}"
+                        Style="{StaticResource GhostButtonStyle}"
+                        Height="28"
+                        Margin="0,0,6,0"/>
+                <Button Grid.Column="2"
+                        Content="{DynamicResource Str_Game_Add}"
+                        Command="{Binding AddGameCommand}"
+                        Style="{StaticResource DarkButtonStyle}"
+                        Height="28"/>
+            </Grid>
+        </StackPanel>
+    </Border>
+</UserControl>

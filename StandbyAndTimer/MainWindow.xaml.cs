@@ -129,28 +129,15 @@ public partial class MainWindow : Window
             Dispatcher.BeginInvoke(new Action(HideOffscreen));
     }
 
-    // ── Title bar window controls ────────────────────────────────────────────
+    // ── Title bar window controls (forwarded from cards:TitleBar) ────────────
 
-    private void OnMinimizeClick(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+    private void OnTitleBarMinimize(object? sender, EventArgs e) => WindowState = WindowState.Minimized;
 
-    private void OnCloseClick(object sender, RoutedEventArgs e) => Close();
+    private void OnTitleBarClose(object? sender, EventArgs e) => Close();
 
-    // ── Game list drag-and-drop ──────────────────────────────────────────────
+    // ── Game list drag-and-drop (forwarded from cards:GameModeCard) ──────────
 
-    private void GamesList_DragEnter(object sender, DragEventArgs e)
-    {
-        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
-        e.Handled = true;
-    }
-
-    private void GamesList_Drop(object sender, DragEventArgs e)
-    {
-        if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
-        var files = (string[])e.Data.GetData(DataFormats.FileDrop);
-        foreach (var f in files)
-            _vm.AddGameFromPath(f);
-        e.Handled = true;
-    }
+    private void OnGameDropped(object? sender, string path) => _vm.AddGameFromPath(path);
 
     // ── Settings panel slide animation ────────────────────────────────────────
 
