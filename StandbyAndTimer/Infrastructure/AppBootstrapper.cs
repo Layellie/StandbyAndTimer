@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using StandbyAndTimer.Core.Interfaces;
 using StandbyAndTimer.Services;
+using StandbyAndTimer.Services.Tray;
 using StandbyAndTimer.ViewModels;
 
 namespace StandbyAndTimer.Infrastructure;
@@ -22,6 +23,7 @@ internal static class AppBootstrapper
         services.AddSingleton<IThemeService,               ThemeService>();
         services.AddSingleton<IUpdateService,              UpdateService>();
         services.AddSingleton<IGameDetectionService,       GameDetectionService>();
+        services.AddSingleton<ITrayIconService,            TrayIconService>();
 
         // ── Presentation ─────────────────────────────────────────────────────
         services.AddSingleton<SettingsViewModel>();
