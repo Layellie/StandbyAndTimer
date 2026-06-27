@@ -163,25 +163,41 @@
 
         <!-- ── Recent logs section header (label + refresh button) ─────────── -->
         <Grid Grid.Row="26">
-            <TextBlock Text="{DynamicResource Str_Settings_LogsSection}"
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0"
+                       Text="{DynamicResource Str_Settings_LogsSection}"
                        Foreground="{DynamicResource AppFgDim}"
                        FontSize="11" FontWeight="SemiBold"
                        VerticalAlignment="Center"/>
-            <Button Content="{DynamicResource Str_Settings_LogsRefresh}"
+            <!-- Explicit column placement + Padding ensures the button text
+                 isn't clipped on the narrow (270 px) settings panel. The
+                 original used overlapping HorizontalAlignment="Right" in a
+                 single-column Grid, which let the label and button collide. -->
+            <Button Grid.Column="1"
+                    Content="{DynamicResource Str_Settings_LogsRefresh}"
                     Command="{Binding RefreshLogsCommand}"
                     Style="{StaticResource GhostButtonStyle}"
-                    Height="22" MinWidth="60"
-                    FontSize="10"
-                    HorizontalAlignment="Right"/>
+                    Height="24"
+                    Padding="10,0"
+                    FontSize="10"/>
         </Grid>
 
         <!-- ── Logs tail viewer ────────────────────────────────────────────────
              Read-only TextBox + ScrollViewer so the user can copy/paste lines
              without round-tripping through Explorer + Notepad. Fixed 120 px
              height keeps the panel from ballooning; full log lives on disk
-             and Open Log Folder still opens it. -->
+             and Open Log Folder still opens it.
+
+             Background uses AppBg (the darkest tone in the palette) instead
+             of SurfaceBg so the box visibly contrasts against the settings
+             panel — they used to share SurfaceBg and the viewer disappeared
+             into the panel. Foreground bumped to AppFg (full brightness)
+             so log lines are actually readable at 10 pt Consolas. -->
         <Border Grid.Row="28"
-                Background="{DynamicResource SurfaceBg}"
+                Background="{DynamicResource AppBg}"
                 BorderBrush="{DynamicResource BorderColor}"
                 BorderThickness="1"
                 CornerRadius="3">
@@ -191,10 +207,10 @@
                 <TextBox Text="{Binding RecentLogs, Mode=OneWay}"
                          IsReadOnly="True"
                          Background="Transparent"
-                         Foreground="{DynamicResource AppFgDim}"
+                         Foreground="{DynamicResource AppFg}"
                          BorderThickness="0"
                          FontFamily="Consolas"
-                         FontSize="10"
+                         FontSize="10.5"
                          TextWrapping="NoWrap"
                          AcceptsReturn="True"/>
             </ScrollViewer>

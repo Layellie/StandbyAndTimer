@@ -6,7 +6,7 @@
         xmlns:conv="clr-namespace:StandbyAndTimer.Views.Converters"
         Title="StandbyAndTimer"
         Width="540"
-        SizeToContent="Height"
+        Height="600"
         ResizeMode="CanMinimize"
         WindowStyle="None"
         Background="{DynamicResource AppBg}"
