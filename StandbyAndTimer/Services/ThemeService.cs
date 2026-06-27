@@ -33,7 +33,12 @@ internal sealed class ThemeService : IThemeService
     {
         if (theme == CurrentTheme) return;
         CurrentTheme = theme;
-        ApplyPalette(EffectiveTheme);
+
+        // MergedDictionaries mutation must happen on the UI thread — same
+        // requirement LocalizationService.SetLanguage observes. SetTheme can
+        // be called from a background thread (e.g. the settings import path
+        // running on a Task), so wrap the ResourceDictionary swap.
+        Application.Current.Dispatcher.Invoke(() => ApplyPalette(EffectiveTheme));
         ThemeChanged?.Invoke(this, EventArgs.Empty);
     }
 

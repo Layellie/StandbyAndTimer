@@ -37,7 +37,8 @@
             <RowDefinition Height="Auto"/>  <!-- 22 Open Log -->
             <RowDefinition Height="14"/>    <!-- 23 -->
             <RowDefinition Height="Auto"/>  <!-- 24 Update status text -->
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>     <!-- 25 spacer -->
+            <RowDefinition Height="Auto"/>  <!-- 26 Version footer -->
         </Grid.RowDefinitions>
 
         <!-- ── Header ───────────────────────────────────────────────────────── -->
@@ -152,6 +153,21 @@
                    Foreground="{DynamicResource AppFgDim}"
                    TextWrapping="Wrap"
                    FontSize="11"/>
+
+        <!-- ── Version footer ──────────────────────────────────────────────────
+             Pinned to the bottom of the panel — Row 25 is the * spacer that
+             pushes this label down regardless of how many rows above grow.
+             The "v" prefix matches the GitHub release tag format (v2.0.5)
+             so what the user sees here is the same string they'd see on the
+             release page. CurrentVersion is computed from the assembly so it
+             auto-updates with every -p:Version=X.Y.Z release build. -->
+        <TextBlock Grid.Row="26"
+                   Text="{Binding CurrentVersion, StringFormat=v{0}}"
+                   Foreground="{DynamicResource AppFgDim}"
+                   FontSize="10.5"
+                   Opacity="0.7"
+                   HorizontalAlignment="Right"
+                   Margin="0,0,0,2"/>
 
     </Grid>
 </UserControl>

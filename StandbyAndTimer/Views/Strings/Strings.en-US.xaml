@@ -64,6 +64,8 @@
     <sys:String x:Key="Str_Settings_ExportOk">Settings exported</sys:String>
     <sys:String x:Key="Str_Settings_ImportOk">Settings imported</sys:String>
     <sys:String x:Key="Str_Settings_ImportFail">Import failed</sys:String>
+    <sys:String x:Key="Str_Settings_AutoStartFailedOn">Could not enable auto-start (schtasks failed)</sys:String>
+    <sys:String x:Key="Str_Settings_AutoStartFailedOff">Could not disable auto-start (schtasks failed)</sys:String>
     <sys:String x:Key="Str_Settings_BackupSection">Backup &amp; Maintenance</sys:String>
     <sys:String x:Key="Str_Settings_OpenLog">Open Log Folder</sys:String>
 

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Text.Json;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -56,6 +57,22 @@ public sealed partial class SettingsViewModel : ObservableObject
     public Language[] LanguageOptions { get; } = [Language.English, Language.Turkish];
     public Theme[]    ThemeOptions    { get; } = [Theme.Dark, Theme.Light, Theme.System];
 
+    // Shown in the Settings panel footer. The release pipeline passes
+    // -p:Version=X.Y.Z to dotnet publish so this lines up with the GitHub
+    // release tag; dev / CI builds fall back to the csproj baseline. We
+    // trim a trailing ".0" so "2.0.5.0" renders as "2.0.5" — matches the
+    // way the version is communicated everywhere else (tags, installer).
+    public string CurrentVersion { get; } = FormatVersion(
+        Assembly.GetExecutingAssembly().GetName().Version);
+
+    private static string FormatVersion(Version? v)
+    {
+        if (v is null) return "?";
+        return v.Revision == 0
+            ? FormattableString.Invariant($"{v.Major}.{v.Minor}.{v.Build}")
+            : FormattableString.Invariant($"{v.Major}.{v.Minor}.{v.Build}.{v.Revision}");
+    }
+
     // Set by MainViewModel after Initialize so Export/Import can serialize a snapshot.
     internal Func<AppSettings>? SnapshotProvider { get; set; }
 
@@ -75,17 +92,12 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public void Initialize(bool autoStartEnabled, Language language, bool updateCheckEnabled, Theme theme)
     {
-        _isInitializing = true;
-        try
+        using (new InitScope(v => _isInitializing = v))
         {
             AutoStartEnabled    = autoStartEnabled;
             SelectedLanguage    = language;
             UpdateCheckEnabled  = updateCheckEnabled;
             SelectedTheme       = theme;
-        }
-        finally
-        {
-            _isInitializing = false;
         }
     }
 
@@ -124,10 +136,20 @@ public sealed partial class SettingsViewModel : ObservableObject
         string exePath = Environment.ProcessPath
             ?? throw new InvalidOperationException("Could not determine executable path.");
 
-        if (enable)
-            await _autoStartService.EnableAsync(exePath).ConfigureAwait(false);
-        else
-            await _autoStartService.DisableAsync().ConfigureAwait(false);
+        bool ok = enable
+            ? await _autoStartService.EnableAsync(exePath).ConfigureAwait(true)
+            : await _autoStartService.DisableAsync().ConfigureAwait(true);
+
+        if (!ok)
+        {
+            // Surface the failure so the user sees the toggle didn't actually
+            // take effect. Without this, schtasks errors (UAC denial, sandboxed
+            // env, malformed path) were swallowed and the checkbox happily
+            // showed ON with no scheduled task behind it.
+            UpdateStatus = _localization.GetString(
+                enable ? "Str_Settings_AutoStartFailedOn"
+                       : "Str_Settings_AutoStartFailedOff");
+        }
     }
 
     // ── Export / Import ───────────────────────────────────────────────────────

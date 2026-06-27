@@ -68,7 +68,7 @@ public partial class App : Application
         Mark("crash handlers + hardening");
 
         // ── 1. Single-instance guard ──────────────────────────────────────────
-        _singleInstanceMutex = new Mutex(true, @"Global\StandbyAndTimer_v1", out bool isNewInstance);
+        _singleInstanceMutex = new Mutex(true, AppConstants.SingleInstanceMutexName, out bool isNewInstance);
         if (!isNewInstance)
         {
             MessageBox.Show(
@@ -192,7 +192,14 @@ public partial class App : Application
         DisposeIcon(ref _iconBase);
         DisposeIcon(ref _iconActive);
 
-        _viewModel?.ShutdownAsync().GetAwaiter().GetResult();
+        // Task.Run hop so the async chain inside ShutdownAsync resumes on a
+        // ThreadPool thread instead of the WPF dispatcher we're blocking with
+        // GetResult. Awaiting via the dispatcher's SynchronizationContext
+        // while .GetResult() pins it would deadlock the moment any callee
+        // tries to ConfigureAwait(true) — and at least one (the memory
+        // service stop path) does exactly that during its cancel handshake.
+        if (_viewModel is not null)
+            Task.Run(_viewModel.ShutdownAsync).GetAwaiter().GetResult();
         (_services as IDisposable)?.Dispose();
 
         _singleInstanceMutex?.ReleaseMutex();
@@ -475,26 +482,32 @@ public partial class App : Application
             Dispatcher.InvokeAsync(UpdateTrayVisuals);
     }
 
+    // Note on `_localization!`: this handler is only subscribed AFTER
+    // _localization is resolved from the DI container in OnStartup, and is
+    // unsubscribed at the top of OnExit. The field is non-null for the entire
+    // lifetime of the handler subscription, so the bang is a fact-stated
+    // assertion, not a guess. LocalizationService.GetString returns the key
+    // itself when the resource is missing, so we don't need a fallback string.
     private void OnPurgeNotification(object? sender, int totalPurges)
     {
-        string title = _localization?.GetString("Str_Tray_NotifyPurgeTitle") ?? "Standby cache purged";
+        string title = _localization!.GetString("Str_Tray_NotifyPurgeTitle");
         string body  = string.Format(
             CultureInfo.CurrentCulture,
-            _localization?.GetString("Str_Tray_NotifyPurgeBody") ?? "Total purges: {0}",
+            _localization.GetString("Str_Tray_NotifyPurgeBody"),
             totalPurges);
         ShowBalloon(title, body);
     }
 
     private void OnTimerToggledNotification(object? sender, TimerToggledArgs args)
     {
-        string title = args.IsActive
-            ? _localization?.GetString("Str_Tray_NotifyTimerOnTitle")  ?? "Timer activated"
-            : _localization?.GetString("Str_Tray_NotifyTimerOffTitle") ?? "Timer disabled";
+        string title = _localization!.GetString(args.IsActive
+            ? "Str_Tray_NotifyTimerOnTitle"
+            : "Str_Tray_NotifyTimerOffTitle");
         string body  = args.IsActive
             ? string.Format(CultureInfo.CurrentCulture,
-                _localization?.GetString("Str_Tray_NotifyTimerOnBody") ?? "Locked to {0:F3} ms",
+                _localization.GetString("Str_Tray_NotifyTimerOnBody"),
                 args.ActualMs)
-            : _localization?.GetString("Str_Tray_NotifyTimerOffBody") ?? "Restored to default";
+            : _localization.GetString("Str_Tray_NotifyTimerOffBody");
 
         ShowBalloon(title, body);
     }
@@ -512,24 +525,27 @@ public partial class App : Application
         catch (Exception ex) { Logger.Warn($"ShowBalloon: {ex.Message}"); }
     }
 
+    // Both _localization and _viewModel are non-null for the lifetime of these
+    // calls — SetupTray runs after they're assigned in OnStartup, and the
+    // DispatcherTimer that drives UpdateTrayVisuals is stopped at the top of
+    // OnExit before the fields are released. `?` is dead weight here.
     private void UpdateTrayHeaders()
     {
         if (_showMenuItem is not null)
-            _showMenuItem.Text = _localization?.GetString("Str_Tray_Show") ?? "Show";
+            _showMenuItem.Text = _localization!.GetString("Str_Tray_Show");
 
         if (_timerMenuItem is not null)
         {
-            bool active  = _viewModel?.TimerActive ?? false;
-            string key   = active ? "Str_Tray_TimerDisable" : "Str_Tray_TimerEnable";
-            string fallback = active ? "Disable Timer" : "Enable Timer";
-            _timerMenuItem.Text = _localization?.GetString(key) ?? fallback;
+            bool active = _viewModel!.TimerActive;
+            _timerMenuItem.Text = _localization!.GetString(
+                active ? "Str_Tray_TimerDisable" : "Str_Tray_TimerEnable");
         }
 
         if (_purgeMenuItem is not null)
-            _purgeMenuItem.Text = _localization?.GetString("Str_Tray_PurgeNow") ?? "Purge Standby Now";
+            _purgeMenuItem.Text = _localization!.GetString("Str_Tray_PurgeNow");
 
         if (_exitMenuItem is not null)
-            _exitMenuItem.Text = _localization?.GetString("Str_Tray_Exit") ?? "Exit";
+            _exitMenuItem.Text = _localization!.GetString("Str_Tray_Exit");
     }
 
     // Updates icon image, menu labels, and live tooltip in a single pass.
@@ -540,16 +556,14 @@ public partial class App : Application
         if (_trayIcon is null) return;
         try
         {
-            bool active = _viewModel?.TimerActive ?? false;
+            bool active = _viewModel!.TimerActive;
             _trayIcon.Icon = active ? (_iconActive ?? _iconBase!) : _iconBase!;
 
-            string state = active
-                ? _localization?.GetString("Str_Tray_TimerStateOn")  ?? "ON"
-                : _localization?.GetString("Str_Tray_TimerStateOff") ?? "OFF";
-            string fmt   = _localization?.GetString("Str_Tray_TooltipFormat")
-                           ?? "StandbyAndTimer\nTimer: {0}  •  Purges: {1}";
+            string state = _localization!.GetString(
+                active ? "Str_Tray_TimerStateOn" : "Str_Tray_TimerStateOff");
+            string fmt   = _localization.GetString("Str_Tray_TooltipFormat");
 
-            string tip = string.Format(CultureInfo.CurrentCulture, fmt, state, _viewModel?.PurgeCount ?? 0);
+            string tip = string.Format(CultureInfo.CurrentCulture, fmt, state, _viewModel.PurgeCount);
             if (tip.Length > 127) tip = tip[..127]; // NotifyIcon.Text limit
             _trayIcon.Text = tip;
         }

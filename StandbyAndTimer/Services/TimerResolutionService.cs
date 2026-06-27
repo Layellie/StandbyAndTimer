@@ -1,4 +1,5 @@
 using StandbyAndTimer.Core.Interfaces;
+using StandbyAndTimer.Infrastructure;
 using StandbyAndTimer.Services.Native;
 
 namespace StandbyAndTimer.Services;
@@ -153,7 +154,7 @@ internal sealed class TimerResolutionService : ITimerResolutionService
     private void WatchdogLoop()
     {
         uint taskIndex = 0;
-        IntPtr avrt = NativeMethods.AvSetMmThreadCharacteristics("Pro Audio", ref taskIndex);
+        IntPtr avrt = NativeMethods.AvSetMmThreadCharacteristics(AppConstants.MmcssProAudioTaskName, ref taskIndex);
         try
         {
             // ManualResetEventSlim.Wait(timeout) returns true on signal, false
