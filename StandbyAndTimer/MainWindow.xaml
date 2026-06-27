@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:views="clr-namespace:StandbyAndTimer.Views"
+        xmlns:overlays="clr-namespace:StandbyAndTimer.Views.Overlays"
         xmlns:conv="clr-namespace:StandbyAndTimer.Views.Converters"
         Title="StandbyAndTimer"
         Width="540"
@@ -494,158 +495,17 @@
             </Border>
 
             <!-- ═══════════════════ ABOUT OVERLAY ═══════════════════ -->
-            <Border x:Name="AboutOverlay"
-                    Grid.Row="0" Grid.RowSpan="2"
-                    Panel.ZIndex="18"
-                    Background="{DynamicResource ModalOverlayBrush}"
-                    Visibility="{Binding IsAboutVisible, Converter={StaticResource BoolToVis}}">
-                <Border.InputBindings>
-                    <MouseBinding MouseAction="LeftClick" Command="{Binding CloseAboutCommand}"/>
-                </Border.InputBindings>
-                <Border HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Background="{DynamicResource Surface2Bg}"
-                        BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1"
-                        CornerRadius="{StaticResource RadiusLarge}"
-                        Padding="22,18"
-                        MaxWidth="380">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <Ellipse Width="9" Height="9"
-                                     Fill="{DynamicResource AccentPrimary}"
-                                     VerticalAlignment="Center"
-                                     Margin="0,0,8,0"/>
-                            <TextBlock Text="{Binding AboutTitle}"
-                                       FontSize="13"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource AppFg}"
-                                       VerticalAlignment="Center"/>
-                        </StackPanel>
+            <overlays:AboutOverlay Grid.Row="0" Grid.RowSpan="2" Panel.ZIndex="18"/>
 
-                        <TextBlock Text="{Binding AboutText}"
-                                   TextWrapping="Wrap"
-                                   Foreground="{DynamicResource AppFgDim}"
-                                   FontSize="11"
-                                   FontFamily="Consolas"
-                                   Margin="0,0,0,16"/>
+            <!-- ═══════════════════ FIRST-RUN WIZARD OVERLAY ═══════════════════ -->
+            <overlays:WizardOverlay Grid.Row="0" Grid.RowSpan="2" Panel.ZIndex="19"/>
 
-                        <Button Content="{Binding AboutClose}"
-                                Command="{Binding CloseAboutCommand}"
-                                Style="{StaticResource DarkButtonStyle}"
-                                HorizontalAlignment="Right"
-                                MinWidth="80" Height="30"/>
-                    </StackPanel>
-                </Border>
-            </Border>
-
-            <!-- ═══════════════════ FIRST-RUN WIZARD OVERLAY ═══════════════════
-                 Shown once on the very first launch. Click-to-dismiss outside
-                 the card is intentional — onboarding shouldn't trap a user
-                 who already knows the app. -->
-            <Border x:Name="WizardOverlay"
-                    Grid.Row="0" Grid.RowSpan="2"
-                    Panel.ZIndex="19"
-                    Background="{DynamicResource ModalOverlayBrush}"
-                    Visibility="{Binding IsWizardVisible, Converter={StaticResource BoolToVis}}">
-                <Border.InputBindings>
-                    <MouseBinding MouseAction="LeftClick" Command="{Binding DismissWizardCommand}"/>
-                </Border.InputBindings>
-                <Border HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Background="{DynamicResource Surface2Bg}"
-                        BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1"
-                        CornerRadius="{StaticResource RadiusLarge}"
-                        Padding="24,20"
-                        MaxWidth="420">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                            <Ellipse Width="9" Height="9"
-                                     Fill="{DynamicResource AccentPrimary}"
-                                     VerticalAlignment="Center"
-                                     Margin="0,0,8,0"/>
-                            <TextBlock Text="{Binding WizardTitle}"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource AppFg}"
-                                       VerticalAlignment="Center"/>
-                        </StackPanel>
-
-                        <TextBlock Text="{Binding WizardBody}"
-                                   TextWrapping="Wrap"
-                                   Foreground="{DynamicResource AppFgDim}"
-                                   FontSize="12"
-                                   LineHeight="18"
-                                   Margin="0,0,0,18"/>
-
-                        <Button Content="{Binding WizardFinish}"
-                                Command="{Binding DismissWizardCommand}"
-                                Style="{StaticResource DarkButtonStyle}"
-                                HorizontalAlignment="Right"
-                                MinWidth="100" Height="32"/>
-                    </StackPanel>
-                </Border>
-            </Border>
-
-            <!-- ═══════════════════ CLOSE CONFIRMATION OVERLAY (above everything) ═══════════════════ -->
-            <Border x:Name="CloseDialogOverlay"
-                    Grid.Row="0" Grid.RowSpan="2"
-                    Panel.ZIndex="20"
-                    Background="{DynamicResource ModalOverlayBrush}"
-                    Visibility="Collapsed">
-                <Border HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Background="{DynamicResource Surface2Bg}"
-                        BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1"
-                        CornerRadius="{StaticResource RadiusLarge}"
-                        Padding="22,20"
-                        MinWidth="290">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <Ellipse Width="9" Height="9"
-                                     Fill="{DynamicResource AccentPrimary}"
-                                     VerticalAlignment="Center"
-                                     Margin="0,0,8,0"/>
-                            <TextBlock Text="{DynamicResource Str_Close_Title}"
-                                       FontSize="13"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource AppFg}"
-                                       VerticalAlignment="Center"/>
-                        </StackPanel>
-
-                        <TextBlock Text="{DynamicResource Str_Close_Message}"
-                                   TextWrapping="Wrap"
-                                   Foreground="{DynamicResource AppFgDim}"
-                                   FontSize="12"
-                                   MaxWidth="260"
-                                   Margin="0,0,0,18"/>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="8"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <Button Grid.Column="0"
-                                    x:Name="CloseExitBtn"
-                                    Content="{DynamicResource Str_Close_Exit}"
-                                    Style="{StaticResource GhostButtonStyle}"
-                                    Height="32"
-                                    Click="OnCloseExitClick"/>
-
-                            <Button Grid.Column="2"
-                                    x:Name="CloseMinimizeBtn"
-                                    Content="{DynamicResource Str_Close_Minimize}"
-                                    Style="{StaticResource DarkButtonStyle}"
-                                    Height="32"
-                                    Click="OnCloseMinimizeClick"/>
-                        </Grid>
-                    </StackPanel>
-                </Border>
-            </Border>
+            <!-- ═══════════════════ CLOSE CONFIRMATION OVERLAY ═══════════════════ -->
+            <overlays:CloseConfirmationOverlay x:Name="CloseDialog"
+                                               Grid.Row="0" Grid.RowSpan="2"
+                                               Panel.ZIndex="20"
+                                               MinimizeRequested="OnCloseDialogMinimize"
+                                               ExitRequested="OnCloseDialogExit"/>
 
         </Grid>
     </Border>

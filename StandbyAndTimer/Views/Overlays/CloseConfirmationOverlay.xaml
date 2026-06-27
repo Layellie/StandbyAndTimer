@@ -1,0 +1,57 @@
+<UserControl x:Class="StandbyAndTimer.Views.Overlays.CloseConfirmationOverlay"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FontFamily="Segoe UI" FontSize="13"
+             Visibility="Collapsed">
+    <Border Background="{DynamicResource ModalOverlayBrush}">
+        <Border HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{DynamicResource Surface2Bg}"
+                BorderBrush="{DynamicResource BorderColor}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource RadiusLarge}"
+                Padding="22,20"
+                MinWidth="290">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <Ellipse Width="9" Height="9"
+                             Fill="{DynamicResource AccentPrimary}"
+                             VerticalAlignment="Center"
+                             Margin="0,0,8,0"/>
+                    <TextBlock Text="{DynamicResource Str_Close_Title}"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppFg}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <TextBlock Text="{DynamicResource Str_Close_Message}"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource AppFgDim}"
+                           FontSize="12"
+                           MaxWidth="260"
+                           Margin="0,0,0,18"/>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0"
+                            Content="{DynamicResource Str_Close_Exit}"
+                            Style="{StaticResource GhostButtonStyle}"
+                            Height="32"
+                            Click="OnExitClick"/>
+
+                    <Button Grid.Column="2"
+                            Content="{DynamicResource Str_Close_Minimize}"
+                            Style="{StaticResource DarkButtonStyle}"
+                            Height="32"
+                            Click="OnMinimizeClick"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Border>
+</UserControl>

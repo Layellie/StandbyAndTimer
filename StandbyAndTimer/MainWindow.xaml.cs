@@ -58,29 +58,15 @@ public partial class MainWindow : Window
     {
         if (_vm.Settings.IsOpen)
             _vm.Settings.IsOpen = false;
-
-        CloseDialogOverlay.Visibility = Visibility.Visible;
-
-        CloseDialogOverlay.BeginAnimation(OpacityProperty,
-            new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(160)));
+        CloseDialog.Show();
     }
 
-    private void OnCloseMinimizeClick(object sender, RoutedEventArgs e)
-    {
-        HideCloseOverlay();
-        HideOffscreen();
-    }
+    private void OnCloseDialogMinimize(object? sender, EventArgs e) => HideOffscreen();
 
-    private void OnCloseExitClick(object sender, RoutedEventArgs e)
+    private void OnCloseDialogExit(object? sender, EventArgs e)
     {
-        HideCloseOverlay();
         _forceClose = true;
         Application.Current.Shutdown();
-    }
-
-    private void HideCloseOverlay()
-    {
-        CloseDialogOverlay.Visibility = Visibility.Collapsed;
     }
 
     // ── Window lifecycle ──────────────────────────────────────────────────────
