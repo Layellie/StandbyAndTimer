@@ -532,6 +532,55 @@
                 </Border>
             </Border>
 
+            <!-- ═══════════════════ FIRST-RUN WIZARD OVERLAY ═══════════════════
+                 Shown once on the very first launch. Click-to-dismiss outside
+                 the card is intentional — onboarding shouldn't trap a user
+                 who already knows the app. -->
+            <Border x:Name="WizardOverlay"
+                    Grid.Row="0" Grid.RowSpan="2"
+                    Panel.ZIndex="19"
+                    Background="{DynamicResource ModalOverlayBrush}"
+                    Visibility="{Binding IsWizardVisible, Converter={StaticResource BoolToVis}}">
+                <Border.InputBindings>
+                    <MouseBinding MouseAction="LeftClick" Command="{Binding DismissWizardCommand}"/>
+                </Border.InputBindings>
+                <Border HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="{DynamicResource Surface2Bg}"
+                        BorderBrush="{DynamicResource BorderColor}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource RadiusLarge}"
+                        Padding="24,20"
+                        MaxWidth="420">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Ellipse Width="9" Height="9"
+                                     Fill="{DynamicResource AccentPrimary}"
+                                     VerticalAlignment="Center"
+                                     Margin="0,0,8,0"/>
+                            <TextBlock Text="{Binding WizardTitle}"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AppFg}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding WizardBody}"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource AppFgDim}"
+                                   FontSize="12"
+                                   LineHeight="18"
+                                   Margin="0,0,0,18"/>
+
+                        <Button Content="{Binding WizardFinish}"
+                                Command="{Binding DismissWizardCommand}"
+                                Style="{StaticResource DarkButtonStyle}"
+                                HorizontalAlignment="Right"
+                                MinWidth="100" Height="32"/>
+                    </StackPanel>
+                </Border>
+            </Border>
+
             <!-- ═══════════════════ CLOSE CONFIRMATION OVERLAY (above everything) ═══════════════════ -->
             <Border x:Name="CloseDialogOverlay"
                     Grid.Row="0" Grid.RowSpan="2"

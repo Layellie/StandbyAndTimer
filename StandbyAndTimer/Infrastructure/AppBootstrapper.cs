@@ -21,6 +21,7 @@ internal static class AppBootstrapper
         services.AddSingleton<ILocalizationService,        LocalizationService>();
         services.AddSingleton<IThemeService,               ThemeService>();
         services.AddSingleton<IUpdateService,              UpdateService>();
+        services.AddSingleton<IGameDetectionService,       GameDetectionService>();
 
         // ── Presentation ─────────────────────────────────────────────────────
         services.AddSingleton<SettingsViewModel>();

@@ -17,6 +17,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private readonly IMemoryMonitorService       _memoryService;
     private readonly ISettingsService            _settingsService;
     private readonly ILocalizationService        _localization;
+    private readonly IGameDetectionService       _gameDetection;
     private readonly CancellationTokenSource     _appCts = new();
 
     // Debounces registry writes triggered by rapidly-changing TextBox-bound
@@ -44,6 +45,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string  _statusMessage  = string.Empty;
     [ObservableProperty] private GameEntry? _selectedGame;
     [ObservableProperty] private bool    _isAboutVisible;
+    [ObservableProperty] private bool    _isWizardVisible;
 
     public ObservableCollection<GameEntry> Games    { get; } = [];
     public SettingsViewModel               Settings { get; }
@@ -54,6 +56,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public string AboutTitle => _localization.GetString("Str_About_Title");
     public string AboutText  => _localization.GetString("Str_About_Text");
     public string AboutClose => _localization.GetString("Str_About_Close");
+
+    public string WizardTitle  => _localization.GetString("Str_Wizard_Title");
+    public string WizardBody   => _localization.GetString("Str_Wizard_Body");
+    public string WizardFinish => _localization.GetString("Str_Wizard_Finish");
 
     // Raised once a manual or auto purge succeeds — App.xaml.cs subscribes to
     // show a balloon notification without needing to know about MVVM internals.
@@ -70,6 +76,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         IMemoryMonitorService       memoryService,
         ISettingsService            settingsService,
         ILocalizationService        localization,
+        IGameDetectionService       gameDetection,
         SettingsViewModel           settingsViewModel)
     {
         _timerService    = timerService;
@@ -77,6 +84,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _memoryService   = memoryService;
         _settingsService = settingsService;
         _localization    = localization;
+        _gameDetection   = gameDetection;
 
         Settings = settingsViewModel;
         Settings.SettingsChanged   += (_, _) => PersistSettings();
@@ -87,6 +95,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _purgeService.PurgeSucceeded       += OnPurgeSucceeded;
         _localization.LanguageChanged      += OnLanguageChanged;
         _timerService.ResolutionMeasured   += OnTimerResolutionMeasured;
+        _gameDetection.GameDetected        += OnGameDetected;
     }
 
     // ── Initialisation (called once from App.OnStartup) ───────────────────────
@@ -105,6 +114,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         StatusMessage = _localization.GetString("Str_Status_Ready");
 
         await _memoryService.StartAsync(_appCts.Token).ConfigureAwait(false);
+        await _gameDetection.StartAsync(_appCts.Token).ConfigureAwait(false);
+
+        // Show the first-run wizard on the very first launch only. Persisting
+        // FirstRunCompleted=true happens when the user dismisses it, so a
+        // crash mid-wizard won't strand them out of the onboarding.
+        if (!settings.FirstRunCompleted)
+            await Application.Current.Dispatcher.InvokeAsync(() => IsWizardVisible = true);
     }
 
     // ── Settings helpers ──────────────────────────────────────────────────────
@@ -113,11 +129,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         using (new InitScope(v => _isInitializing = v))
         {
-            StandbyLimitMb   = s.StandbyLimitMb;
-            FreeLimitMb      = s.FreeLimitMb;
-            AutoPurgeEnabled = s.AutoPurgeEnabled;
-            GameModeEnabled  = s.GameModeEnabled;
-            TimerActive      = s.TimerResolutionActive;
+            StandbyLimitMb     = s.StandbyLimitMb;
+            FreeLimitMb        = s.FreeLimitMb;
+            AutoPurgeEnabled   = s.AutoPurgeEnabled;
+            GameModeEnabled    = s.GameModeEnabled;
+            TimerActive        = s.TimerResolutionActive;
+            _firstRunCompleted = s.FirstRunCompleted;
 
             Games.Clear();
             foreach (var g in s.Games)
@@ -144,7 +161,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     // Games collection actually mutates (add / remove / settings load / import).
     private void SyncMonitorGames()
     {
-        _memoryService.GamePaths = Games.Select(g => g.ExecutablePath).ToList();
+        var paths = Games.Select(g => g.ExecutablePath).ToList();
+        _memoryService.GamePaths = paths;
+        // Also keep the detection service in sync — without this, a game the
+        // user just added would still trigger a "fullscreen detected" balloon
+        // on the next poll tick.
+        _gameDetection.KnownGamePaths = new HashSet<string>(paths, StringComparer.OrdinalIgnoreCase);
     }
 
     private void PersistSettings()
@@ -196,8 +218,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         Language              = Settings.SelectedLanguage,
         Theme                 = Settings.SelectedTheme,
         UpdateCheckEnabled    = Settings.UpdateCheckEnabled,
+        FirstRunCompleted     = _firstRunCompleted,
         Games                 = [.. Games]
     };
+
+    // Local mirror of the persisted FirstRunCompleted flag so BuildCurrentSettings
+    // doesn't have to re-read from disk. DismissWizard flips this true before
+    // calling Save.
+    private bool _firstRunCompleted;
 
     // ── Event handlers ────────────────────────────────────────────────────────
 
@@ -224,7 +252,22 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(AboutTitle));
             OnPropertyChanged(nameof(AboutText));
             OnPropertyChanged(nameof(AboutClose));
+            OnPropertyChanged(nameof(WizardTitle));
+            OnPropertyChanged(nameof(WizardBody));
+            OnPropertyChanged(nameof(WizardFinish));
         });
+
+    private void OnGameDetected(object? sender, string exePath) =>
+        Application.Current.Dispatcher.InvokeAsync(() =>
+        {
+            // Surface the candidate to App.xaml.cs which owns the tray icon
+            // and can show a balloon. We don't auto-add — that would be
+            // surprising behavior and could mis-promote a fullscreen video
+            // player. The user decides.
+            GameAutoDetected?.Invoke(this, exePath);
+        });
+
+    public event EventHandler<string>? GameAutoDetected;
 
     private void OnTimerResolutionMeasured(object? sender, double measuredMs) =>
         Application.Current.Dispatcher.InvokeAsync(() =>
@@ -359,6 +402,16 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void CloseAbout() => IsAboutVisible = false;
 
+    [RelayCommand]
+    private void DismissWizard()
+    {
+        IsWizardVisible    = false;
+        _firstRunCompleted = true;
+        // Persist immediately so the wizard doesn't return on the next launch
+        // even if the process is killed before normal OnExit shutdown runs.
+        _settingsService.Save(BuildCurrentSettings());
+    }
+
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private async Task ActivateTimerInternalAsync(bool silent)
@@ -384,6 +437,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
         await _appCts.CancelAsync().ConfigureAwait(false);
         await _memoryService.StopAsync().ConfigureAwait(false);
+        await _gameDetection.StopAsync().ConfigureAwait(false);
         _settingsService.Save(BuildCurrentSettings());
     }
 
@@ -398,9 +452,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _purgeService.PurgeSucceeded       -= OnPurgeSucceeded;
         _localization.LanguageChanged      -= OnLanguageChanged;
         _timerService.ResolutionMeasured   -= OnTimerResolutionMeasured;
+        _gameDetection.GameDetected        -= OnGameDetected;
 
         _timerService.Dispose();
         _memoryService.Dispose();
+        _gameDetection.Dispose();
         _appCts.Dispose();
     }
 }

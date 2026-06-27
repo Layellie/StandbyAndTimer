@@ -52,4 +52,42 @@ internal static class Logger
         }
         catch { }
     }
+
+    // Reads the tail of the active log file. Used by the in-app Logs viewer
+    // so users don't have to open Explorer + Notepad to triage a hiccup. We
+    // open with FileShare.ReadWrite so a concurrent Write from the gate above
+    // (different process? no — same process, different thread) can't AccessDenied
+    // the reader. Returns oldest→newest as a single string.
+    public static string ReadTail(int maxLines)
+    {
+        try
+        {
+            if (!File.Exists(_logFile)) return string.Empty;
+            using var fs = new FileStream(_logFile, FileMode.Open,
+                FileAccess.Read, FileShare.ReadWrite);
+            using var sr = new StreamReader(fs, Encoding.UTF8);
+
+            // Ring buffer of the last `maxLines` lines — keeps memory bounded
+            // even if the log is close to MaxBytes (~1 MB).
+            var ring = new string[maxLines];
+            int idx = 0, count = 0;
+            string? line;
+            while ((line = sr.ReadLine()) is not null)
+            {
+                ring[idx] = line;
+                idx = (idx + 1) % maxLines;
+                if (count < maxLines) count++;
+            }
+
+            var sb = new StringBuilder(count * 80);
+            int start = count < maxLines ? 0 : idx;
+            for (int i = 0; i < count; i++)
+                sb.AppendLine(ring[(start + i) % maxLines]);
+            return sb.ToString();
+        }
+        catch (Exception ex)
+        {
+            return $"(failed to read log: {ex.Message})";
+        }
+    }
 }

@@ -113,6 +113,7 @@ public partial class App : Application
         _viewModel.PropertyChanged                += OnViewModelPropertyChanged;
         _viewModel.PurgeNotification              += OnPurgeNotification;
         _viewModel.TimerToggledNotification       += OnTimerToggledNotification;
+        _viewModel.GameAutoDetected               += OnGameAutoDetected;
 
         // ── 5. Build window and tray ──────────────────────────────────────────
         _iconBase   = LoadAppIcon();
@@ -181,6 +182,7 @@ public partial class App : Application
             _viewModel.PropertyChanged          -= OnViewModelPropertyChanged;
             _viewModel.PurgeNotification        -= OnPurgeNotification;
             _viewModel.TimerToggledNotification -= OnTimerToggledNotification;
+            _viewModel.GameAutoDetected         -= OnGameAutoDetected;
         }
 
         if (_trayIcon is not null)
@@ -220,8 +222,40 @@ public partial class App : Application
     {
         Logger.Error("DispatcherUnhandledException", e.Exception);
         TryEmergencyRestore();
-        // Don't mark as handled — let the app crash visibly, but at least the
-        // timer is restored so the user's system clock isn't stuck at 0.5 ms.
+        // Show the crash reporter dialog and mark the exception handled — the
+        // alternative (let WPF show its default fatal error popup and exit)
+        // gives the user nothing to act on. Our window has Copy + Open-Issue
+        // buttons so the report actually reaches us. We only handle the
+        // exception if the reporter actually displays; if it fails too, fall
+        // through to the default fatal path.
+        try
+        {
+            var reporter = new Views.CrashReporterWindow(FormatCrash(e.Exception));
+            reporter.ShowDialog();
+            e.Handled = true;
+        }
+        catch (Exception ex2)
+        {
+            Logger.Error("CrashReporter failed to show", ex2);
+        }
+    }
+
+    private static string FormatCrash(Exception ex)
+    {
+        var sb  = new System.Text.StringBuilder();
+        var inv = CultureInfo.InvariantCulture;
+        sb.AppendLine(inv, $"Type: {ex.GetType().FullName}");
+        sb.AppendLine(inv, $"Message: {ex.Message}");
+        sb.AppendLine();
+        sb.AppendLine("Stack:");
+        sb.AppendLine(ex.StackTrace);
+        if (ex.InnerException is { } inner)
+        {
+            sb.AppendLine();
+            sb.AppendLine(inv, $"InnerException: {inner.GetType().FullName}: {inner.Message}");
+            sb.AppendLine(inner.StackTrace);
+        }
+        return sb.ToString();
     }
 
     private void OnUnobservedTaskException(object? sender, System.Threading.Tasks.UnobservedTaskExceptionEventArgs e)
@@ -496,6 +530,26 @@ public partial class App : Application
             _localization.GetString("Str_Tray_NotifyPurgeBody"),
             totalPurges);
         ShowBalloon(title, body);
+    }
+
+    // Detection event handler — shows a tray balloon. We don't auto-add the
+    // game to the list (could be a fullscreen video player). The body uses
+    // the filename only so it stays under the balloon's ~256-char cap even
+    // for paths with deep folder nesting.
+    private void OnGameAutoDetected(object? sender, string exePath)
+    {
+        try
+        {
+            string fileName = Path.GetFileName(exePath);
+            string title    = _localization!.GetString("Str_Detect_NotifyTitle");
+            string body     = string.Format(
+                CultureInfo.CurrentCulture,
+                _localization.GetString("Str_Detect_NotifyBody"),
+                fileName);
+            ShowBalloon(title, body);
+            Logger.Info($"GameDetection balloon shown for {fileName}");
+        }
+        catch (Exception ex) { Logger.Warn($"OnGameAutoDetected: {ex.Message}"); }
     }
 
     private void OnTimerToggledNotification(object? sender, TimerToggledArgs args)
