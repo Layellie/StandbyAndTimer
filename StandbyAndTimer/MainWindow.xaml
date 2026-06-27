@@ -6,7 +6,7 @@
         xmlns:conv="clr-namespace:StandbyAndTimer.Views.Converters"
         Title="StandbyAndTimer"
         Width="540"
-        SizeToContent="Height"
+        Height="600"
         ResizeMode="CanMinimize"
         WindowStyle="None"
         Background="{DynamicResource AppBg}"
@@ -130,11 +130,18 @@
                 <!-- ── Hero: Timer Resolution ─────────────────────────────────── -->
                 <Border Style="{StaticResource SectionBorderStyle}" Padding="18,14">
                     <StackPanel>
-                        <Grid Margin="0,0,0,4">
+                        <!-- MinHeight reserves the badge's vertical footprint so
+                             toggling the timer ON doesn't grow the title row by
+                             a few px and shift the value/button row below it.
+                             Without this, every Timer toggle made the card
+                             "breathe" by ~6 px because Collapsed gives back the
+                             badge's layout space. -->
+                        <Grid Margin="0,0,0,4" MinHeight="24">
                             <TextBlock Text="{DynamicResource Str_Card_TimerTitle}"
                                        Style="{StaticResource SectionLabelStyle}"
                                        VerticalAlignment="Center"/>
                             <Border HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
                                     Style="{StaticResource SuccessBadgeStyle}"
                                     Visibility="{Binding TimerActive, Converter={StaticResource BoolToVis}}">
                                 <StackPanel Orientation="Horizontal">
