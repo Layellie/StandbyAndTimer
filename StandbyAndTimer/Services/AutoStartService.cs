@@ -1,20 +1,24 @@
 using System.Diagnostics;
 using StandbyAndTimer.Core.Interfaces;
+using StandbyAndTimer.Infrastructure;
 
 namespace StandbyAndTimer.Services;
 
 internal sealed class AutoStartService : IAutoStartService
 {
-    private const string TaskName = "StandbyAndTimer_AutoStart";
-
-    public Task EnableAsync(string executablePath) =>
+    public Task<bool> EnableAsync(string executablePath) =>
         RunSchtasksAsync(
-            $"/create /tn \"{TaskName}\" /tr \"\\\"{executablePath}\\\" -hidden\" /sc onlogon /rl highest /f");
+            $"/create /tn \"{AppConstants.AutoStartTaskName}\" /tr \"\\\"{executablePath}\\\" -hidden\" /sc onlogon /rl highest /f");
 
-    public Task DisableAsync() =>
-        RunSchtasksAsync($"/delete /tn \"{TaskName}\" /f");
+    public Task<bool> DisableAsync() =>
+        RunSchtasksAsync($"/delete /tn \"{AppConstants.AutoStartTaskName}\" /f");
 
-    private static Task RunSchtasksAsync(string args) => Task.Run(() =>
+    // Returns true if schtasks ran to completion with exit code 0. Errors
+    // (process couldn't start, timeout, non-zero exit, sandboxed environment)
+    // all surface as `false` so the caller can show the user a failure status
+    // — previously the result was swallowed and a failed AutoStart toggle
+    // would silently leave the UI checkbox ON with no scheduled task behind it.
+    private static Task<bool> RunSchtasksAsync(string args) => Task.Run(() =>
     {
         try
         {
@@ -24,8 +28,14 @@ internal sealed class AutoStartService : IAutoStartService
                 CreateNoWindow = true
             };
             using var p = Process.Start(psi);
-            p?.WaitForExit(5_000); // don't block indefinitely
+            if (p is null) return false;
+            if (!p.WaitForExit(5_000)) return false;
+            return p.ExitCode == 0;
         }
-        catch { /* schtasks may not be available in sandboxed environments */ }
+        catch (Exception ex)
+        {
+            Logger.Warn($"schtasks ({args}): {ex.Message}");
+            return false;
+        }
     });
 }

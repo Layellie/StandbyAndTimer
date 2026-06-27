@@ -111,8 +111,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     private void ApplySettings(AppSettings s)
     {
-        _isInitializing = true;
-        try
+        using (new InitScope(v => _isInitializing = v))
         {
             StandbyLimitMb   = s.StandbyLimitMb;
             FreeLimitMb      = s.FreeLimitMb;
@@ -125,10 +124,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 Games.Add(g);
 
             Settings.Initialize(s.AutoStartEnabled, s.Language, s.UpdateCheckEnabled, s.Theme);
-        }
-        finally
-        {
-            _isInitializing = false;
         }
         SyncMonitorThresholds();
         SyncMonitorGames();

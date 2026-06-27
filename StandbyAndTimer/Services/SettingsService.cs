@@ -2,18 +2,17 @@ using System.Globalization;
 using Microsoft.Win32;
 using StandbyAndTimer.Core.Interfaces;
 using StandbyAndTimer.Core.Models;
+using StandbyAndTimer.Infrastructure;
 
 namespace StandbyAndTimer.Services;
 
 internal sealed class SettingsService : ISettingsService
 {
-    private const string RegKey = @"SOFTWARE\StandbyAndTimer";
-
     public AppSettings Load()
     {
         try
         {
-            using var key = Registry.CurrentUser.OpenSubKey(RegKey);
+            using var key = Registry.CurrentUser.OpenSubKey(AppConstants.SettingsRegistryPath);
             if (key is null)
                 return new AppSettings();
 
@@ -60,12 +59,15 @@ internal sealed class SettingsService : ISettingsService
     {
         try
         {
-            using var key = Registry.CurrentUser.CreateSubKey(RegKey);
-            // Persist with InvariantCulture so the registry contents stay
-            // portable across locales — e.g. a value written under tr-TR
-            // must round-trip cleanly when the user later switches to en-US.
-            key.SetValue("StandbyLimitMb", settings.StandbyLimitMb.ToString(CultureInfo.InvariantCulture));
-            key.SetValue("FreeLimitMb",    settings.FreeLimitMb.ToString(CultureInfo.InvariantCulture));
+            using var key = Registry.CurrentUser.CreateSubKey(AppConstants.SettingsRegistryPath);
+
+            // Ints stored as REG_DWORD — native typing means regedit shows them
+            // as numbers (not quoted strings) and Load() doesn't have to parse.
+            // GetInt below still tolerates legacy REG_SZ values so an upgrade
+            // from a pre-DWORD install doesn't lose the user's thresholds.
+            key.SetValue("StandbyLimitMb", settings.StandbyLimitMb, RegistryValueKind.DWord);
+            key.SetValue("FreeLimitMb",    settings.FreeLimitMb,    RegistryValueKind.DWord);
+
             key.SetValue("AutoPurgeEnabled",       settings.AutoPurgeEnabled       ? "1" : "0");
             key.SetValue("GameModeEnabled",        settings.GameModeEnabled        ? "1" : "0");
             key.SetValue("AutoStartEnabled",       settings.AutoStartEnabled       ? "1" : "0");
@@ -86,15 +88,31 @@ internal sealed class SettingsService : ISettingsService
         }
     }
 
-    private static int GetInt(RegistryKey key, string name, int fallback) =>
-        int.TryParse(key.GetValue(name)?.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int v)
-            ? v : fallback;
+    // Reads either REG_DWORD (current format) or REG_SZ (legacy / Import JSON
+    // path which writes string-encoded numbers). InvariantCulture parse so a
+    // tr-TR machine doesn't mis-parse "1024" written under en-US, etc.
+    private static int GetInt(RegistryKey key, string name, int fallback)
+    {
+        var raw = key.GetValue(name);
+        return raw switch
+        {
+            int i                                                                          => i,
+            string s when int.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out int v) => v,
+            _                                                                              => fallback,
+        };
+    }
 
+    // Accepts the legacy "1"/"0" registry format AND "true"/"false" — the JSON
+    // Export/Import path round-trips bool as the latter, so without the
+    // TryParse fallback every imported settings file would silently reset all
+    // toggles to their defaults on the next Load.
     private static bool GetBool(RegistryKey key, string name, bool defaultValue = false)
     {
         var v = key.GetValue(name)?.ToString();
         if (v is null) return defaultValue;
-        return v == "1";
+        if (v == "1")  return true;
+        if (v == "0")  return false;
+        return bool.TryParse(v, out bool parsed) ? parsed : defaultValue;
     }
 
     private static TEnum GetEnum<TEnum>(RegistryKey key, string name, TEnum fallback) where TEnum : struct =>
