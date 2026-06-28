@@ -33,7 +33,6 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private Language _selectedLanguage = Language.English;
     [ObservableProperty] private Theme    _selectedTheme    = Theme.Dark;
     [ObservableProperty] private string   _updateStatus = string.Empty;
-    [ObservableProperty] private string   _recentLogs   = string.Empty;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(DownloadAndInstallCommand))]
@@ -104,22 +103,6 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [RelayCommand]
     private void Close() => IsOpen = false;
-
-    [RelayCommand]
-    private void RefreshLogs()
-    {
-        string tail = Logger.ReadTail(100);
-        RecentLogs = string.IsNullOrWhiteSpace(tail)
-            ? _localization.GetString("Str_Settings_LogsEmpty")
-            : tail;
-    }
-
-    // Auto-refresh when the panel opens so the user always sees current logs
-    // without an extra click, but skip the file read when the panel closes.
-    partial void OnIsOpenChanged(bool value)
-    {
-        if (value) RefreshLogs();
-    }
 
     partial void OnAutoStartEnabledChanged(bool value)
     {

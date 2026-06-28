@@ -129,11 +129,6 @@
     <sys:String x:Key="Str_Crash_Close">Kapat</sys:String>
     <sys:String x:Key="Str_Crash_Copied">Detaylar panoya kopyalandı</sys:String>
 
-    <!-- Log görüntüleyici -->
-    <sys:String x:Key="Str_Settings_LogsSection">Son loglar</sys:String>
-    <sys:String x:Key="Str_Settings_LogsRefresh">Yenile</sys:String>
-    <sys:String x:Key="Str_Settings_LogsEmpty">Henüz log girdisi yok.</sys:String>
-
     <!-- Oyun otomatik tespit -->
     <sys:String x:Key="Str_Detect_NotifyTitle">Tam ekran uygulama tespit edildi</sys:String>
     <sys:String x:Key="Str_Detect_NotifyBody">"{0}" Game Mode listesine eklensin mi?</sys:String>

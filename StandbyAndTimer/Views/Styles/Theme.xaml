@@ -299,8 +299,46 @@
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
-    <!--  COMBOBOX (settings language selector)                                  -->
+    <!--  COMBOBOX (settings language / theme selector)                          -->
+    <!--                                                                          -->
+    <!--  Full custom ControlTemplate. Without it WPF falls back to the Aero     -->
+    <!--  default which paints the selection box white and ignores Foreground    -->
+    <!--  on the inner ContentPresenter — the closed value was rendering         -->
+    <!--  white-on-light/white-on-dark and effectively unreadable.               -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <ControlTemplate x:Key="SettingsComboBoxToggleTemplate" TargetType="ToggleButton">
+        <Border x:Name="bd"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{StaticResource RadiusMedium}"
+                SnapsToDevicePixels="True">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="22"/>
+                </Grid.ColumnDefinitions>
+                <Path x:Name="arrow"
+                      Grid.Column="1"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Width="9" Height="5"
+                      Stretch="Fill"
+                      Data="M 0,0 L 1,0 0.5,1 Z"
+                      Fill="{DynamicResource AppFgDim}"/>
+            </Grid>
+        </Border>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="bd"    Property="BorderBrush" Value="{DynamicResource AccentPrimary}"/>
+                <Setter TargetName="arrow" Property="Fill"        Value="{DynamicResource AppFg}"/>
+            </Trigger>
+            <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="bd"    Property="BorderBrush" Value="{DynamicResource InputFocusBorder}"/>
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
     <Style x:Key="SettingsComboBoxStyle" TargetType="ComboBox">
         <Setter Property="Background"       Value="{DynamicResource InputBg}"/>
         <Setter Property="Foreground"       Value="{DynamicResource InputFg}"/>
@@ -308,25 +346,83 @@
         <Setter Property="BorderThickness"  Value="1"/>
         <Setter Property="FontFamily"       Value="Segoe UI"/>
         <Setter Property="FontSize"         Value="13"/>
-        <Setter Property="Padding"          Value="8,5"/>
+        <Setter Property="Padding"          Value="10,0"/>
         <Setter Property="Height"           Value="30"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid>
+                        <ToggleButton x:Name="toggle"
+                                      Background="{TemplateBinding Background}"
+                                      BorderBrush="{TemplateBinding BorderBrush}"
+                                      BorderThickness="{TemplateBinding BorderThickness}"
+                                      Template="{StaticResource SettingsComboBoxToggleTemplate}"
+                                      IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                      Focusable="False"
+                                      ClickMode="Press"/>
+                        <ContentPresenter x:Name="contentSite"
+                                          IsHitTestVisible="False"
+                                          Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="Left"
+                                          VerticalAlignment="Center"
+                                          Content="{TemplateBinding SelectionBoxItem}"
+                                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                          ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        <Popup x:Name="popup"
+                               Placement="Bottom"
+                               IsOpen="{TemplateBinding IsDropDownOpen}"
+                               AllowsTransparency="True"
+                               Focusable="False"
+                               PopupAnimation="Slide">
+                            <Border Background="{DynamicResource InputBg}"
+                                    BorderBrush="{DynamicResource InputBorder}"
+                                    BorderThickness="1"
+                                    CornerRadius="{StaticResource RadiusMedium}"
+                                    MinWidth="{TemplateBinding ActualWidth}"
+                                    MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                    SnapsToDevicePixels="True">
+                                <ScrollViewer SnapsToDevicePixels="True">
+                                    <StackPanel IsItemsHost="True"
+                                                KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
         <Setter Property="ItemContainerStyle">
             <Setter.Value>
                 <Style TargetType="ComboBoxItem">
                     <Setter Property="Background"       Value="{DynamicResource InputBg}"/>
                     <Setter Property="Foreground"       Value="{DynamicResource InputFg}"/>
-                    <Setter Property="Padding"          Value="8,5"/>
+                    <Setter Property="Padding"          Value="10,6"/>
                     <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                    <Style.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="{DynamicResource HoverBg}"/>
-                        </Trigger>
-                        <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="Background" Value="{DynamicResource SelectionBg}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource SelectionFg}"/>
-                        </Trigger>
-                    </Style.Triggers>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ComboBoxItem">
+                                <Border x:Name="bd"
+                                        Background="{TemplateBinding Background}"
+                                        Padding="{TemplateBinding Padding}"
+                                        SnapsToDevicePixels="True">
+                                    <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="bd" Property="Background" Value="{DynamicResource HoverBg}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsHighlighted" Value="True">
+                                        <Setter TargetName="bd" Property="Background" Value="{DynamicResource SelectionBg}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource SelectionFg}"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
                 </Style>
             </Setter.Value>
         </Setter>
