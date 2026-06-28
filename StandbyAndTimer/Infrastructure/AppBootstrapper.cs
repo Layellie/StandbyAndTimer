@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using StandbyAndTimer.Core.Interfaces;
 using StandbyAndTimer.Services;
+using StandbyAndTimer.Services.Logging;
 using StandbyAndTimer.Services.Tray;
 using StandbyAndTimer.ViewModels;
 
@@ -24,6 +25,7 @@ internal static class AppBootstrapper
         services.AddSingleton<IUpdateService,              UpdateService>();
         services.AddSingleton<IGameDetectionService,       GameDetectionService>();
         services.AddSingleton<ITrayIconService,            TrayIconService>();
+        services.AddSingleton<ILogTailReader,              LogTailReader>();
 
         // ── Presentation ─────────────────────────────────────────────────────
         services.AddSingleton<SettingsViewModel>();

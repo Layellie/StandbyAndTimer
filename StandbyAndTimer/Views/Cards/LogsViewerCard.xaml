@@ -1,0 +1,62 @@
+<UserControl x:Class="StandbyAndTimer.Views.Cards.LogsViewerCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FontFamily="Segoe UI" FontSize="13">
+
+    <!-- In-panel logs viewer used inside the Settings panel.
+         Inherits SettingsViewModel as DataContext (RecentLogs +
+         RefreshLogsCommand). Stays a thin view so the parent panel just
+         drops in <cards:LogsViewerCard /> and forgets about layout
+         details. -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>  <!-- 0 Header (label + refresh) -->
+            <RowDefinition Height="6"/>     <!-- 1 -->
+            <RowDefinition Height="140"/>   <!-- 2 Tail viewer -->
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0"
+                       Text="{DynamicResource Str_Settings_LogsSection}"
+                       Foreground="{DynamicResource AppFgDim}"
+                       FontSize="11" FontWeight="SemiBold"
+                       VerticalAlignment="Center"/>
+            <Button Grid.Column="1"
+                    Content="{DynamicResource Str_Settings_LogsRefresh}"
+                    Command="{Binding RefreshLogsCommand}"
+                    Style="{StaticResource GhostButtonStyle}"
+                    Height="24"
+                    Padding="10,0"
+                    FontSize="10"/>
+        </Grid>
+
+        <!-- Tail box. TextWrapping=Wrap so long lines break onto the next
+             visible row instead of disappearing off the right; the on-disk
+             log keeps original line shape. Background uses AppBg (darkest
+             tone in the palette) for visible contrast against the panel,
+             Foreground=AppFg for full readability of 10.5 pt Consolas. -->
+        <Border Grid.Row="2"
+                Background="{DynamicResource AppBg}"
+                BorderBrush="{DynamicResource BorderColor}"
+                BorderThickness="1"
+                CornerRadius="3">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Padding="6">
+                <TextBox Text="{Binding RecentLogs, Mode=OneWay}"
+                         IsReadOnly="True"
+                         Background="Transparent"
+                         Foreground="{DynamicResource AppFg}"
+                         BorderThickness="0"
+                         FontFamily="Consolas"
+                         FontSize="10.5"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"/>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</UserControl>

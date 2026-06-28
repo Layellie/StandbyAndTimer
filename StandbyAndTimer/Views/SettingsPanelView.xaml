@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="clr-namespace:StandbyAndTimer.Views.Converters"
+             xmlns:cards="clr-namespace:StandbyAndTimer.Views.Cards"
              FontFamily="Segoe UI" FontSize="13">
 
     <UserControl.Resources>
@@ -44,8 +45,10 @@
             <RowDefinition Height="Auto"/>  <!-- 22 Open Log -->
             <RowDefinition Height="14"/>    <!-- 23 -->
             <RowDefinition Height="Auto"/>  <!-- 24 Update status text -->
-            <RowDefinition Height="*"/>     <!-- 25 spacer -->
-            <RowDefinition Height="Auto"/>  <!-- 26 Version footer -->
+            <RowDefinition Height="14"/>    <!-- 25 -->
+            <RowDefinition Height="Auto"/>  <!-- 26 Logs viewer card -->
+            <RowDefinition Height="*"/>     <!-- 27 spacer -->
+            <RowDefinition Height="Auto"/>  <!-- 28 Version footer -->
         </Grid.RowDefinitions>
 
         <!-- ── Header ───────────────────────────────────────────────────────── -->
@@ -164,14 +167,20 @@
                    TextWrapping="Wrap"
                    FontSize="11"/>
 
+        <!-- ── Logs viewer ──────────────────────────────────────────────────
+             Thin card that owns its own header (label + Refresh button) and
+             the wrap-enabled tail box. Bound to RecentLogs / RefreshLogsCommand
+             on the inherited SettingsViewModel DataContext. -->
+        <cards:LogsViewerCard Grid.Row="26"/>
+
         <!-- ── Version footer ──────────────────────────────────────────────────
-             Pinned to the bottom of the panel — Row 25 is the * spacer that
+             Pinned to the bottom of the panel — Row 27 is the * spacer that
              pushes this label down regardless of how many rows above grow.
              The "v" prefix matches the GitHub release tag format (v2.0.5)
              so what the user sees here is the same string they'd see on the
              release page. CurrentVersion is computed from the assembly so it
              auto-updates with every -p:Version=X.Y.Z release build. -->
-        <TextBlock Grid.Row="26"
+        <TextBlock Grid.Row="28"
                    Text="{Binding CurrentVersion, StringFormat=v{0}}"
                    Foreground="{DynamicResource AppFgDim}"
                    FontSize="10.5"
