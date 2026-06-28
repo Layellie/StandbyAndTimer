@@ -14,6 +14,13 @@ internal static class AppConstants
     // the name if we ever ship a breaking IPC change.
     internal const string SingleInstanceMutexName = @"Global\StandbyAndTimer_v1";
 
+    // Named auto-reset EventWaitHandle the primary instance listens on. A
+    // second launch opens it by name and pulses Set() to ask the primary
+    // instance to surface its main window, instead of showing a "already
+    // running" dialog. Same Global\ scope as the mutex so cross-session
+    // launches reach the right process.
+    internal const string ShowWindowSignalName = @"Global\StandbyAndTimer_ShowWindow_v1";
+
     // schtasks /tn name — used by AutoStartService for both create and
     // delete. Must match exactly; a typo would orphan the scheduled task.
     internal const string AutoStartTaskName = "StandbyAndTimer_AutoStart";

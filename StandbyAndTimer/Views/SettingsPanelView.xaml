@@ -12,18 +12,16 @@
     </UserControl.Resources>
 
     <!-- No outer ScrollViewer: the only variable-height region is the Logs
-         viewer card (Row 26 = *). Everything else has a known intrinsic
+         viewer card (Row 39 = *). Everything else has a known intrinsic
          height that fits in the fixed window, so the panel never needs to
          scroll vertically — the log viewer absorbs all slack and its own
-         internal ScrollViewer handles long log content. Spacers along the
-         column were tightened just enough to free ~50 px for the log
-         section without producing a cramped feel. -->
+         internal ScrollViewer handles long log content.
+
+         v2.1.0 inserted Notifications (rows 14-20) + Hotkeys (rows 22-26)
+         between Theme picker and Backup section; the * Logs row absorbed
+         the height, no overall layout shift below. -->
     <Grid Margin="18,12">
         <Grid.RowDefinitions>
-            <!-- Header row is locked to 30 px (was Auto / effectively 26) so
-                 the close ✕ button can be 30×30 instead of 26×26 for a bigger
-                 hit-target. The next spacer is trimmed from 20 → 16 so the
-                 net header block height is identical and nothing below shifts. -->
             <RowDefinition Height="30"/>    <!-- 0  Header -->
             <RowDefinition Height="12"/>    <!-- 1 -->
             <RowDefinition Height="Auto"/>  <!-- 2  AutoStart -->
@@ -37,21 +35,35 @@
             <RowDefinition Height="Auto"/>  <!-- 10 Theme label -->
             <RowDefinition Height="6"/>     <!-- 11 -->
             <RowDefinition Height="Auto"/>  <!-- 12 Theme picker -->
-            <RowDefinition Height="16"/>    <!-- 13 -->
-            <RowDefinition Height="Auto"/>  <!-- 14 Backup section label -->
+            <RowDefinition Height="14"/>    <!-- 13 -->
+            <RowDefinition Height="Auto"/>  <!-- 14 NOTIFICATIONS section label -->
             <RowDefinition Height="6"/>     <!-- 15 -->
-            <RowDefinition Height="Auto"/>  <!-- 16 Export -->
+            <RowDefinition Height="Auto"/>  <!-- 16 Notify on purge -->
             <RowDefinition Height="4"/>     <!-- 17 -->
-            <RowDefinition Height="Auto"/>  <!-- 18 Import -->
+            <RowDefinition Height="Auto"/>  <!-- 18 Notify on timer -->
             <RowDefinition Height="4"/>     <!-- 19 -->
-            <RowDefinition Height="Auto"/>  <!-- 20 Check Update -->
-            <RowDefinition Height="4"/>     <!-- 21 -->
-            <RowDefinition Height="Auto"/>  <!-- 22 Open Log -->
-            <RowDefinition Height="10"/>    <!-- 23 -->
-            <RowDefinition Height="Auto"/>  <!-- 24 Update status text -->
-            <RowDefinition Height="10"/>    <!-- 25 -->
-            <RowDefinition Height="*"/>     <!-- 26 Logs viewer card (fills slack) -->
-            <RowDefinition Height="Auto"/>  <!-- 27 Version footer -->
+            <RowDefinition Height="Auto"/>  <!-- 20 Notify on game -->
+            <RowDefinition Height="14"/>    <!-- 21 -->
+            <RowDefinition Height="Auto"/>  <!-- 22 HOTKEYS section label -->
+            <RowDefinition Height="6"/>     <!-- 23 -->
+            <RowDefinition Height="Auto"/>  <!-- 24 Purge hotkey row -->
+            <RowDefinition Height="4"/>     <!-- 25 -->
+            <RowDefinition Height="Auto"/>  <!-- 26 Timer hotkey row -->
+            <RowDefinition Height="16"/>    <!-- 27 -->
+            <RowDefinition Height="Auto"/>  <!-- 28 Backup section label -->
+            <RowDefinition Height="6"/>     <!-- 29 -->
+            <RowDefinition Height="Auto"/>  <!-- 30 Export -->
+            <RowDefinition Height="4"/>     <!-- 31 -->
+            <RowDefinition Height="Auto"/>  <!-- 32 Import -->
+            <RowDefinition Height="4"/>     <!-- 33 -->
+            <RowDefinition Height="Auto"/>  <!-- 34 Check Update + Download -->
+            <RowDefinition Height="4"/>     <!-- 35 -->
+            <RowDefinition Height="Auto"/>  <!-- 36 Open Log -->
+            <RowDefinition Height="10"/>    <!-- 37 -->
+            <RowDefinition Height="Auto"/>  <!-- 38 Update status text -->
+            <RowDefinition Height="10"/>    <!-- 39 -->
+            <RowDefinition Height="*"/>     <!-- 40 Logs viewer card (fills slack) -->
+            <RowDefinition Height="Auto"/>  <!-- 41 Version footer -->
         </Grid.RowDefinitions>
 
         <!-- ── Header ───────────────────────────────────────────────────────── -->
@@ -122,27 +134,84 @@
             </ComboBox.ItemTemplate>
         </ComboBox>
 
-        <!-- ── Backup & Maintenance ─────────────────────────────────────────── -->
+        <!-- ── Notifications ────────────────────────────────────────────────── -->
         <TextBlock Grid.Row="14"
+                   Text="{DynamicResource Str_Settings_NotificationsSection}"
+                   Foreground="{DynamicResource AppFgDim}"
+                   FontSize="11" FontWeight="SemiBold"/>
+
+        <CheckBox Grid.Row="16"
+                  Content="{DynamicResource Str_Settings_NotifyOnPurge}"
+                  IsChecked="{Binding NotifyOnPurge}"
+                  Style="{StaticResource DarkCheckBoxStyle}"/>
+
+        <CheckBox Grid.Row="18"
+                  Content="{DynamicResource Str_Settings_NotifyOnTimer}"
+                  IsChecked="{Binding NotifyOnTimerToggle}"
+                  Style="{StaticResource DarkCheckBoxStyle}"/>
+
+        <CheckBox Grid.Row="20"
+                  Content="{DynamicResource Str_Settings_NotifyOnGame}"
+                  IsChecked="{Binding NotifyOnGameDetected}"
+                  Style="{StaticResource DarkCheckBoxStyle}"/>
+
+        <!-- ── Hotkeys (read-only display for v2.1.0; rebind UI in v2.2) ────── -->
+        <TextBlock Grid.Row="22"
+                   Text="{DynamicResource Str_Settings_HotkeysSection}"
+                   Foreground="{DynamicResource AppFgDim}"
+                   FontSize="11" FontWeight="SemiBold"/>
+
+        <Grid Grid.Row="24">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{DynamicResource Str_Settings_HotkeyPurge}"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource AppFg}" FontSize="12"/>
+            <TextBlock Grid.Column="1"
+                       Text="{Binding PurgeHotkeyText}"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource AccentPrimary}"
+                       FontSize="12" FontWeight="SemiBold"/>
+        </Grid>
+
+        <Grid Grid.Row="26">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{DynamicResource Str_Settings_HotkeyTimer}"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource AppFg}" FontSize="12"/>
+            <TextBlock Grid.Column="1"
+                       Text="{Binding TimerHotkeyText}"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource AccentPrimary}"
+                       FontSize="12" FontWeight="SemiBold"/>
+        </Grid>
+
+        <!-- ── Backup & Maintenance ─────────────────────────────────────────── -->
+        <TextBlock Grid.Row="28"
                    Text="{DynamicResource Str_Settings_BackupSection}"
                    Foreground="{DynamicResource AppFgDim}"
                    FontSize="11" FontWeight="SemiBold"/>
 
-        <Button Grid.Row="16"
+        <Button Grid.Row="30"
                 Content="{DynamicResource Str_Settings_Export}"
                 Command="{Binding ExportSettingsCommand}"
                 Style="{StaticResource GhostButtonStyle}"
                 Height="28"
                 HorizontalAlignment="Stretch"/>
 
-        <Button Grid.Row="18"
+        <Button Grid.Row="32"
                 Content="{DynamicResource Str_Settings_Import}"
                 Command="{Binding ImportSettingsCommand}"
                 Style="{StaticResource GhostButtonStyle}"
                 Height="28"
                 HorizontalAlignment="Stretch"/>
 
-        <StackPanel Grid.Row="20" Orientation="Vertical">
+        <StackPanel Grid.Row="34" Orientation="Vertical">
             <Button Content="{DynamicResource Str_Settings_CheckUpdate}"
                     Command="{Binding CheckUpdateCommand}"
                     Style="{StaticResource DarkButtonStyle}"
@@ -157,14 +226,14 @@
                     Visibility="{Binding UpdateAvailable, Converter={StaticResource BoolToVis}}"/>
         </StackPanel>
 
-        <Button Grid.Row="22"
+        <Button Grid.Row="36"
                 Content="{DynamicResource Str_Settings_OpenLog}"
                 Command="{Binding OpenLogFolderCommand}"
                 Style="{StaticResource GhostButtonStyle}"
                 Height="28"
                 HorizontalAlignment="Stretch"/>
 
-        <TextBlock Grid.Row="24"
+        <TextBlock Grid.Row="38"
                    Text="{Binding UpdateStatus}"
                    Foreground="{DynamicResource AppFgDim}"
                    TextWrapping="Wrap"
@@ -173,10 +242,10 @@
         <!-- ── Logs viewer ──────────────────────────────────────────────────
              Thin card that owns its own header (label + Refresh button) and
              the wrap-enabled tail box. Bound to RecentLogs / RefreshLogsCommand
-             on the inherited SettingsViewModel DataContext. Row 26 = *, so
+             on the inherited SettingsViewModel DataContext. Row 40 = *, so
              this card absorbs all leftover vertical space — that's what
              eliminates the outer scrollbar without forcing a window resize. -->
-        <cards:LogsViewerCard Grid.Row="26"/>
+        <cards:LogsViewerCard Grid.Row="40"/>
 
         <!-- ── Version footer ──────────────────────────────────────────────────
              Pinned to the bottom of the panel. The "v" prefix matches the
@@ -184,7 +253,7 @@
              is the same string they'd see on the release page.
              CurrentVersion is computed from the assembly so it
              auto-updates with every -p:Version=X.Y.Z release build. -->
-        <TextBlock Grid.Row="27"
+        <TextBlock Grid.Row="41"
                    Text="{Binding CurrentVersion, StringFormat=v{0}}"
                    Foreground="{DynamicResource AppFgDim}"
                    FontSize="10.5"

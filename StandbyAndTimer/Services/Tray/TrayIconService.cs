@@ -27,6 +27,7 @@ internal sealed class TrayIconService : ITrayIconService
     private bool _disposed;
 
     public event EventHandler? ShowRequested;
+    public event EventHandler? ToggleRequested;
     public event EventHandler? ExitRequested;
     public event EventHandler? TimerToggleRequested;
     public event EventHandler? PurgeRequested;
@@ -50,12 +51,15 @@ internal sealed class TrayIconService : ITrayIconService
             ContextMenuStrip = menu,
         };
 
+        // Left-click and double-click both toggle visibility. The context-menu
+        // "Show" item still raises ShowRequested — semantically "always show",
+        // distinct from "toggle" (which can hide a visible window).
         _notifyIcon.MouseClick += (_, e) =>
         {
             if (e.Button == WinForms.MouseButtons.Left)
-                ShowRequested?.Invoke(this, EventArgs.Empty);
+                ToggleRequested?.Invoke(this, EventArgs.Empty);
         };
-        _notifyIcon.DoubleClick += (_, _) => ShowRequested?.Invoke(this, EventArgs.Empty);
+        _notifyIcon.DoubleClick += (_, _) => ToggleRequested?.Invoke(this, EventArgs.Empty);
 
         RefreshLabels();
     }

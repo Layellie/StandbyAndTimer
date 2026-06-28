@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using StandbyAndTimer.Core.Interfaces;
+using StandbyAndTimer.Core.Models;
 using StandbyAndTimer.Infrastructure;
 using StandbyAndTimer.Services;
 using StandbyAndTimer.Services.Native;
@@ -28,13 +29,22 @@ public partial class App : Application
 
     private readonly CrashHandler _crashHandler = new();
 
-    private IServiceProvider?     _services;
-    private ILocalizationService? _localization;
-    private IThemeService?        _themeService;
-    private ITrayIconService?     _tray;
-    private MainViewModel?        _viewModel;
-    private MainWindow?           _mainWindow;
-    private DispatcherTimer?      _tooltipTicker;
+    private IServiceProvider?       _services;
+    private ILocalizationService?   _localization;
+    private IThemeService?          _themeService;
+    private ITrayIconService?       _tray;
+    private MainViewModel?          _viewModel;
+    private MainWindow?             _mainWindow;
+    private DispatcherTimer?        _tooltipTicker;
+    private EventWaitHandle?        _showWindowSignal;
+    private CancellationTokenSource? _showWindowSignalCts;
+
+    // Cached latest AppSettings snapshot. Used by the balloon handlers
+    // (OnPurgeNotification / OnTimerToggledNotification / OnGameAutoDetected)
+    // to skip raising the WinForms balloon when the user has opted out of
+    // that particular notification kind. Refreshed via the SettingsPersisted
+    // event MainViewModel raises after every successful Save.
+    private AppSettings?            _userSettings;
 
     private System.Drawing.Icon?  _iconBase;
     private System.Drawing.Icon?  _iconActive;
@@ -61,17 +71,36 @@ public partial class App : Application
         Mark("crash handlers + hardening");
 
         // ── 1. Single-instance guard ──────────────────────────────────────────
+        // Primary acquires the mutex AND owns the named EventWaitHandle the
+        // listener thread blocks on. A secondary launch opens that handle by
+        // name, grants foreground rights (ASFW_ANY) so the primary's
+        // SetForegroundWindow call isn't muted by the foreground-lock
+        // timeout, signals it, then exits silently — no "already running"
+        // dialog. The primary listener dispatches to the UI thread and
+        // surfaces the window from offscreen / tray.
         _singleInstanceMutex = new Mutex(true, AppConstants.SingleInstanceMutexName, out bool isNewInstance);
         if (!isNewInstance)
         {
-            MessageBox.Show(
-                "Application is already running in the background.\nLook for the icon in the system tray.",
-                "StandbyAndTimer",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            try
+            {
+                using var existing = EventWaitHandle.OpenExisting(AppConstants.ShowWindowSignalName);
+                NativeMethods.AllowSetForegroundWindow(NativeMethods.ASFW_ANY);
+                existing.Set();
+            }
+            catch (WaitHandleCannotBeOpenedException)
+            {
+                // Primary hasn't published the handle yet (startup race) — nothing we can do but bail.
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Logger.Warn($"Single-instance signal: {ex.Message}");
+            }
             Current.Shutdown();
             return;
         }
+
+        _showWindowSignal    = new EventWaitHandle(false, EventResetMode.AutoReset, AppConstants.ShowWindowSignalName);
+        _showWindowSignalCts = new CancellationTokenSource();
 
         base.OnStartup(e);
         Mark("single-instance + base.OnStartup");
@@ -93,6 +122,7 @@ public partial class App : Application
 
         // ── 4. Apply persisted language + theme before window is created ─────
         var savedSettings = _services.GetRequiredService<ISettingsService>().Load();
+        _userSettings = savedSettings;
         if (savedSettings.Language != Core.Models.Language.English)
             _localization.SetLanguage(savedSettings.Language);
         if (savedSettings.Theme != Core.Models.Theme.Dark)
@@ -105,8 +135,10 @@ public partial class App : Application
         _viewModel.PurgeNotification        += OnPurgeNotification;
         _viewModel.TimerToggledNotification += OnTimerToggledNotification;
         _viewModel.GameAutoDetected         += OnGameAutoDetected;
+        _viewModel.SettingsPersisted        += (_, latest) => _userSettings = latest;
 
         _tray.ShowRequested        += (_, _) => ShowMainWindow();
+        _tray.ToggleRequested      += (_, _) => ToggleMainWindow();
         _tray.ExitRequested        += (_, _) => Shutdown();
         _tray.TimerToggleRequested += (_, _) => _viewModel.ToggleTimerResolutionCommand.Execute(null);
         _tray.PurgeRequested       += (_, _) => _viewModel.ManualPurgeCommand.Execute(null);
@@ -126,6 +158,23 @@ public partial class App : Application
         else
             _mainWindow.Show();
         Mark("window shown");
+
+        // Background listener for second-launch "show me" pulses. Started
+        // only after MainWindow exists so the dispatched ShowMainWindow()
+        // call actually has a window to surface.
+        StartShowWindowListener(_showWindowSignal!, _showWindowSignalCts!.Token);
+
+        // Hotkeys require the HWND to exist, which is guaranteed after Show()
+        // (and after HideOffscreen, since that internally calls Show too).
+        // Each binding dispatches back to the UI thread; the command itself
+        // does the dispatcher hop work.
+        var hotkeys = _services.GetRequiredService<IHotkeyService>();
+        hotkeys.AttachTo(_mainWindow.WindowHandle);
+        RegisterHotkeyFromSetting(hotkeys, "purge", savedSettings.PurgeHotkey,
+            () => _viewModel.ManualPurgeCommand.Execute(null));
+        RegisterHotkeyFromSetting(hotkeys, "timer", savedSettings.TimerHotkey,
+            () => _viewModel.ToggleTimerResolutionCommand.Execute(null));
+        Mark("hotkeys registered");
 
         // Live tooltip updater — every 3 s, refresh icon and text. Cheap.
         _tooltipTicker = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
@@ -173,6 +222,11 @@ public partial class App : Application
             _viewModel.GameAutoDetected         -= OnGameAutoDetected;
         }
 
+        // Release every Win32 RegisterHotKey before the HWND goes away —
+        // otherwise the OS keeps the registrations bound to a dead window
+        // and the next launch fails with "hot key already registered."
+        (_services?.GetService<IHotkeyService>() as IDisposable)?.Dispose();
+
         _tray?.Dispose();
 
         AppIconLoader.DisposeIcon(ref _iconBase);
@@ -185,10 +239,52 @@ public partial class App : Application
             Task.Run(_viewModel.ShutdownAsync).GetAwaiter().GetResult();
         (_services as IDisposable)?.Dispose();
 
+        // Shut down the second-launch listener: cancel first (wakes WaitAny
+        // via the cancellation handle), then dispose. The handle itself is
+        // disposed last so the listener never observes a disposed handle.
+        _showWindowSignalCts?.Cancel();
+        _showWindowSignal?.Dispose();
+        _showWindowSignalCts?.Dispose();
+
         _singleInstanceMutex?.ReleaseMutex();
         _singleInstanceMutex?.Dispose();
 
         base.OnExit(e);
+    }
+
+    // ── Single-instance "show me" listener ───────────────────────────────────
+
+    private void StartShowWindowListener(EventWaitHandle signal, CancellationToken ct)
+    {
+        var thread = new Thread(() =>
+        {
+            var handles = new WaitHandle[] { signal, ct.WaitHandle };
+            try
+            {
+                while (true)
+                {
+                    int idx = WaitHandle.WaitAny(handles);
+                    if (idx == 1) return;  // cancelled — shutting down
+                    Dispatcher.BeginInvoke(new Action(SurfaceMainWindow));
+                }
+            }
+            catch (ObjectDisposedException) { /* handles disposed during shutdown */ }
+            catch (Exception ex)            { Logger.Warn($"ShowWindowListener: {ex.Message}"); }
+        })
+        {
+            IsBackground = true,
+            Name         = "ShowWindowListener"
+        };
+        thread.Start();
+    }
+
+    private void SurfaceMainWindow()
+    {
+        if (_mainWindow is null) return;
+        _mainWindow.ShowFromOffscreen();
+        var hwnd = new System.Windows.Interop.WindowInteropHelper(_mainWindow).Handle;
+        if (hwnd != IntPtr.Zero)
+            NativeMethods.SetForegroundWindow(hwnd);
     }
 
     // ── DLL search-path hardening ─────────────────────────────────────────────
@@ -235,6 +331,30 @@ public partial class App : Application
 
     private void ShowMainWindow() => _mainWindow?.ShowFromOffscreen();
 
+    private static void RegisterHotkeyFromSetting(IHotkeyService svc, string id, string? text, Action handler)
+    {
+        var parsed = HotkeyBinding.Parse(text ?? string.Empty);
+        if (parsed is null)
+        {
+            Logger.Warn($"Hotkey '{id}': could not parse '{text}', skipping");
+            return;
+        }
+        // Marshal the handler onto the dispatcher — RelayCommand.Execute on
+        // off-thread can race with the WPF binding system. BeginInvoke is fine
+        // here; the user won't notice a one-frame latency on a hotkey fire.
+        svc.Register(id, parsed, () =>
+            Application.Current.Dispatcher.BeginInvoke(handler));
+    }
+
+    // Tray left-click semantics: if hidden → surface; if visible → hide.
+    // Right-click "Show" still always surfaces (via ShowRequested).
+    private void ToggleMainWindow()
+    {
+        if (_mainWindow is null) return;
+        if (_mainWindow.IsOffscreen) SurfaceMainWindow();
+        else                          _mainWindow.HideOffscreen();
+    }
+
     private void OnLanguageChanged(object? sender, EventArgs e) =>
         Dispatcher.InvokeAsync(RefreshTray);
 
@@ -264,6 +384,7 @@ public partial class App : Application
     // top of OnExit. Non-null for the lifetime of the subscription.
     private void OnPurgeNotification(object? sender, int totalPurges)
     {
+        if (_userSettings is { NotifyOnPurge: false }) return;
         string title = _localization!.GetString("Str_Tray_NotifyPurgeTitle");
         string body  = string.Format(
             CultureInfo.CurrentCulture,
@@ -274,6 +395,7 @@ public partial class App : Application
 
     private void OnGameAutoDetected(object? sender, string exePath)
     {
+        if (_userSettings is { NotifyOnGameDetected: false }) return;
         try
         {
             string fileName = Path.GetFileName(exePath);
@@ -290,6 +412,7 @@ public partial class App : Application
 
     private void OnTimerToggledNotification(object? sender, TimerToggledArgs args)
     {
+        if (_userSettings is { NotifyOnTimerToggle: false }) return;
         string title = _localization!.GetString(args.IsActive
             ? "Str_Tray_NotifyTimerOnTitle"
             : "Str_Tray_NotifyTimerOffTitle");

@@ -18,6 +18,8 @@ internal static class AppBootstrapper
         services.AddSingleton<ITimerResolutionService,     TimerResolutionService>();
         services.AddSingleton<IStandbyPurgeService,        StandbyPurgeService>();
         services.AddSingleton<IProcessOptimizationService, ProcessOptimizationService>();
+        services.AddSingleton<IIdleMonitor,                IdleMonitor>();
+        services.AddSingleton<IHotkeyService,              HotkeyService>();
         services.AddSingleton<IMemoryMonitorService,       MemoryMonitorService>();
         services.AddSingleton<IAutoStartService,           AutoStartService>();
         services.AddSingleton<ILocalizationService,        LocalizationService>();

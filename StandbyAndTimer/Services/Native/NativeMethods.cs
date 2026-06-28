@@ -96,6 +96,64 @@ internal static class NativeMethods
     [DllImport("user32.dll")]
     internal static extern IntPtr GetForegroundWindow();
 
+    /// <summary>
+    /// Pulls a window to the top and gives it keyboard focus. Subject to
+    /// foreground-lock rules — only works when the calling process already
+    /// has foreground rights or was granted them by another process via
+    /// <see cref="AllowSetForegroundWindow"/>.
+    /// </summary>
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    /// <summary>
+    /// Allows another process to call <see cref="SetForegroundWindow"/>.
+    /// Used by the secondary single-instance launcher: before signaling the
+    /// primary process to surface itself, we grant ASFW_ANY so the primary
+    /// can call SetForegroundWindow without being silently rejected by the
+    /// foreground-lock timeout.
+    /// </summary>
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool AllowSetForegroundWindow(uint dwProcessId);
+
+    internal const uint ASFW_ANY = 0xFFFFFFFFu;
+
+    /// <summary>
+    /// Registers a system-wide hotkey. <paramref name="id"/> is delivered as
+    /// wParam in <see cref="WM_HOTKEY"/>. Returns false if the combo is taken
+    /// by another app — caller should log the Win32 error code.
+    /// </summary>
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
+
+    /// <summary>Releases a hotkey previously registered with <see cref="RegisterHotKey"/>.</summary>
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+
+    /// <summary>Fills <paramref name="plii"/> with the system tick count of the most recent input event.</summary>
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
+
+    // RegisterHotKey modifier flags (winuser.h).
+    internal const uint MOD_ALT      = 0x0001;
+    internal const uint MOD_CONTROL  = 0x0002;
+    internal const uint MOD_SHIFT    = 0x0004;
+    internal const uint MOD_WIN      = 0x0008;
+
+    /// <summary>
+    /// Suppresses auto-repeat when the user holds the chord — without this,
+    /// holding Ctrl+Alt+P would fire the purge handler tens of times per
+    /// second until they let go.
+    /// </summary>
+    internal const uint MOD_NOREPEAT = 0x4000;
+
+    /// <summary>Window message id for hotkey events.</summary>
+    internal const int WM_HOTKEY     = 0x0312;
+
     /// <summary>Returns the bounding rectangle of a window in screen coordinates.</summary>
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
@@ -173,6 +231,18 @@ internal static class NativeMethods
         internal int Top;
         internal int Right;
         internal int Bottom;
+    }
+
+    /// <summary>
+    /// Out parameter for <see cref="GetLastInputInfo"/>. <c>dwTime</c> is the
+    /// system tick count (millisecond wall clock that wraps every ~24.8 days)
+    /// of the last input event reaching the input queue.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct LASTINPUTINFO
+    {
+        internal uint cbSize;
+        internal uint dwTime;
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]

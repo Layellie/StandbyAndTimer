@@ -1,15 +1,16 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
 
 PackageIdentifier: Layellie.StandbyAndTimer
-PackageVersion: 2.0.11
+PackageVersion: 2.1.0
 PackageLocale: en-US
 Publisher: LAYE77IE
 PublisherUrl: https://github.com/Layellie
 PublisherSupportUrl: https://github.com/Layellie/StandbyAndTimer/issues
 PackageName: StandbyAndTimer
 PackageUrl: https://github.com/Layellie/StandbyAndTimer
-License: Proprietary
-Copyright: Copyright (c) LAYE77IE
+License: MIT
+LicenseUrl: https://github.com/Layellie/StandbyAndTimer/blob/main/LICENSE
+Copyright: Copyright (c) 2026 LAYE77IE
 ShortDescription: Lock Windows timer to 0.5 ms, auto-purge standby memory, optimize games.
 Description: |-
   StandbyAndTimer is a Windows desktop utility for gamers and power users.
@@ -31,6 +32,6 @@ Tags:
   - timer
   - tweak
   - utility
-ReleaseNotesUrl: https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.11
+ReleaseNotesUrl: https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.1.0
 ManifestType: defaultLocale
 ManifestVersion: 1.6.0

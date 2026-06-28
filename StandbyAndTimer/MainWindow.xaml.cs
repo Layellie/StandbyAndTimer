@@ -79,6 +79,17 @@ public partial class MainWindow : Window
 
     // ── Off-screen "tray" mode ────────────────────────────────────────────────
 
+    /// <summary>True while the window is parked at (-32000, -32000) with Opacity=0 — i.e. "in the tray".</summary>
+    internal bool IsOffscreen => _offscreen;
+
+    /// <summary>
+    /// HWND of this window's HwndSource. Becomes non-zero after Show() forces
+    /// SourceInitialized. HotkeyService attaches here so WM_HOTKEY messages
+    /// route through our WndProc.
+    /// </summary>
+    internal IntPtr WindowHandle =>
+        new System.Windows.Interop.WindowInteropHelper(this).Handle;
+
     internal void HideOffscreen()
     {
         if (_offscreen) return;

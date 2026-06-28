@@ -39,6 +39,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private int     _standbyLimitMb;
     [ObservableProperty] private int     _freeLimitMb;
     [ObservableProperty] private bool    _autoPurgeEnabled;
+    [ObservableProperty] private bool    _autoPurgeIdleOnly;
+    [ObservableProperty] private int     _idleThresholdMinutes = 5;
     [ObservableProperty] private bool    _gameModeEnabled;
     [ObservableProperty] private bool    _timerActive;
     [ObservableProperty] private double  _actualTimerMs;
@@ -129,18 +131,23 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         using (new InitScope(v => _isInitializing = v))
         {
-            StandbyLimitMb     = s.StandbyLimitMb;
-            FreeLimitMb        = s.FreeLimitMb;
-            AutoPurgeEnabled   = s.AutoPurgeEnabled;
-            GameModeEnabled    = s.GameModeEnabled;
-            TimerActive        = s.TimerResolutionActive;
-            _firstRunCompleted = s.FirstRunCompleted;
+            StandbyLimitMb       = s.StandbyLimitMb;
+            FreeLimitMb          = s.FreeLimitMb;
+            AutoPurgeEnabled     = s.AutoPurgeEnabled;
+            AutoPurgeIdleOnly    = s.AutoPurgeIdleOnly;
+            IdleThresholdMinutes = s.IdleThresholdMinutes > 0 ? s.IdleThresholdMinutes : 5;
+            GameModeEnabled      = s.GameModeEnabled;
+            TimerActive          = s.TimerResolutionActive;
+            _firstRunCompleted   = s.FirstRunCompleted;
 
             Games.Clear();
             foreach (var g in s.Games)
                 Games.Add(g);
 
-            Settings.Initialize(s.AutoStartEnabled, s.Language, s.UpdateCheckEnabled, s.Theme);
+            Settings.Initialize(
+                s.AutoStartEnabled, s.Language, s.UpdateCheckEnabled, s.Theme,
+                s.NotifyOnPurge, s.NotifyOnTimerToggle, s.NotifyOnGameDetected,
+                s.PurgeHotkey, s.TimerHotkey);
         }
         SyncMonitorThresholds();
         SyncMonitorGames();
@@ -151,10 +158,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     // LINQ + List allocation that GamePaths rebuilding would cost is wasted.
     private void SyncMonitorThresholds()
     {
-        _memoryService.StandbyLimitMb   = StandbyLimitMb;
-        _memoryService.FreeLimitMb      = FreeLimitMb;
-        _memoryService.AutoPurgeEnabled = AutoPurgeEnabled;
-        _memoryService.GameModeEnabled  = GameModeEnabled;
+        _memoryService.StandbyLimitMb    = StandbyLimitMb;
+        _memoryService.FreeLimitMb       = FreeLimitMb;
+        _memoryService.AutoPurgeEnabled  = AutoPurgeEnabled;
+        _memoryService.AutoPurgeIdleOnly = AutoPurgeIdleOnly;
+        _memoryService.IdleThresholdMs   = Math.Max(0, IdleThresholdMinutes) * 60_000;
+        _memoryService.GameModeEnabled   = GameModeEnabled;
     }
 
     // Pushes the executable-path list to the monitor. Called only when the
@@ -172,8 +181,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private void PersistSettings()
     {
         if (_isInitializing) return;
-        _settingsService.Save(BuildCurrentSettings());
+        var snapshot = BuildCurrentSettings();
+        _settingsService.Save(snapshot);
+        SettingsPersisted?.Invoke(this, snapshot);
     }
+
+    /// <summary>Raised after every successful Save — App.xaml.cs keeps a cached snapshot for balloon-guard decisions.</summary>
+    public event EventHandler<AppSettings>? SettingsPersisted;
 
     private void SchedulePersist()
     {
@@ -212,12 +226,19 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         StandbyLimitMb        = StandbyLimitMb,
         FreeLimitMb           = FreeLimitMb,
         AutoPurgeEnabled      = AutoPurgeEnabled,
+        AutoPurgeIdleOnly     = AutoPurgeIdleOnly,
+        IdleThresholdMinutes  = IdleThresholdMinutes,
         GameModeEnabled       = GameModeEnabled,
         AutoStartEnabled      = Settings.AutoStartEnabled,
         TimerResolutionActive = TimerActive,
         Language              = Settings.SelectedLanguage,
         Theme                 = Settings.SelectedTheme,
         UpdateCheckEnabled    = Settings.UpdateCheckEnabled,
+        NotifyOnPurge         = Settings.NotifyOnPurge,
+        NotifyOnTimerToggle   = Settings.NotifyOnTimerToggle,
+        NotifyOnGameDetected  = Settings.NotifyOnGameDetected,
+        PurgeHotkey           = Settings.PurgeHotkeyText,
+        TimerHotkey           = Settings.TimerHotkeyText,
         FirstRunCompleted     = _firstRunCompleted,
         Games                 = [.. Games]
     };
@@ -297,6 +318,18 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         SyncMonitorThresholds();
         PersistSettings();
+    }
+
+    partial void OnAutoPurgeIdleOnlyChanged(bool value)
+    {
+        SyncMonitorThresholds();
+        PersistSettings();
+    }
+
+    partial void OnIdleThresholdMinutesChanged(int value)
+    {
+        SyncMonitorThresholds();
+        SchedulePersist();  // debounced — TextBox emits a change per keystroke
     }
 
     partial void OnGameModeEnabledChanged(bool value)
