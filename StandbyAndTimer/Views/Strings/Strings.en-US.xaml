@@ -129,11 +129,6 @@
     <sys:String x:Key="Str_Crash_Close">Close</sys:String>
     <sys:String x:Key="Str_Crash_Copied">Details copied to clipboard</sys:String>
 
-    <!-- Logs viewer -->
-    <sys:String x:Key="Str_Settings_LogsSection">Recent logs</sys:String>
-    <sys:String x:Key="Str_Settings_LogsRefresh">Refresh</sys:String>
-    <sys:String x:Key="Str_Settings_LogsEmpty">No log entries yet.</sys:String>
-
     <!-- Game auto-detect -->
     <sys:String x:Key="Str_Detect_NotifyTitle">Fullscreen app detected</sys:String>
     <sys:String x:Key="Str_Detect_NotifyBody">Add "{0}" to the Game Mode list?</sys:String>

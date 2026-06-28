@@ -11,12 +11,16 @@
     </UserControl.Resources>
 
     <!-- ScrollViewer so the panel still fits on small windows even with the
-         logs viewer + version footer pushing total height past ~600 px. -->
+         version footer pushing total height past ~600 px. -->
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <Grid Margin="18,16">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>  <!-- 0  Header -->
-            <RowDefinition Height="20"/>    <!-- 1 -->
+            <!-- Header row is locked to 30 px (was Auto / effectively 26) so
+                 the close ✕ button can be 30×30 instead of 26×26 for a bigger
+                 hit-target. The next spacer is trimmed from 20 → 16 so the
+                 net header block height is identical and nothing below shifts. -->
+            <RowDefinition Height="30"/>    <!-- 0  Header -->
+            <RowDefinition Height="16"/>    <!-- 1 -->
             <RowDefinition Height="Auto"/>  <!-- 2  AutoStart -->
             <RowDefinition Height="12"/>    <!-- 3 -->
             <RowDefinition Height="Auto"/>  <!-- 4  UpdateCheck -->
@@ -40,12 +44,8 @@
             <RowDefinition Height="Auto"/>  <!-- 22 Open Log -->
             <RowDefinition Height="14"/>    <!-- 23 -->
             <RowDefinition Height="Auto"/>  <!-- 24 Update status text -->
-            <RowDefinition Height="14"/>    <!-- 25 -->
-            <RowDefinition Height="Auto"/>  <!-- 26 Logs section header + refresh -->
-            <RowDefinition Height="6"/>     <!-- 27 -->
-            <RowDefinition Height="120"/>   <!-- 28 Logs viewer (fixed height, scrollable) -->
-            <RowDefinition Height="*"/>     <!-- 29 spacer -->
-            <RowDefinition Height="Auto"/>  <!-- 30 Version footer -->
+            <RowDefinition Height="*"/>     <!-- 25 spacer -->
+            <RowDefinition Height="Auto"/>  <!-- 26 Version footer -->
         </Grid.RowDefinitions>
 
         <!-- ── Header ───────────────────────────────────────────────────────── -->
@@ -58,7 +58,10 @@
                     Command="{Binding CloseCommand}"
                     Style="{StaticResource IconButtonStyle}"
                     HorizontalAlignment="Right"
-                    Width="26" Height="26"/>
+                    VerticalAlignment="Center"
+                    Padding="0"
+                    FontSize="15"
+                    Width="30" Height="30"/>
         </Grid>
 
         <Border Grid.Row="0" VerticalAlignment="Bottom" Height="1"
@@ -161,69 +164,14 @@
                    TextWrapping="Wrap"
                    FontSize="11"/>
 
-        <!-- ── Recent logs section header (label + refresh button) ─────────── -->
-        <Grid Grid.Row="26">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0"
-                       Text="{DynamicResource Str_Settings_LogsSection}"
-                       Foreground="{DynamicResource AppFgDim}"
-                       FontSize="11" FontWeight="SemiBold"
-                       VerticalAlignment="Center"/>
-            <!-- Explicit column placement + Padding ensures the button text
-                 isn't clipped on the narrow (270 px) settings panel. The
-                 original used overlapping HorizontalAlignment="Right" in a
-                 single-column Grid, which let the label and button collide. -->
-            <Button Grid.Column="1"
-                    Content="{DynamicResource Str_Settings_LogsRefresh}"
-                    Command="{Binding RefreshLogsCommand}"
-                    Style="{StaticResource GhostButtonStyle}"
-                    Height="24"
-                    Padding="10,0"
-                    FontSize="10"/>
-        </Grid>
-
-        <!-- ── Logs tail viewer ────────────────────────────────────────────────
-             Read-only TextBox + ScrollViewer so the user can copy/paste lines
-             without round-tripping through Explorer + Notepad. Fixed 120 px
-             height keeps the panel from ballooning; full log lives on disk
-             and Open Log Folder still opens it.
-
-             Background uses AppBg (the darkest tone in the palette) instead
-             of SurfaceBg so the box visibly contrasts against the settings
-             panel — they used to share SurfaceBg and the viewer disappeared
-             into the panel. Foreground bumped to AppFg (full brightness)
-             so log lines are actually readable at 10 pt Consolas. -->
-        <Border Grid.Row="28"
-                Background="{DynamicResource AppBg}"
-                BorderBrush="{DynamicResource BorderColor}"
-                BorderThickness="1"
-                CornerRadius="3">
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Auto"
-                          Padding="6">
-                <TextBox Text="{Binding RecentLogs, Mode=OneWay}"
-                         IsReadOnly="True"
-                         Background="Transparent"
-                         Foreground="{DynamicResource AppFg}"
-                         BorderThickness="0"
-                         FontFamily="Consolas"
-                         FontSize="10.5"
-                         TextWrapping="NoWrap"
-                         AcceptsReturn="True"/>
-            </ScrollViewer>
-        </Border>
-
         <!-- ── Version footer ──────────────────────────────────────────────────
-             Pinned to the bottom of the panel — Row 29 is the * spacer that
+             Pinned to the bottom of the panel — Row 25 is the * spacer that
              pushes this label down regardless of how many rows above grow.
              The "v" prefix matches the GitHub release tag format (v2.0.5)
              so what the user sees here is the same string they'd see on the
              release page. CurrentVersion is computed from the assembly so it
              auto-updates with every -p:Version=X.Y.Z release build. -->
-        <TextBlock Grid.Row="30"
+        <TextBlock Grid.Row="26"
                    Text="{Binding CurrentVersion, StringFormat=v{0}}"
                    Foreground="{DynamicResource AppFgDim}"
                    FontSize="10.5"

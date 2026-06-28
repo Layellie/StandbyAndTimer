@@ -22,7 +22,7 @@
 
 [CmdletBinding()]
 param(
-    [string]$Version = "2.0.8"
+    [string]$Version = "2.0.9"
 )
 
 $ErrorActionPreference = "Stop"
