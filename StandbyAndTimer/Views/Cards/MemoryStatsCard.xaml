@@ -54,6 +54,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="{DynamicResource Str_Memory_TotalShort}"
@@ -74,6 +75,16 @@
                                    FontSize="13"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource SuccessColor}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="{DynamicResource Str_Memory_PurgesShort}"
+                                   FontSize="10"
+                                   Foreground="{DynamicResource AppFgDim}"
+                                   Margin="0,0,0,2"/>
+                        <TextBlock Text="{Binding PurgeCount}"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppFg}"/>
                     </StackPanel>
                 </Grid>
             </Border>
