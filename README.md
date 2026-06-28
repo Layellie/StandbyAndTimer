@@ -6,7 +6,7 @@
 
 A Windows desktop utility for reducing input latency and managing system memory — designed for gamers and power users.
 
-> **v2.0.9** — Settings polish: drops the in-panel "Recent logs" viewer (Open Log Folder is enough), reskins the Theme / Language dropdowns with a custom template so the selected value is properly themed (fixes the unreadable white-on-light/white-on-dark fallback), and enlarges the ✕ close button hit-area without shifting the layout. The original WinForms release is preserved as [`v1.0.0`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v1.0.0) on the [`winforms-archive`](https://github.com/Layellie/StandbyAndTimer/tree/winforms-archive) branch.
+> **v2.0.9** — Settings polish: reskins the Theme / Language dropdowns with a custom template so the selected value is properly themed (fixes the unreadable white-on-light/white-on-dark fallback) and enlarges the ✕ close button hit-area without shifting the layout. The original WinForms release is preserved as [`v1.0.0`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v1.0.0) on the [`winforms-archive`](https://github.com/Layellie/StandbyAndTimer/tree/winforms-archive) branch.
 
 ## Features
 
@@ -61,10 +61,10 @@ The manifest lives at [`winget-manifests/`](winget-manifests/) and is submitted 
 
 | Tag | Stack | Notes |
 |---|---|---|
-| [`v2.0.9`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.9) | WPF (.NET 10) | Current — Settings panel polish: removed in-panel logs viewer, fixed unreadable Theme/Language ComboBox text, bigger ✕ close hitbox (no layout shift) |
+| [`v2.0.9`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.9) | WPF (.NET 10) | Current — Settings panel polish: readable Theme/Language ComboBox text, bigger ✕ close hitbox (no layout shift) |
 | [`v2.0.8`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.8) | WPF (.NET 10) | MainWindow split into 6 UserControls + title bar row locked to 36 px (no more shift on Settings open) |
-| [`v2.0.7`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.7) | WPF (.NET 10) | Settings panel UI polish (readable logs, refresh button no-clip, no window shift on Settings/Timer click) |
-| [`v2.0.6`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.6) | WPF (.NET 10) | First-run wizard, crash reporter, logs viewer, game auto-detect, winget manifest |
+| [`v2.0.7`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.7) | WPF (.NET 10) | Settings panel UI polish (refresh button no-clip, no window shift on Settings/Timer click) |
+| [`v2.0.6`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.6) | WPF (.NET 10) | First-run wizard, crash reporter, Open Log Folder, game auto-detect, winget manifest |
 | [`v2.0.5`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.5) | WPF (.NET 10) | Game Mode EcoQoS opt-out fix, dedicated AVRT watchdog thread for tighter 0.5 ms lock |
 | [`v2.0.4`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.4) | WPF (.NET 10) | AUTO PURGE master switch + safer defaults (0 MB thresholds) |
 | [`v2.0.3`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.3) | WPF (.NET 10) | Sub-500 ms startup, accurate Free-RAM accounting, timer auto-lock on launch |
