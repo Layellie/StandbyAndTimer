@@ -14,6 +14,28 @@
                        Style="{StaticResource SectionLabelStyle}"
                        Margin="0,0,0,8"/>
 
+            <!-- Idle-only gate (sits ABOVE the master toggle).
+                 Greyed when AUTO PURGE is off because the gate has no
+                 effect without the master switch. The right-side minutes
+                 input mirrors the Standby/Free limit input pattern
+                 (Width=78, Height=26, FontSize=12) for visual symmetry. -->
+            <Grid Margin="0,0,0,8" IsEnabled="{Binding AutoPurgeEnabled}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="78"/>
+                </Grid.ColumnDefinitions>
+                <CheckBox Grid.Column="0"
+                          Content="{DynamicResource Str_Purge_IdleOnlyLabel}"
+                          IsChecked="{Binding AutoPurgeIdleOnly}"
+                          Style="{StaticResource DarkCheckBoxStyle}"
+                          VerticalAlignment="Center"/>
+                <TextBox Grid.Column="1"
+                         Text="{Binding IdleThresholdMinutes, UpdateSourceTrigger=LostFocus}"
+                         Style="{StaticResource InputTextBoxStyle}"
+                         Height="26" FontSize="12"
+                         IsEnabled="{Binding AutoPurgeIdleOnly}"/>
+            </Grid>
+
             <!-- AUTO PURGE master toggle — when off, both thresholds are
                  ignored and no automatic purge ever fires. -->
             <Grid Margin="0,0,0,8">
