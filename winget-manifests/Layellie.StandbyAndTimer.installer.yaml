@@ -19,6 +19,6 @@ Installers:
     InstallerUrl: https://github.com/Layellie/StandbyAndTimer/releases/download/v2.0.9/StandbyAndTimer_Setup_2.0.9.exe
     # SHA256 is computed by the release pipeline (build-installer.ps1 prints it).
     # Update this hash on every release before opening the winget-pkgs PR.
-    InstallerSha256: 0000000000000000000000000000000000000000000000000000000000000000
+    InstallerSha256: 6C4E565CBFC42A074E2F8038E058B21BE944715596077D8E8CBD52F9154113AC
 ManifestType: installer
 ManifestVersion: 1.6.0
