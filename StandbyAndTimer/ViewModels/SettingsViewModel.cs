@@ -19,11 +19,26 @@ public sealed partial class SettingsViewModel : ObservableObject
     private static readonly JsonSerializerOptions ExportJsonOptions =
         new() { WriteIndented = true };
 
+    // Number of log lines surfaced in the in-panel viewer. 100 is enough
+    // context to triage a hiccup without making the box itself a scroll-fest;
+    // the full log lives on disk and Open Log Folder still surfaces it.
+    private const int LogTailLines = 100;
+
     private readonly IAutoStartService    _autoStartService;
     private readonly ILocalizationService _localization;
     private readonly ISettingsService     _settingsService;
     private readonly IUpdateService       _updateService;
     private readonly IThemeService        _themeService;
+    private readonly ILogTailReader       _logTailReader;
+
+    // Monotonically increases on every LoadLogTailAsync entry. After the
+    // async read returns, the result is published to RecentLogs only if
+    // the captured ticket still matches — this guarantees a slow read
+    // that started first can never clobber a faster, newer one. Using a
+    // counter (rather than a CancellationTokenSource field) keeps this
+    // type Disposable-free, which the SettingsViewModel singleton
+    // lifetime makes appropriate.
+    private int _logReadTicket;
 
     private bool _isInitializing;
 
@@ -33,6 +48,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private Language _selectedLanguage = Language.English;
     [ObservableProperty] private Theme    _selectedTheme    = Theme.Dark;
     [ObservableProperty] private string   _updateStatus = string.Empty;
+    [ObservableProperty] private string   _recentLogs   = string.Empty;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(DownloadAndInstallCommand))]
@@ -81,13 +97,15 @@ public sealed partial class SettingsViewModel : ObservableObject
         ILocalizationService localization,
         ISettingsService     settingsService,
         IUpdateService       updateService,
-        IThemeService        themeService)
+        IThemeService        themeService,
+        ILogTailReader       logTailReader)
     {
         _autoStartService = autoStartService;
         _localization     = localization;
         _settingsService  = settingsService;
         _updateService    = updateService;
         _themeService     = themeService;
+        _logTailReader    = logTailReader;
     }
 
     public void Initialize(bool autoStartEnabled, Language language, bool updateCheckEnabled, Theme theme)
@@ -103,6 +121,35 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [RelayCommand]
     private void Close() => IsOpen = false;
+
+    [RelayCommand]
+    private Task RefreshLogsAsync() => LoadLogTailAsync();
+
+    // Auto-refresh whenever the panel opens so the user always sees current
+    // logs without an extra click; bumping the ticket on close ensures any
+    // still-in-flight read that returns later won't overwrite RecentLogs.
+    partial void OnIsOpenChanged(bool value)
+    {
+        if (value) _ = LoadLogTailAsync();
+        else       System.Threading.Interlocked.Increment(ref _logReadTicket);
+    }
+
+    private async Task LoadLogTailAsync()
+    {
+        int myTicket = System.Threading.Interlocked.Increment(ref _logReadTicket);
+
+        string tail = await _logTailReader
+            .ReadTailAsync(LogTailLines)
+            .ConfigureAwait(true);
+
+        // Superseded by a newer LoadLogTailAsync (or by panel close) while
+        // we were awaiting the disk read — drop the result silently.
+        if (myTicket != System.Threading.Volatile.Read(ref _logReadTicket)) return;
+
+        RecentLogs = string.IsNullOrWhiteSpace(tail)
+            ? _localization.GetString("Str_Settings_LogsEmpty")
+            : tail;
+    }
 
     partial void OnAutoStartEnabledChanged(bool value)
     {
