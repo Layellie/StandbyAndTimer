@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using StandbyAndTimer.Core.Interfaces;
+using StandbyAndTimer.Core.Models;
 using StandbyAndTimer.Infrastructure;
 using StandbyAndTimer.Services;
 using StandbyAndTimer.Services.Native;
