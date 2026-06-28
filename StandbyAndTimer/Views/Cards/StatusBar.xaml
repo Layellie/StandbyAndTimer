@@ -1,0 +1,32 @@
+<UserControl x:Class="StandbyAndTimer.Views.Cards.StatusBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FontFamily="Segoe UI" FontSize="13">
+
+    <!-- Bottom status row: live status message + MVVM build marker.
+         Binds to StatusMessage on MainViewModel. -->
+    <Border BorderBrush="{DynamicResource SeparatorBrush}"
+            BorderThickness="0,1,0,0"
+            Padding="2,8,2,2"
+            Margin="0,2,0,0">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0"
+                       Text="{Binding StatusMessage}"
+                       FontSize="11"
+                       Foreground="{DynamicResource AppFgDim}"
+                       VerticalAlignment="Center"/>
+            <Border Grid.Column="1"
+                    Style="{StaticResource MutedBadgeStyle}"
+                    Padding="6,1">
+                <TextBlock Text="MVVM"
+                           FontSize="9"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource AppFgDim}"/>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

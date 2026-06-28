@@ -6,7 +6,7 @@
 
 A Windows desktop utility for reducing input latency and managing system memory — designed for gamers and power users.
 
-> **v2.0.7** — UI polish: logs viewer is readable now (was invisible against the panel), the settings refresh button no longer clips, and the main window no longer shifts when you press Settings / Timer (was `SizeToContent` reflowing). The original WinForms release is preserved as [`v1.0.0`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v1.0.0) on the [`winforms-archive`](https://github.com/Layellie/StandbyAndTimer/tree/winforms-archive) branch.
+> **v2.0.8** — Big internal refactor: MainWindow.xaml split into 6 focused UserControls (TitleBar, TimerCard, MemoryStatsCard, StandbyPurgeCard, GameModeCard, StatusBar) so each file does one job. Also locks the title bar row height so opening the Settings panel no longer inflates the bar by a few pixels. The original WinForms release is preserved as [`v1.0.0`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v1.0.0) on the [`winforms-archive`](https://github.com/Layellie/StandbyAndTimer/tree/winforms-archive) branch.
 
 ## Features
 
@@ -42,10 +42,10 @@ dotnet run --project StandbyAndTimer/StandbyAndTimer.csproj
 To produce a redistributable installer ([Inno Setup 6](https://jrsoftware.org/isdl.php) required):
 
 ```powershell
-.\build-installer.ps1 -Version 2.0.7
+.\build-installer.ps1 -Version 2.0.8
 ```
 
-Output: `installer/dist/StandbyAndTimer_Setup_2.0.7.exe` (~72 MB self-contained).
+Output: `installer/dist/StandbyAndTimer_Setup_2.0.8.exe` (~72 MB self-contained).
 
 ## Install via winget
 
@@ -61,7 +61,8 @@ The manifest lives at [`winget-manifests/`](winget-manifests/) and is submitted 
 
 | Tag | Stack | Notes |
 |---|---|---|
-| [`v2.0.7`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.7) | WPF (.NET 10) | Current — settings panel UI polish (readable logs, refresh button no-clip, no window shift on Settings/Timer click) |
+| [`v2.0.8`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.8) | WPF (.NET 10) | Current — MainWindow split into 6 UserControls + title bar row locked to 36 px (no more shift on Settings open) |
+| [`v2.0.7`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.7) | WPF (.NET 10) | Settings panel UI polish (readable logs, refresh button no-clip, no window shift on Settings/Timer click) |
 | [`v2.0.6`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.6) | WPF (.NET 10) | First-run wizard, crash reporter, logs viewer, game auto-detect, winget manifest |
 | [`v2.0.5`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.5) | WPF (.NET 10) | Game Mode EcoQoS opt-out fix, dedicated AVRT watchdog thread for tighter 0.5 ms lock |
 | [`v2.0.4`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.4) | WPF (.NET 10) | AUTO PURGE master switch + safer defaults (0 MB thresholds) |

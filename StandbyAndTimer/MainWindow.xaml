@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:views="clr-namespace:StandbyAndTimer.Views"
+        xmlns:cards="clr-namespace:StandbyAndTimer.Views.Cards"
         xmlns:overlays="clr-namespace:StandbyAndTimer.Views.Overlays"
-        xmlns:conv="clr-namespace:StandbyAndTimer.Views.Converters"
         Title="StandbyAndTimer"
         Width="540"
         Height="600"
@@ -28,9 +28,6 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Views/Styles/Theme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-            <conv:GameIconConverter x:Key="GameIconConv"/>
-            <conv:MbToGbConverter   x:Key="MbToGbConv"/>
-            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         </ResourceDictionary>
     </Window.Resources>
 
@@ -40,428 +37,39 @@
         <!-- Root grid: title bar + main content + overlays -->
         <Grid x:Name="RootGrid" ClipToBounds="True">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+                <!-- Row 0 = title bar, locked to 36 px. Was Height="Auto" but
+                     when the Settings panel opens, its RowSpan="2" +
+                     VerticalAlignment="Stretch" content height was bleeding
+                     into Row 0 and inflating the title bar by a few pixels —
+                     the user saw the bar "grow upward" each time Settings
+                     was toggled. A fixed row height makes the title bar
+                     immune to whatever lives in the overlay layer. -->
+                <RowDefinition Height="36"/>
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- ═══════════════════ CUSTOM TITLE BAR ═══════════════════ -->
-            <Border Grid.Row="0"
-                    Background="{DynamicResource SurfaceBg}"
-                    BorderBrush="{DynamicResource BorderColor}"
-                    BorderThickness="0,0,0,1"
-                    Height="36">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Left: status dot + app name -->
-                    <StackPanel Grid.Column="0"
-                                Orientation="Horizontal"
-                                Margin="14,0,0,0"
-                                VerticalAlignment="Center">
-                        <Ellipse Width="9" Height="9"
-                                 Fill="{DynamicResource SuccessColor}"
-                                 VerticalAlignment="Center"
-                                 Margin="0,0,9,0"/>
-                        <TextBlock Text="StandbyAndTimer"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource AppFg}"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-
-                    <!-- Right: admin badge + window controls -->
-                    <StackPanel Grid.Column="1"
-                                Orientation="Horizontal"
-                                Margin="0,0,4,0"
-                                VerticalAlignment="Center"
-                                shell:WindowChrome.IsHitTestVisibleInChrome="True">
-
-                        <Border Style="{StaticResource SuccessBadgeStyle}" Margin="0,0,8,0">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="M5,0 L5,3 L9,3 L9,8 L1,8 L1,3 L5,3 M3,3 L3,1.5 A2,2 0 0 1 7,1.5 L7,3"
-                                      Stroke="{DynamicResource SuccessColor}"
-                                      StrokeThickness="1"
-                                      Width="10" Height="9"
-                                      Stretch="Uniform"
-                                      VerticalAlignment="Center"
-                                      Margin="0,0,5,0"/>
-                                <TextBlock Text="{DynamicResource Str_TitleBar_Admin}"
-                                           FontSize="10"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource SuccessColor}"
-                                           VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Button Style="{StaticResource TitleBarIconButtonStyle}"
-                                Content="⚙"
-                                FontSize="14"
-                                Command="{Binding OpenSettingsCommand}"
-                                ToolTip="Settings"/>
-
-                        <Button Style="{StaticResource TitleBarIconButtonStyle}"
-                                Content="?"
-                                FontSize="13"
-                                Command="{Binding ShowAboutCommand}"
-                                ToolTip="About"/>
-
-                        <Button x:Name="MinimizeBtn"
-                                Style="{StaticResource TitleBarIconButtonStyle}"
-                                Content="—"
-                                FontSize="11"
-                                Click="OnMinimizeClick"
-                                ToolTip="Minimize"/>
-
-                        <Button x:Name="CloseBtn"
-                                Style="{StaticResource TitleBarCloseButtonStyle}"
-                                Content="✕"
-                                FontSize="12"
-                                Click="OnCloseClick"
-                                ToolTip="Close"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
+            <!-- ═══════════════════ TITLE BAR ═══════════════════ -->
+            <cards:TitleBar Grid.Row="0"
+                            MinimizeRequested="OnTitleBarMinimize"
+                            CloseRequested="OnTitleBarClose"/>
 
             <!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
             <StackPanel Grid.Row="1" Margin="14,12,14,10">
+                <cards:TimerCard/>
 
-                <!-- ── Hero: Timer Resolution ─────────────────────────────────── -->
-                <Border Style="{StaticResource SectionBorderStyle}" Padding="18,14">
-                    <StackPanel>
-                        <!-- MinHeight reserves the badge's vertical footprint so
-                             toggling the timer ON doesn't grow the title row by
-                             a few px and shift the value/button row below it.
-                             Without this, every Timer toggle made the card
-                             "breathe" by ~6 px because Collapsed gives back the
-                             badge's layout space. -->
-                        <Grid Margin="0,0,0,4" MinHeight="24">
-                            <TextBlock Text="{DynamicResource Str_Card_TimerTitle}"
-                                       Style="{StaticResource SectionLabelStyle}"
-                                       VerticalAlignment="Center"/>
-                            <Border HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    Style="{StaticResource SuccessBadgeStyle}"
-                                    Visibility="{Binding TimerActive, Converter={StaticResource BoolToVis}}">
-                                <StackPanel Orientation="Horizontal">
-                                    <Path Data="M5,0 L5,3 L9,3 L9,8 L1,8 L1,3 L5,3 M3,3 L3,1.5 A2,2 0 0 1 7,1.5 L7,3"
-                                          Stroke="{DynamicResource SuccessColor}"
-                                          StrokeThickness="1"
-                                          Width="10" Height="9"
-                                          Stretch="Uniform"
-                                          VerticalAlignment="Center"
-                                          Margin="0,0,5,0"/>
-                                    <TextBlock Text="{DynamicResource Str_Card_TimerLocked}"
-                                               FontSize="10"
-                                               FontWeight="SemiBold"
-                                               Foreground="{DynamicResource SuccessColor}"
-                                               VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Border>
-                        </Grid>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel Grid.Column="0"
-                                        Orientation="Horizontal"
-                                        VerticalAlignment="Center">
-                                <TextBlock Text="{Binding ActualTimerMs, StringFormat={}{0:F2}}"
-                                           Style="{StaticResource HeroValueStyle}"/>
-                                <TextBlock Text="ms"
-                                           FontSize="18"
-                                           FontWeight="Light"
-                                           Foreground="{DynamicResource AppFgDim}"
-                                           VerticalAlignment="Bottom"
-                                           Margin="6,0,0,12"/>
-                            </StackPanel>
-
-                            <Button Grid.Column="1"
-                                    Content="{Binding TimerButtonLabel}"
-                                    Command="{Binding ToggleTimerResolutionCommand}"
-                                    Style="{StaticResource DarkButtonStyle}"
-                                    MinWidth="120" Height="38"
-                                    VerticalAlignment="Center"
-                                    FontSize="13"/>
-                        </Grid>
-                    </StackPanel>
-                </Border>
-
-                <!-- ── Memory Stats (left) + Standby Purge (right) ──────────── -->
+                <!-- Memory Stats (left) + Standby Purge (right) side-by-side -->
                 <Grid Margin="0,0,0,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-
-                    <!-- Standby Memory KPI card -->
-                    <Border Grid.Column="0"
-                            Style="{StaticResource SectionBorderStyle}"
-                            Padding="16,14"
-                            Margin="0">
-                        <StackPanel>
-                            <TextBlock Text="{DynamicResource Str_Card_StandbyTitle}"
-                                       Style="{StaticResource SectionLabelStyle}"
-                                       Margin="0,0,0,8"/>
-
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding StandbyRamMb, Converter={StaticResource MbToGbConv}}"
-                                           Style="{StaticResource KpiValueStyle}"/>
-                                <TextBlock Text="GB"
-                                           FontSize="13"
-                                           VerticalAlignment="Bottom"
-                                           Margin="5,0,0,5"
-                                           Foreground="{DynamicResource AppFgDim}"/>
-                            </StackPanel>
-
-                            <TextBlock Text="{DynamicResource Str_Card_StandbyClearable}"
-                                       FontSize="10"
-                                       Foreground="{DynamicResource AppFgDim}"
-                                       Margin="0,2,0,0"/>
-
-                            <Border BorderBrush="{DynamicResource SeparatorBrush}"
-                                    BorderThickness="0,1,0,0"
-                                    Margin="0,10,0,0"
-                                    Padding="0,8,0,0">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="{DynamicResource Str_Memory_TotalShort}"
-                                                   FontSize="9"
-                                                   Foreground="{DynamicResource AppFgDim}"/>
-                                        <TextBlock Text="{Binding TotalRamMb, StringFormat={}{0} MB}"
-                                                   FontSize="12"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource AccentPrimary}"/>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1">
-                                        <TextBlock Text="{DynamicResource Str_Memory_FreeShort}"
-                                                   FontSize="9"
-                                                   Foreground="{DynamicResource AppFgDim}"/>
-                                        <TextBlock Text="{Binding FreeRamMb, StringFormat={}{0} MB}"
-                                                   FontSize="12"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource SuccessColor}"/>
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Standby Purge card -->
-                    <Border Grid.Column="2"
-                            Style="{StaticResource SectionBorderStyle}"
-                            Padding="16,14"
-                            Margin="0">
-                        <StackPanel>
-                            <Grid Margin="0,0,0,8">
-                                <TextBlock Text="{DynamicResource Str_Card_PurgeTitle}"
-                                           Style="{StaticResource SectionLabelStyle}"/>
-                                <StackPanel Orientation="Horizontal"
-                                            HorizontalAlignment="Right">
-                                    <TextBlock Text="×"
-                                               Foreground="{DynamicResource AppFgDim}"
-                                               FontSize="11"
-                                               VerticalAlignment="Center"/>
-                                    <TextBlock Text="{Binding PurgeCount}"
-                                               FontSize="13"
-                                               FontWeight="SemiBold"
-                                               Foreground="{DynamicResource AccentPrimary}"
-                                               Margin="2,0,0,0"/>
-                                </StackPanel>
-                            </Grid>
-
-                            <!-- AUTO PURGE master toggle — when off, both thresholds
-                                 are ignored and no automatic purge ever fires. -->
-                            <Grid Margin="0,0,0,8">
-                                <TextBlock Text="{DynamicResource Str_Card_AutoPurgeLabel}"
-                                           FontSize="11"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource AppFgDim}"
-                                           VerticalAlignment="Center"/>
-                                <CheckBox Style="{StaticResource ToggleSwitchStyle}"
-                                          IsChecked="{Binding AutoPurgeEnabled}"
-                                          HorizontalAlignment="Right"
-                                          VerticalAlignment="Center">
-                                    <CheckBox.Content>
-                                        <TextBlock>
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Text" Value="{DynamicResource Str_Card_GameModeOff}"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding AutoPurgeEnabled}" Value="True">
-                                                            <Setter Property="Text" Value="{DynamicResource Str_Card_GameModeOn}"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                    </CheckBox.Content>
-                                </CheckBox>
-                            </Grid>
-
-                            <Grid Margin="0,0,0,6">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="78"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0"
-                                           Text="{DynamicResource Str_Purge_StandbyLimitLabel}"
-                                           FontSize="11"
-                                           TextWrapping="Wrap"
-                                           VerticalAlignment="Center"
-                                           Foreground="{DynamicResource AppFgDim}"
-                                           Margin="0,0,6,0"/>
-                                <TextBox Grid.Column="1"
-                                         Text="{Binding StandbyLimitMb, UpdateSourceTrigger=LostFocus}"
-                                         Style="{StaticResource InputTextBoxStyle}"
-                                         Height="26" FontSize="12"/>
-                            </Grid>
-
-                            <Grid Margin="0,0,0,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="78"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0"
-                                           Text="{DynamicResource Str_Purge_FreeLimitLabel}"
-                                           FontSize="11"
-                                           TextWrapping="Wrap"
-                                           VerticalAlignment="Center"
-                                           Foreground="{DynamicResource AppFgDim}"
-                                           Margin="0,0,6,0"/>
-                                <TextBox Grid.Column="1"
-                                         Text="{Binding FreeLimitMb, UpdateSourceTrigger=LostFocus}"
-                                         Style="{StaticResource InputTextBoxStyle}"
-                                         Height="26" FontSize="12"/>
-                            </Grid>
-
-                            <Button Content="{DynamicResource Str_Purge_Button}"
-                                    Command="{Binding ManualPurgeCommand}"
-                                    Style="{StaticResource DarkButtonStyle}"
-                                    Height="32"
-                                    HorizontalAlignment="Stretch"/>
-                        </StackPanel>
-                    </Border>
+                    <cards:MemoryStatsCard  Grid.Column="0"/>
+                    <cards:StandbyPurgeCard Grid.Column="2"/>
                 </Grid>
 
-                <!-- ── Game Mode (full width) ──────────────────────────────── -->
-                <Border Style="{StaticResource SectionBorderStyle}" Padding="16,14">
-                    <StackPanel>
-                        <Grid Margin="0,0,0,4">
-                            <TextBlock Text="{DynamicResource Str_Card_GameModeTitle}"
-                                       Style="{StaticResource SectionLabelStyle}"
-                                       VerticalAlignment="Center"/>
-                            <CheckBox Style="{StaticResource ToggleSwitchStyle}"
-                                      IsChecked="{Binding GameModeEnabled}"
-                                      HorizontalAlignment="Right"
-                                      VerticalAlignment="Center">
-                                <CheckBox.Content>
-                                    <TextBlock>
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Text" Value="{DynamicResource Str_Card_GameModeOff}"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding GameModeEnabled}" Value="True">
-                                                        <Setter Property="Text" Value="{DynamicResource Str_Card_GameModeOn}"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </CheckBox.Content>
-                            </CheckBox>
-                        </Grid>
-
-                        <TextBlock Text="{DynamicResource Str_Card_GameModeDesc}"
-                                   FontSize="10"
-                                   Foreground="{DynamicResource AppFgDim}"
-                                   Margin="0,0,0,10"/>
-
-                        <ListBox x:Name="GamesList"
-                                 ItemsSource="{Binding Games}"
-                                 SelectedItem="{Binding SelectedGame}"
-                                 Style="{StaticResource GameListBoxStyle}"
-                                 Height="60"
-                                 Margin="0,0,0,8"
-                                 AllowDrop="True"
-                                 DragEnter="GamesList_DragEnter"
-                                 DragOver="GamesList_DragEnter"
-                                 Drop="GamesList_Drop"
-                                 ToolTip="{DynamicResource Str_Game_DropHint}">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Image Source="{Binding ExecutablePath, Converter={StaticResource GameIconConv}}"
-                                               Width="16" Height="16"
-                                               Margin="0,0,8,0"/>
-                                        <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="66"/>
-                                <ColumnDefinition Width="66"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0"
-                                       Text="{DynamicResource Str_Game_DropHint}"
-                                       FontSize="10"
-                                       VerticalAlignment="Center"
-                                       Foreground="{DynamicResource AppFgDim}"/>
-                            <Button Grid.Column="1"
-                                    Content="{DynamicResource Str_Game_Del}"
-                                    Command="{Binding RemoveGameCommand}"
-                                    Style="{StaticResource GhostButtonStyle}"
-                                    Height="28"
-                                    Margin="0,0,6,0"/>
-                            <Button Grid.Column="2"
-                                    Content="{DynamicResource Str_Game_Add}"
-                                    Command="{Binding AddGameCommand}"
-                                    Style="{StaticResource DarkButtonStyle}"
-                                    Height="28"/>
-                        </Grid>
-                    </StackPanel>
-                </Border>
-
-                <!-- ── Status Bar ─────────────────────────────────────────── -->
-                <Border BorderBrush="{DynamicResource SeparatorBrush}"
-                        BorderThickness="0,1,0,0"
-                        Padding="2,8,2,2"
-                        Margin="0,2,0,0">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   Text="{Binding StatusMessage}"
-                                   FontSize="11"
-                                   Foreground="{DynamicResource AppFgDim}"
-                                   VerticalAlignment="Center"/>
-                        <Border Grid.Column="1"
-                                Style="{StaticResource MutedBadgeStyle}"
-                                Padding="6,1">
-                            <TextBlock Text="MVVM"
-                                       FontSize="9"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource AppFgDim}"/>
-                        </Border>
-                    </Grid>
-                </Border>
-
+                <cards:GameModeCard GameDropped="OnGameDropped"/>
+                <cards:StatusBar/>
             </StackPanel>
 
             <!-- ═══════════════════ DIM OVERLAY ═══════════════════ -->
@@ -494,19 +102,14 @@
                 <views:SettingsPanelView DataContext="{Binding Settings}"/>
             </Border>
 
-            <!-- ═══════════════════ ABOUT OVERLAY ═══════════════════ -->
-            <overlays:AboutOverlay Grid.Row="0" Grid.RowSpan="2" Panel.ZIndex="18"/>
-
-            <!-- ═══════════════════ FIRST-RUN WIZARD OVERLAY ═══════════════════ -->
+            <!-- ═══════════════════ MODAL OVERLAYS ═══════════════════ -->
+            <overlays:AboutOverlay  Grid.Row="0" Grid.RowSpan="2" Panel.ZIndex="18"/>
             <overlays:WizardOverlay Grid.Row="0" Grid.RowSpan="2" Panel.ZIndex="19"/>
-
-            <!-- ═══════════════════ CLOSE CONFIRMATION OVERLAY ═══════════════════ -->
             <overlays:CloseConfirmationOverlay x:Name="CloseDialog"
                                                Grid.Row="0" Grid.RowSpan="2"
                                                Panel.ZIndex="20"
                                                MinimizeRequested="OnCloseDialogMinimize"
                                                ExitRequested="OnCloseDialogExit"/>
-
         </Grid>
     </Border>
 </Window>
