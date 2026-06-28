@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
 
 PackageIdentifier: Layellie.StandbyAndTimer
-PackageVersion: 2.0.11
+PackageVersion: 2.1.0
 PackageLocale: en-US
 Publisher: LAYE77IE
 PublisherUrl: https://github.com/Layellie
@@ -31,6 +31,6 @@ Tags:
   - timer
   - tweak
   - utility
-ReleaseNotesUrl: https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.11
+ReleaseNotesUrl: https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.1.0
 ManifestType: defaultLocale
 ManifestVersion: 1.6.0

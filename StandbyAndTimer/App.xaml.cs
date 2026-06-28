@@ -28,13 +28,15 @@ public partial class App : Application
 
     private readonly CrashHandler _crashHandler = new();
 
-    private IServiceProvider?     _services;
-    private ILocalizationService? _localization;
-    private IThemeService?        _themeService;
-    private ITrayIconService?     _tray;
-    private MainViewModel?        _viewModel;
-    private MainWindow?           _mainWindow;
-    private DispatcherTimer?      _tooltipTicker;
+    private IServiceProvider?       _services;
+    private ILocalizationService?   _localization;
+    private IThemeService?          _themeService;
+    private ITrayIconService?       _tray;
+    private MainViewModel?          _viewModel;
+    private MainWindow?             _mainWindow;
+    private DispatcherTimer?        _tooltipTicker;
+    private EventWaitHandle?        _showWindowSignal;
+    private CancellationTokenSource? _showWindowSignalCts;
 
     private System.Drawing.Icon?  _iconBase;
     private System.Drawing.Icon?  _iconActive;
@@ -61,17 +63,36 @@ public partial class App : Application
         Mark("crash handlers + hardening");
 
         // ── 1. Single-instance guard ──────────────────────────────────────────
+        // Primary acquires the mutex AND owns the named EventWaitHandle the
+        // listener thread blocks on. A secondary launch opens that handle by
+        // name, grants foreground rights (ASFW_ANY) so the primary's
+        // SetForegroundWindow call isn't muted by the foreground-lock
+        // timeout, signals it, then exits silently — no "already running"
+        // dialog. The primary listener dispatches to the UI thread and
+        // surfaces the window from offscreen / tray.
         _singleInstanceMutex = new Mutex(true, AppConstants.SingleInstanceMutexName, out bool isNewInstance);
         if (!isNewInstance)
         {
-            MessageBox.Show(
-                "Application is already running in the background.\nLook for the icon in the system tray.",
-                "StandbyAndTimer",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            try
+            {
+                using var existing = EventWaitHandle.OpenExisting(AppConstants.ShowWindowSignalName);
+                NativeMethods.AllowSetForegroundWindow(NativeMethods.ASFW_ANY);
+                existing.Set();
+            }
+            catch (WaitHandleCannotBeOpenedException)
+            {
+                // Primary hasn't published the handle yet (startup race) — nothing we can do but bail.
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Logger.Warn($"Single-instance signal: {ex.Message}");
+            }
             Current.Shutdown();
             return;
         }
+
+        _showWindowSignal    = new EventWaitHandle(false, EventResetMode.AutoReset, AppConstants.ShowWindowSignalName);
+        _showWindowSignalCts = new CancellationTokenSource();
 
         base.OnStartup(e);
         Mark("single-instance + base.OnStartup");
@@ -126,6 +147,11 @@ public partial class App : Application
         else
             _mainWindow.Show();
         Mark("window shown");
+
+        // Background listener for second-launch "show me" pulses. Started
+        // only after MainWindow exists so the dispatched ShowMainWindow()
+        // call actually has a window to surface.
+        StartShowWindowListener(_showWindowSignal!, _showWindowSignalCts!.Token);
 
         // Live tooltip updater — every 3 s, refresh icon and text. Cheap.
         _tooltipTicker = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
@@ -185,10 +211,52 @@ public partial class App : Application
             Task.Run(_viewModel.ShutdownAsync).GetAwaiter().GetResult();
         (_services as IDisposable)?.Dispose();
 
+        // Shut down the second-launch listener: cancel first (wakes WaitAny
+        // via the cancellation handle), then dispose. The handle itself is
+        // disposed last so the listener never observes a disposed handle.
+        _showWindowSignalCts?.Cancel();
+        _showWindowSignal?.Dispose();
+        _showWindowSignalCts?.Dispose();
+
         _singleInstanceMutex?.ReleaseMutex();
         _singleInstanceMutex?.Dispose();
 
         base.OnExit(e);
+    }
+
+    // ── Single-instance "show me" listener ───────────────────────────────────
+
+    private void StartShowWindowListener(EventWaitHandle signal, CancellationToken ct)
+    {
+        var thread = new Thread(() =>
+        {
+            var handles = new WaitHandle[] { signal, ct.WaitHandle };
+            try
+            {
+                while (true)
+                {
+                    int idx = WaitHandle.WaitAny(handles);
+                    if (idx == 1) return;  // cancelled — shutting down
+                    Dispatcher.BeginInvoke(new Action(SurfaceMainWindow));
+                }
+            }
+            catch (ObjectDisposedException) { /* handles disposed during shutdown */ }
+            catch (Exception ex)            { Logger.Warn($"ShowWindowListener: {ex.Message}"); }
+        })
+        {
+            IsBackground = true,
+            Name         = "ShowWindowListener"
+        };
+        thread.Start();
+    }
+
+    private void SurfaceMainWindow()
+    {
+        if (_mainWindow is null) return;
+        _mainWindow.ShowFromOffscreen();
+        var hwnd = new System.Windows.Interop.WindowInteropHelper(_mainWindow).Handle;
+        if (hwnd != IntPtr.Zero)
+            NativeMethods.SetForegroundWindow(hwnd);
     }
 
     // ── DLL search-path hardening ─────────────────────────────────────────────

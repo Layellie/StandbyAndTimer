@@ -96,6 +96,29 @@ internal static class NativeMethods
     [DllImport("user32.dll")]
     internal static extern IntPtr GetForegroundWindow();
 
+    /// <summary>
+    /// Pulls a window to the top and gives it keyboard focus. Subject to
+    /// foreground-lock rules — only works when the calling process already
+    /// has foreground rights or was granted them by another process via
+    /// <see cref="AllowSetForegroundWindow"/>.
+    /// </summary>
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    /// <summary>
+    /// Allows another process to call <see cref="SetForegroundWindow"/>.
+    /// Used by the secondary single-instance launcher: before signaling the
+    /// primary process to surface itself, we grant ASFW_ANY so the primary
+    /// can call SetForegroundWindow without being silently rejected by the
+    /// foreground-lock timeout.
+    /// </summary>
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool AllowSetForegroundWindow(uint dwProcessId);
+
+    internal const uint ASFW_ANY = 0xFFFFFFFFu;
+
     /// <summary>Returns the bounding rectangle of a window in screen coordinates.</summary>
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
