@@ -139,4 +139,16 @@
     <sys:String x:Key="Str_Detect_NotifyBody">"{0}" Game Mode listesine eklensin mi?</sys:String>
     <sys:String x:Key="Str_Status_GameAutoAdded">Otomatik eklendi: {0}</sys:String>
 
+    <!-- v2.1.0 -->
+    <sys:String x:Key="Str_Memory_PurgesShort">Temizleme</sys:String>
+    <sys:String x:Key="Str_Purge_IdleOnlyLabel">Sadece boştayken</sys:String>
+    <sys:String x:Key="Str_Purge_IdleMinutesLabel">Boşta süre (dk)</sys:String>
+    <sys:String x:Key="Str_Settings_NotificationsSection">BİLDİRİMLER</sys:String>
+    <sys:String x:Key="Str_Settings_NotifyOnPurge">Temizleme bildirimleri</sys:String>
+    <sys:String x:Key="Str_Settings_NotifyOnTimer">Zamanlayıcı bildirimleri</sys:String>
+    <sys:String x:Key="Str_Settings_NotifyOnGame">Oyun algılandı bildirimleri</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeysSection">KISAYOLLAR</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyPurge">Manuel temizle</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyTimer">Zamanlayıcı aç/kapa</sys:String>
+
 </ResourceDictionary>

@@ -139,4 +139,16 @@
     <sys:String x:Key="Str_Detect_NotifyBody">Add "{0}" to the Game Mode list?</sys:String>
     <sys:String x:Key="Str_Status_GameAutoAdded">Auto-added game: {0}</sys:String>
 
+    <!-- v2.1.0 -->
+    <sys:String x:Key="Str_Memory_PurgesShort">Purges</sys:String>
+    <sys:String x:Key="Str_Purge_IdleOnlyLabel">Only when idle</sys:String>
+    <sys:String x:Key="Str_Purge_IdleMinutesLabel">Idle threshold (min)</sys:String>
+    <sys:String x:Key="Str_Settings_NotificationsSection">NOTIFICATIONS</sys:String>
+    <sys:String x:Key="Str_Settings_NotifyOnPurge">Purge notifications</sys:String>
+    <sys:String x:Key="Str_Settings_NotifyOnTimer">Timer state notifications</sys:String>
+    <sys:String x:Key="Str_Settings_NotifyOnGame">Game-detected notifications</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeysSection">HOTKEYS</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyPurge">Manual purge</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyTimer">Toggle timer</sys:String>
+
 </ResourceDictionary>

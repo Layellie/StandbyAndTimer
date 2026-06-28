@@ -31,6 +31,16 @@ internal sealed class SettingsService : ISettingsService
                 Theme                 = GetEnum(key, "Theme",    Theme.Dark),
                 UpdateCheckEnabled    = GetBool(key,     "UpdateCheckEnabled", defaultValue: true),
                 FirstRunCompleted     = GetBool(key,     "FirstRunCompleted"),
+
+                NotifyOnPurge         = GetBool(key,     "NotifyOnPurge",        defaultValue: true),
+                NotifyOnTimerToggle   = GetBool(key,     "NotifyOnTimerToggle",  defaultValue: true),
+                NotifyOnGameDetected  = GetBool(key,     "NotifyOnGameDetected", defaultValue: true),
+
+                AutoPurgeIdleOnly     = GetBool(key,     "AutoPurgeIdleOnly"),
+                IdleThresholdMinutes  = GetInt (key,     "IdleThresholdMinutes", 5),
+
+                PurgeHotkey           = key.GetValue("PurgeHotkey")?.ToString() ?? "Ctrl+Alt+P",
+                TimerHotkey           = key.GetValue("TimerHotkey")?.ToString() ?? "Ctrl+Alt+T",
             };
 
             string pathsRaw = key.GetValue("GamePaths")?.ToString() ?? string.Empty;
@@ -75,6 +85,14 @@ internal sealed class SettingsService : ISettingsService
             key.SetValue("TimerResolutionActive",  settings.TimerResolutionActive  ? "1" : "0");
             key.SetValue("UpdateCheckEnabled",     settings.UpdateCheckEnabled     ? "1" : "0");
             key.SetValue("FirstRunCompleted",      settings.FirstRunCompleted      ? "1" : "0");
+
+            key.SetValue("NotifyOnPurge",          settings.NotifyOnPurge          ? "1" : "0");
+            key.SetValue("NotifyOnTimerToggle",    settings.NotifyOnTimerToggle    ? "1" : "0");
+            key.SetValue("NotifyOnGameDetected",   settings.NotifyOnGameDetected   ? "1" : "0");
+            key.SetValue("AutoPurgeIdleOnly",      settings.AutoPurgeIdleOnly      ? "1" : "0");
+            key.SetValue("IdleThresholdMinutes",   settings.IdleThresholdMinutes,  RegistryValueKind.DWord);
+            key.SetValue("PurgeHotkey",            settings.PurgeHotkey            ?? "Ctrl+Alt+P");
+            key.SetValue("TimerHotkey",            settings.TimerHotkey            ?? "Ctrl+Alt+T");
 
             key.SetValue("Language", settings.Language.ToString());
             key.SetValue("Theme",    settings.Theme.ToString());
