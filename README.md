@@ -1,7 +1,7 @@
 # StandbyAndTimer
 
 <p align="center">
-  <img src="docs/screenshot.png" width="60%" alt="StandbyAndTimer main window" />
+  <img width="536" height="595" alt="Ekran görüntüsü 2026-06-28 174432" src="https://github.com/user-attachments/assets/339a9e2c-8080-44ac-893c-82a887038817" />
 </p>
 
 A Windows desktop utility for reducing input latency and managing system memory — designed for gamers and power users.
