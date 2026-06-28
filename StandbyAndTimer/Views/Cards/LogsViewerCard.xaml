@@ -7,12 +7,15 @@
          Inherits SettingsViewModel as DataContext (RecentLogs +
          RefreshLogsCommand). Stays a thin view so the parent panel just
          drops in <cards:LogsViewerCard /> and forgets about layout
-         details. -->
+         details. The tail row is *, so the card grows to fill whatever
+         vertical slack the parent gives it — this is what lets the
+         Settings panel avoid an outer scrollbar regardless of how much
+         room is left after the static rows above. -->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>  <!-- 0 Header (label + refresh) -->
             <RowDefinition Height="6"/>     <!-- 1 -->
-            <RowDefinition Height="140"/>   <!-- 2 Tail viewer -->
+            <RowDefinition Height="*"/>     <!-- 2 Tail viewer (fills slack) -->
         </Grid.RowDefinitions>
 
         <Grid Grid.Row="0">
@@ -39,6 +42,10 @@
              log keeps original line shape. Background uses AppBg (darkest
              tone in the palette) for visible contrast against the panel,
              Foreground=AppFg for full readability of 10.5 pt Consolas. -->
+        <!-- No MinHeight on purpose: if the upper Auto rows ever grow (long
+             UpdateStatus wrap, Download button visible) we want the log row
+             to give up its space so the Auto version footer below the *
+             row never gets pushed off the bottom of the panel. -->
         <Border Grid.Row="2"
                 Background="{DynamicResource AppBg}"
                 BorderBrush="{DynamicResource BorderColor}"

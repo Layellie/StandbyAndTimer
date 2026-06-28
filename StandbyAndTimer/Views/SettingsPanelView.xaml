@@ -11,44 +11,47 @@
         <BooleanToVisibilityConverter  x:Key="BoolToVis"/>
     </UserControl.Resources>
 
-    <!-- ScrollViewer so the panel still fits on small windows even with the
-         version footer pushing total height past ~600 px. -->
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-    <Grid Margin="18,16">
+    <!-- No outer ScrollViewer: the only variable-height region is the Logs
+         viewer card (Row 26 = *). Everything else has a known intrinsic
+         height that fits in the fixed window, so the panel never needs to
+         scroll vertically — the log viewer absorbs all slack and its own
+         internal ScrollViewer handles long log content. Spacers along the
+         column were tightened just enough to free ~50 px for the log
+         section without producing a cramped feel. -->
+    <Grid Margin="18,12">
         <Grid.RowDefinitions>
             <!-- Header row is locked to 30 px (was Auto / effectively 26) so
                  the close ✕ button can be 30×30 instead of 26×26 for a bigger
                  hit-target. The next spacer is trimmed from 20 → 16 so the
                  net header block height is identical and nothing below shifts. -->
             <RowDefinition Height="30"/>    <!-- 0  Header -->
-            <RowDefinition Height="16"/>    <!-- 1 -->
+            <RowDefinition Height="12"/>    <!-- 1 -->
             <RowDefinition Height="Auto"/>  <!-- 2  AutoStart -->
-            <RowDefinition Height="12"/>    <!-- 3 -->
+            <RowDefinition Height="10"/>    <!-- 3 -->
             <RowDefinition Height="Auto"/>  <!-- 4  UpdateCheck -->
-            <RowDefinition Height="20"/>    <!-- 5 -->
+            <RowDefinition Height="14"/>    <!-- 5 -->
             <RowDefinition Height="Auto"/>  <!-- 6  Language label -->
-            <RowDefinition Height="8"/>     <!-- 7 -->
+            <RowDefinition Height="6"/>     <!-- 7 -->
             <RowDefinition Height="Auto"/>  <!-- 8  Language picker -->
-            <RowDefinition Height="14"/>    <!-- 9 -->
+            <RowDefinition Height="10"/>    <!-- 9 -->
             <RowDefinition Height="Auto"/>  <!-- 10 Theme label -->
-            <RowDefinition Height="8"/>     <!-- 11 -->
+            <RowDefinition Height="6"/>     <!-- 11 -->
             <RowDefinition Height="Auto"/>  <!-- 12 Theme picker -->
-            <RowDefinition Height="22"/>    <!-- 13 -->
+            <RowDefinition Height="16"/>    <!-- 13 -->
             <RowDefinition Height="Auto"/>  <!-- 14 Backup section label -->
-            <RowDefinition Height="8"/>     <!-- 15 -->
+            <RowDefinition Height="6"/>     <!-- 15 -->
             <RowDefinition Height="Auto"/>  <!-- 16 Export -->
-            <RowDefinition Height="6"/>     <!-- 17 -->
+            <RowDefinition Height="4"/>     <!-- 17 -->
             <RowDefinition Height="Auto"/>  <!-- 18 Import -->
-            <RowDefinition Height="6"/>     <!-- 19 -->
+            <RowDefinition Height="4"/>     <!-- 19 -->
             <RowDefinition Height="Auto"/>  <!-- 20 Check Update -->
-            <RowDefinition Height="6"/>     <!-- 21 -->
+            <RowDefinition Height="4"/>     <!-- 21 -->
             <RowDefinition Height="Auto"/>  <!-- 22 Open Log -->
-            <RowDefinition Height="14"/>    <!-- 23 -->
+            <RowDefinition Height="10"/>    <!-- 23 -->
             <RowDefinition Height="Auto"/>  <!-- 24 Update status text -->
-            <RowDefinition Height="14"/>    <!-- 25 -->
-            <RowDefinition Height="Auto"/>  <!-- 26 Logs viewer card -->
-            <RowDefinition Height="*"/>     <!-- 27 spacer -->
-            <RowDefinition Height="Auto"/>  <!-- 28 Version footer -->
+            <RowDefinition Height="10"/>    <!-- 25 -->
+            <RowDefinition Height="*"/>     <!-- 26 Logs viewer card (fills slack) -->
+            <RowDefinition Height="Auto"/>  <!-- 27 Version footer -->
         </Grid.RowDefinitions>
 
         <!-- ── Header ───────────────────────────────────────────────────────── -->
@@ -170,17 +173,18 @@
         <!-- ── Logs viewer ──────────────────────────────────────────────────
              Thin card that owns its own header (label + Refresh button) and
              the wrap-enabled tail box. Bound to RecentLogs / RefreshLogsCommand
-             on the inherited SettingsViewModel DataContext. -->
+             on the inherited SettingsViewModel DataContext. Row 26 = *, so
+             this card absorbs all leftover vertical space — that's what
+             eliminates the outer scrollbar without forcing a window resize. -->
         <cards:LogsViewerCard Grid.Row="26"/>
 
         <!-- ── Version footer ──────────────────────────────────────────────────
-             Pinned to the bottom of the panel — Row 27 is the * spacer that
-             pushes this label down regardless of how many rows above grow.
-             The "v" prefix matches the GitHub release tag format (v2.0.5)
-             so what the user sees here is the same string they'd see on the
-             release page. CurrentVersion is computed from the assembly so it
+             Pinned to the bottom of the panel. The "v" prefix matches the
+             GitHub release tag format (v2.0.5) so what the user sees here
+             is the same string they'd see on the release page.
+             CurrentVersion is computed from the assembly so it
              auto-updates with every -p:Version=X.Y.Z release build. -->
-        <TextBlock Grid.Row="28"
+        <TextBlock Grid.Row="27"
                    Text="{Binding CurrentVersion, StringFormat=v{0}}"
                    Foreground="{DynamicResource AppFgDim}"
                    FontSize="10.5"
@@ -189,5 +193,4 @@
                    Margin="0,0,0,2"/>
 
     </Grid>
-    </ScrollViewer>
 </UserControl>

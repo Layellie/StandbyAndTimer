@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
 
 PackageIdentifier: Layellie.StandbyAndTimer
-PackageVersion: 2.0.10
+PackageVersion: 2.0.11
 Platform:
   - Windows.Desktop
 MinimumOSVersion: 10.0.19041.0
@@ -16,9 +16,9 @@ UpgradeBehavior: install
 ReleaseDate: 2026-06-29
 Installers:
   - Architecture: x64
-    InstallerUrl: https://github.com/Layellie/StandbyAndTimer/releases/download/v2.0.10/StandbyAndTimer_Setup_2.0.10.exe
+    InstallerUrl: https://github.com/Layellie/StandbyAndTimer/releases/download/v2.0.11/StandbyAndTimer_Setup_2.0.11.exe
     # SHA256 is computed by the release pipeline (build-installer.ps1 prints it).
     # Update this hash on every release before opening the winget-pkgs PR.
-    InstallerSha256: 418348F4FC522C30290745A574FDCB2237149FA16FFB5A940D08E2B6557D55CB
+    InstallerSha256: 0000000000000000000000000000000000000000000000000000000000000000
 ManifestType: installer
 ManifestVersion: 1.6.0
