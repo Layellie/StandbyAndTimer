@@ -178,8 +178,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private void PersistSettings()
     {
         if (_isInitializing) return;
-        _settingsService.Save(BuildCurrentSettings());
+        var snapshot = BuildCurrentSettings();
+        _settingsService.Save(snapshot);
+        SettingsPersisted?.Invoke(this, snapshot);
     }
+
+    /// <summary>Raised after every successful Save — App.xaml.cs keeps a cached snapshot for balloon-guard decisions.</summary>
+    public event EventHandler<AppSettings>? SettingsPersisted;
 
     private void SchedulePersist()
     {

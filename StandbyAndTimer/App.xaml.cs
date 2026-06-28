@@ -38,6 +38,13 @@ public partial class App : Application
     private EventWaitHandle?        _showWindowSignal;
     private CancellationTokenSource? _showWindowSignalCts;
 
+    // Cached latest AppSettings snapshot. Used by the balloon handlers
+    // (OnPurgeNotification / OnTimerToggledNotification / OnGameAutoDetected)
+    // to skip raising the WinForms balloon when the user has opted out of
+    // that particular notification kind. Refreshed via the SettingsPersisted
+    // event MainViewModel raises after every successful Save.
+    private AppSettings?            _userSettings;
+
     private System.Drawing.Icon?  _iconBase;
     private System.Drawing.Icon?  _iconActive;
 
@@ -114,6 +121,7 @@ public partial class App : Application
 
         // ── 4. Apply persisted language + theme before window is created ─────
         var savedSettings = _services.GetRequiredService<ISettingsService>().Load();
+        _userSettings = savedSettings;
         if (savedSettings.Language != Core.Models.Language.English)
             _localization.SetLanguage(savedSettings.Language);
         if (savedSettings.Theme != Core.Models.Theme.Dark)
@@ -126,6 +134,7 @@ public partial class App : Application
         _viewModel.PurgeNotification        += OnPurgeNotification;
         _viewModel.TimerToggledNotification += OnTimerToggledNotification;
         _viewModel.GameAutoDetected         += OnGameAutoDetected;
+        _viewModel.SettingsPersisted        += (_, latest) => _userSettings = latest;
 
         _tray.ShowRequested        += (_, _) => ShowMainWindow();
         _tray.ToggleRequested      += (_, _) => ToggleMainWindow();
@@ -342,6 +351,7 @@ public partial class App : Application
     // top of OnExit. Non-null for the lifetime of the subscription.
     private void OnPurgeNotification(object? sender, int totalPurges)
     {
+        if (_userSettings is { NotifyOnPurge: false }) return;
         string title = _localization!.GetString("Str_Tray_NotifyPurgeTitle");
         string body  = string.Format(
             CultureInfo.CurrentCulture,
@@ -352,6 +362,7 @@ public partial class App : Application
 
     private void OnGameAutoDetected(object? sender, string exePath)
     {
+        if (_userSettings is { NotifyOnGameDetected: false }) return;
         try
         {
             string fileName = Path.GetFileName(exePath);
@@ -368,6 +379,7 @@ public partial class App : Application
 
     private void OnTimerToggledNotification(object? sender, TimerToggledArgs args)
     {
+        if (_userSettings is { NotifyOnTimerToggle: false }) return;
         string title = _localization!.GetString(args.IsActive
             ? "Str_Tray_NotifyTimerOnTitle"
             : "Str_Tray_NotifyTimerOffTitle");
