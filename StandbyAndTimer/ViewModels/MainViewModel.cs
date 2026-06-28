@@ -144,7 +144,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             foreach (var g in s.Games)
                 Games.Add(g);
 
-            Settings.Initialize(s.AutoStartEnabled, s.Language, s.UpdateCheckEnabled, s.Theme);
+            Settings.Initialize(
+                s.AutoStartEnabled, s.Language, s.UpdateCheckEnabled, s.Theme,
+                s.NotifyOnPurge, s.NotifyOnTimerToggle, s.NotifyOnGameDetected,
+                s.PurgeHotkey, s.TimerHotkey);
         }
         SyncMonitorThresholds();
         SyncMonitorGames();
@@ -231,6 +234,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         Language              = Settings.SelectedLanguage,
         Theme                 = Settings.SelectedTheme,
         UpdateCheckEnabled    = Settings.UpdateCheckEnabled,
+        NotifyOnPurge         = Settings.NotifyOnPurge,
+        NotifyOnTimerToggle   = Settings.NotifyOnTimerToggle,
+        NotifyOnGameDetected  = Settings.NotifyOnGameDetected,
+        PurgeHotkey           = Settings.PurgeHotkeyText,
+        TimerHotkey           = Settings.TimerHotkeyText,
         FirstRunCompleted     = _firstRunCompleted,
         Games                 = [.. Games]
     };

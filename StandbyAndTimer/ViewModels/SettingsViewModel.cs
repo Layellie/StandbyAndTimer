@@ -49,6 +49,11 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private Theme    _selectedTheme    = Theme.Dark;
     [ObservableProperty] private string   _updateStatus = string.Empty;
     [ObservableProperty] private string   _recentLogs   = string.Empty;
+    [ObservableProperty] private bool     _notifyOnPurge        = true;
+    [ObservableProperty] private bool     _notifyOnTimerToggle  = true;
+    [ObservableProperty] private bool     _notifyOnGameDetected = true;
+    [ObservableProperty] private string   _purgeHotkeyText      = "Ctrl+Alt+P";
+    [ObservableProperty] private string   _timerHotkeyText      = "Ctrl+Alt+T";
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(DownloadAndInstallCommand))]
@@ -108,14 +113,22 @@ public sealed partial class SettingsViewModel : ObservableObject
         _logTailReader    = logTailReader;
     }
 
-    public void Initialize(bool autoStartEnabled, Language language, bool updateCheckEnabled, Theme theme)
+    public void Initialize(
+        bool autoStartEnabled, Language language, bool updateCheckEnabled, Theme theme,
+        bool notifyOnPurge, bool notifyOnTimerToggle, bool notifyOnGameDetected,
+        string purgeHotkey, string timerHotkey)
     {
         using (new InitScope(v => _isInitializing = v))
         {
-            AutoStartEnabled    = autoStartEnabled;
-            SelectedLanguage    = language;
-            UpdateCheckEnabled  = updateCheckEnabled;
-            SelectedTheme       = theme;
+            AutoStartEnabled     = autoStartEnabled;
+            SelectedLanguage     = language;
+            UpdateCheckEnabled   = updateCheckEnabled;
+            SelectedTheme        = theme;
+            NotifyOnPurge        = notifyOnPurge;
+            NotifyOnTimerToggle  = notifyOnTimerToggle;
+            NotifyOnGameDetected = notifyOnGameDetected;
+            PurgeHotkeyText      = purgeHotkey;
+            TimerHotkeyText      = timerHotkey;
         }
     }
 
@@ -166,6 +179,24 @@ public sealed partial class SettingsViewModel : ObservableObject
     }
 
     partial void OnUpdateCheckEnabledChanged(bool value)
+    {
+        if (_isInitializing) return;
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    partial void OnNotifyOnPurgeChanged(bool value)
+    {
+        if (_isInitializing) return;
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    partial void OnNotifyOnTimerToggleChanged(bool value)
+    {
+        if (_isInitializing) return;
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    partial void OnNotifyOnGameDetectedChanged(bool value)
     {
         if (_isInitializing) return;
         SettingsChanged?.Invoke(this, EventArgs.Empty);
