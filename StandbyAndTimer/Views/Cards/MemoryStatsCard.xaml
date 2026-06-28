@@ -41,9 +41,9 @@
                 </StackPanel>
 
                 <TextBlock Text="{DynamicResource Str_Card_StandbyClearable}"
-                           FontSize="12"
+                           FontSize="14"
                            Foreground="{DynamicResource AppFgDim}"
-                           Margin="0,3,0,0"/>
+                           Margin="0,4,0,0"/>
             </StackPanel>
 
             <Border Grid.Row="2"
