@@ -3,16 +3,13 @@ name: build
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - '**.md'
-      - 'LICENSE'
-      - '.github/dependabot.yml'
+    # NOTE: no paths-ignore. Branch protection on main requires the
+    # "Build (Release)" check to pass before merge — paths-ignored events
+    # never publish a check at all, which would silently lock out every
+    # docs-only PR. We pay ~3 min of CI for the occasional README change
+    # so the rule "every PR runs CI" stays true.
   pull_request:
     branches: [main]
-    paths-ignore:
-      - '**.md'
-      - 'LICENSE'
-      - '.github/dependabot.yml'
   workflow_dispatch:
 
 permissions:
