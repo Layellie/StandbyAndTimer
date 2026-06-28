@@ -164,6 +164,18 @@ public partial class App : Application
         // call actually has a window to surface.
         StartShowWindowListener(_showWindowSignal!, _showWindowSignalCts!.Token);
 
+        // Hotkeys require the HWND to exist, which is guaranteed after Show()
+        // (and after HideOffscreen, since that internally calls Show too).
+        // Each binding dispatches back to the UI thread; the command itself
+        // does the dispatcher hop work.
+        var hotkeys = _services.GetRequiredService<IHotkeyService>();
+        hotkeys.AttachTo(_mainWindow.WindowHandle);
+        RegisterHotkeyFromSetting(hotkeys, "purge", savedSettings.PurgeHotkey,
+            () => _viewModel.ManualPurgeCommand.Execute(null));
+        RegisterHotkeyFromSetting(hotkeys, "timer", savedSettings.TimerHotkey,
+            () => _viewModel.ToggleTimerResolutionCommand.Execute(null));
+        Mark("hotkeys registered");
+
         // Live tooltip updater — every 3 s, refresh icon and text. Cheap.
         _tooltipTicker = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
         _tooltipTicker.Tick += (_, _) => RefreshTray();
@@ -209,6 +221,11 @@ public partial class App : Application
             _viewModel.TimerToggledNotification -= OnTimerToggledNotification;
             _viewModel.GameAutoDetected         -= OnGameAutoDetected;
         }
+
+        // Release every Win32 RegisterHotKey before the HWND goes away —
+        // otherwise the OS keeps the registrations bound to a dead window
+        // and the next launch fails with "hot key already registered."
+        (_services?.GetService<IHotkeyService>() as IDisposable)?.Dispose();
 
         _tray?.Dispose();
 
@@ -313,6 +330,21 @@ public partial class App : Application
     // ── Event handlers / forwarders ──────────────────────────────────────────
 
     private void ShowMainWindow() => _mainWindow?.ShowFromOffscreen();
+
+    private static void RegisterHotkeyFromSetting(IHotkeyService svc, string id, string? text, Action handler)
+    {
+        var parsed = HotkeyBinding.Parse(text ?? string.Empty);
+        if (parsed is null)
+        {
+            Logger.Warn($"Hotkey '{id}': could not parse '{text}', skipping");
+            return;
+        }
+        // Marshal the handler onto the dispatcher — RelayCommand.Execute on
+        // off-thread can race with the WPF binding system. BeginInvoke is fine
+        // here; the user won't notice a one-frame latency on a hotkey fire.
+        svc.Register(id, parsed, () =>
+            Application.Current.Dispatcher.BeginInvoke(handler));
+    }
 
     // Tray left-click semantics: if hidden → surface; if visible → hide.
     // Right-click "Show" still always surfaces (via ShowRequested).
