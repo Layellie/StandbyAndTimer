@@ -13,12 +13,12 @@ InstallModes:
   - silent
   - silentWithProgress
 UpgradeBehavior: install
-ReleaseDate: 2026-06-29
+ReleaseDate: 2026-06-28
 Installers:
   - Architecture: x64
     InstallerUrl: https://github.com/Layellie/StandbyAndTimer/releases/download/v2.1.0/StandbyAndTimer_Setup_2.1.0.exe
     # SHA256 is computed by the release pipeline (build-installer.ps1 prints it).
     # Update this hash on every release before opening the winget-pkgs PR.
-    InstallerSha256: 0000000000000000000000000000000000000000000000000000000000000000
+    InstallerSha256: B69BD65D548DD8326FE5628D56DAA1F13EF2DA602D06D773F70A7669C3B0E5B6
 ManifestType: installer
 ManifestVersion: 1.6.0
