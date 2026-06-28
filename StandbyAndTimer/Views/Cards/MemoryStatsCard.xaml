@@ -56,34 +56,45 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
+                    <!-- Three equal columns; each cell uses its outer StackPanel
+                         alignment (Left / Center / Right) to anchor the label
+                         and value to the same side, so the row visually breaks
+                         into left|center|right thirds instead of three
+                         left-flushed clumps. -->
+                    <StackPanel Grid.Column="0" HorizontalAlignment="Left">
                         <TextBlock Text="{DynamicResource Str_Memory_TotalShort}"
                                    FontSize="10"
                                    Foreground="{DynamicResource AppFgDim}"
+                                   HorizontalAlignment="Left"
                                    Margin="0,0,0,2"/>
                         <TextBlock Text="{Binding TotalRamMb, StringFormat={}{0} MB}"
                                    FontSize="13"
                                    FontWeight="SemiBold"
+                                   HorizontalAlignment="Left"
                                    Foreground="{DynamicResource AccentPrimary}"/>
                     </StackPanel>
-                    <StackPanel Grid.Column="1">
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                         <TextBlock Text="{DynamicResource Str_Memory_FreeShort}"
                                    FontSize="10"
                                    Foreground="{DynamicResource AppFgDim}"
+                                   HorizontalAlignment="Center"
                                    Margin="0,0,0,2"/>
                         <TextBlock Text="{Binding FreeRamMb, StringFormat={}{0} MB}"
                                    FontSize="13"
                                    FontWeight="SemiBold"
+                                   HorizontalAlignment="Center"
                                    Foreground="{DynamicResource SuccessColor}"/>
                     </StackPanel>
-                    <StackPanel Grid.Column="2">
+                    <StackPanel Grid.Column="2" HorizontalAlignment="Right">
                         <TextBlock Text="{DynamicResource Str_Memory_PurgesShort}"
                                    FontSize="10"
                                    Foreground="{DynamicResource AppFgDim}"
+                                   HorizontalAlignment="Right"
                                    Margin="0,0,0,2"/>
                         <TextBlock Text="{Binding PurgeCount}"
                                    FontSize="13"
                                    FontWeight="SemiBold"
+                                   HorizontalAlignment="Right"
                                    Foreground="{DynamicResource AppFg}"/>
                     </StackPanel>
                 </Grid>
