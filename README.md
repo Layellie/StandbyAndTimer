@@ -6,7 +6,7 @@
 
 A Windows desktop utility for reducing input latency and managing system memory — designed for gamers and power users.
 
-> **v2.0.10** — Brings back the in-panel logs viewer as a self-contained `LogsViewerCard` UserControl backed by a new `ILogTailReader` service (async, share-friendly file IO). Display timestamps are compacted to `HH:mm:ss` so the message body fits in the narrow Settings panel, and long lines word-wrap instead of clipping. The on-disk `log.txt` keeps the full date+ms format for archival use. The original WinForms release is preserved as [`v1.0.0`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v1.0.0) on the [`winforms-archive`](https://github.com/Layellie/StandbyAndTimer/tree/winforms-archive) branch.
+> **v2.0.11** — Removes the outer Settings-panel scrollbar by switching the layout to a single `*`-sized Logs row that absorbs all leftover vertical space. The log box itself still scrolls internally, the version footer stays pinned at the bottom, and nothing else in the panel needs to move. The original WinForms release is preserved as [`v1.0.0`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v1.0.0) on the [`winforms-archive`](https://github.com/Layellie/StandbyAndTimer/tree/winforms-archive) branch.
 
 ## Features
 
@@ -42,10 +42,10 @@ dotnet run --project StandbyAndTimer/StandbyAndTimer.csproj
 To produce a redistributable installer ([Inno Setup 6](https://jrsoftware.org/isdl.php) required):
 
 ```powershell
-.\build-installer.ps1 -Version 2.0.10
+.\build-installer.ps1 -Version 2.0.11
 ```
 
-Output: `installer/dist/StandbyAndTimer_Setup_2.0.10.exe` (~72 MB self-contained).
+Output: `installer/dist/StandbyAndTimer_Setup_2.0.11.exe` (~72 MB self-contained).
 
 ## Install via winget
 
@@ -61,7 +61,8 @@ The manifest lives at [`winget-manifests/`](winget-manifests/) and is submitted 
 
 | Tag | Stack | Notes |
 |---|---|---|
-| [`v2.0.10`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.10) | WPF (.NET 10) | Current — Compact in-panel logs viewer (HH:mm:ss timestamps + word-wrap) extracted into LogsViewerCard + ILogTailReader service |
+| [`v2.0.11`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.11) | WPF (.NET 10) | Current — Settings panel no longer shows an outer vertical scrollbar; log viewer absorbs the leftover space and the version footer stays pinned |
+| [`v2.0.10`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.10) | WPF (.NET 10) | Compact in-panel logs viewer (HH:mm:ss timestamps + word-wrap) extracted into LogsViewerCard + ILogTailReader service |
 | [`v2.0.9`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.9) | WPF (.NET 10) | Settings panel polish: readable Theme/Language ComboBox text, bigger ✕ close hitbox (no layout shift) |
 | [`v2.0.8`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.8) | WPF (.NET 10) | MainWindow split into 6 UserControls + title bar row locked to 36 px (no more shift on Settings open) |
 | [`v2.0.7`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.7) | WPF (.NET 10) | Settings panel UI polish (readable logs, refresh button no-clip, no window shift on Settings/Timer click) |
