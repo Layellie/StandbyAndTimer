@@ -7,8 +7,11 @@ namespace StandbyAndTimer.Core.Interfaces;
 // needs to know anything about WinForms Shell_NotifyIcon plumbing.
 public interface ITrayIconService : IDisposable
 {
-    /// <summary>Invoked when the user picks "Show" or clicks/double-clicks the tray icon.</summary>
+    /// <summary>Invoked when the user picks "Show" from the tray context menu — always surfaces the window.</summary>
     event EventHandler? ShowRequested;
+
+    /// <summary>Invoked on a left-click / double-click of the tray icon — App toggles window visibility.</summary>
+    event EventHandler? ToggleRequested;
 
     /// <summary>Invoked when the user picks "Exit" from the tray menu.</summary>
     event EventHandler? ExitRequested;

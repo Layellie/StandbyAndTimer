@@ -128,6 +128,7 @@ public partial class App : Application
         _viewModel.GameAutoDetected         += OnGameAutoDetected;
 
         _tray.ShowRequested        += (_, _) => ShowMainWindow();
+        _tray.ToggleRequested      += (_, _) => ToggleMainWindow();
         _tray.ExitRequested        += (_, _) => Shutdown();
         _tray.TimerToggleRequested += (_, _) => _viewModel.ToggleTimerResolutionCommand.Execute(null);
         _tray.PurgeRequested       += (_, _) => _viewModel.ManualPurgeCommand.Execute(null);
@@ -302,6 +303,15 @@ public partial class App : Application
     // ── Event handlers / forwarders ──────────────────────────────────────────
 
     private void ShowMainWindow() => _mainWindow?.ShowFromOffscreen();
+
+    // Tray left-click semantics: if hidden → surface; if visible → hide.
+    // Right-click "Show" still always surfaces (via ShowRequested).
+    private void ToggleMainWindow()
+    {
+        if (_mainWindow is null) return;
+        if (_mainWindow.IsOffscreen) SurfaceMainWindow();
+        else                          _mainWindow.HideOffscreen();
+    }
 
     private void OnLanguageChanged(object? sender, EventArgs e) =>
         Dispatcher.InvokeAsync(RefreshTray);
