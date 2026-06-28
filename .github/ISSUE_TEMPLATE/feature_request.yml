@@ -1,0 +1,31 @@
+name: Feature request
+description: Suggest a new capability or enhancement.
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the user-visible problem first, not the solution.
+      placeholder: |
+        When I'm in a fullscreen game, I want the timer status icon to flash if the resolution falls off 0.5 ms — right now I only see it after alt-tabbing back to the tray.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How you imagine it working. Mockups, sketches, or "I don't know yet" are all fine.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you thought about and why you didn't pick them.
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Pre-flight
+      options:
+        - label: I searched existing issues and this isn't already requested.
+          required: true

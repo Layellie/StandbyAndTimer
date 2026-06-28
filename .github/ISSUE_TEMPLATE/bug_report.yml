@@ -1,0 +1,51 @@
+name: Bug report
+description: Something is broken or behaves incorrectly.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report. Please fill in what you can — incomplete reports take longer to triage.
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Settings panel shows the version at the bottom right (e.g. v2.1.0).
+      placeholder: "v2.1.0"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Windows version
+      description: Run `winver` and copy the version + build.
+      placeholder: "Windows 11 24H2 (build 26100.2314)"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what did you see instead?
+      placeholder: |
+        1. Opened Settings panel
+        2. Clicked Export
+        3. Expected a file dialog; got a silent no-op
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log lines
+      description: "Settings → Open Log Folder → `log.txt`. Paste the last ~30 lines around the time the bug happened. Remove anything personal."
+      render: shell
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Pre-flight
+      options:
+        - label: I am running the app as Administrator (UAC prompt was accepted).
+          required: true
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
