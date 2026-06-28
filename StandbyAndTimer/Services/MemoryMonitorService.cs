@@ -8,8 +8,9 @@ namespace StandbyAndTimer.Services;
 
 internal sealed class MemoryMonitorService : IMemoryMonitorService
 {
-    private readonly IStandbyPurgeService       _purgeService;
+    private readonly IStandbyPurgeService        _purgeService;
     private readonly IProcessOptimizationService _processService;
+    private readonly IIdleMonitor                _idleMonitor;
 
     // The total Windows standby list = Normal Priority + Reserve + Core.
     // Reading only one bucket (as the original did) understated the value by
@@ -27,20 +28,24 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
     private Task? _loopTask;
     private bool  _disposed;
 
-    public int  StandbyLimitMb   { get; set; }
-    public int  FreeLimitMb      { get; set; }
-    public bool AutoPurgeEnabled { get; set; }
-    public bool GameModeEnabled  { get; set; }
+    public int  StandbyLimitMb    { get; set; }
+    public int  FreeLimitMb       { get; set; }
+    public bool AutoPurgeEnabled  { get; set; }
+    public bool GameModeEnabled   { get; set; }
+    public bool AutoPurgeIdleOnly { get; set; }
+    public int  IdleThresholdMs   { get; set; }
     public IReadOnlyList<string> GamePaths { get; set; } = [];
 
     public event EventHandler<MemorySnapshot>? SnapshotUpdated;
 
     public MemoryMonitorService(
         IStandbyPurgeService purgeService,
-        IProcessOptimizationService processService)
+        IProcessOptimizationService processService,
+        IIdleMonitor idleMonitor)
     {
         _purgeService   = purgeService;
         _processService = processService;
+        _idleMonitor    = idleMonitor;
         // Counters are created in EnsureCountersInitialized on the loop thread.
     }
 
@@ -114,11 +119,19 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
                 // Master switch: AutoPurgeEnabled must be ON, and both thresholds
                 // must be > 0. Defaults ship as OFF + 0/0 so a fresh install never
                 // touches the standby list until the user explicitly opts in.
+                // Idle gate: when AutoPurgeIdleOnly is on, suppress the purge
+                // until the user has been quiet for IdleThresholdMs. Defaults
+                // to "always allowed" if the flag is off, so existing users
+                // see no behaviour change on upgrade.
+                bool idleGate = !AutoPurgeIdleOnly
+                             || _idleMonitor.TimeSinceLastInput.TotalMilliseconds >= IdleThresholdMs;
+
                 bool purgeNeeded = AutoPurgeEnabled
                     && StandbyLimitMb > 0
                     && FreeLimitMb    > 0
                     && snapshot.StandbyMb >= StandbyLimitMb
-                    && snapshot.FreeMb    <= FreeLimitMb;
+                    && snapshot.FreeMb    <= FreeLimitMb
+                    && idleGate;
 
                 if (purgeNeeded)
                     await _purgeService.PurgeAsync().ConfigureAwait(false);

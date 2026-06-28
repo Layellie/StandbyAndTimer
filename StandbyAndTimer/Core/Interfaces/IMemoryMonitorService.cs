@@ -14,6 +14,12 @@ public interface IMemoryMonitorService : IDisposable
     bool GameModeEnabled  { get; set; }
     IReadOnlyList<string> GamePaths { get; set; }
 
+    /// <summary>When true, threshold-triggered purge fires only after the user has been idle for <see cref="IdleThresholdMs"/>.</summary>
+    bool AutoPurgeIdleOnly { get; set; }
+
+    /// <summary>Idle window in milliseconds before an idle-gated purge is allowed to fire.</summary>
+    int  IdleThresholdMs   { get; set; }
+
     Task StartAsync(CancellationToken cancellationToken);
     Task StopAsync();
 }
