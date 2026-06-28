@@ -8,8 +8,9 @@ PublisherUrl: https://github.com/Layellie
 PublisherSupportUrl: https://github.com/Layellie/StandbyAndTimer/issues
 PackageName: StandbyAndTimer
 PackageUrl: https://github.com/Layellie/StandbyAndTimer
-License: Proprietary
-Copyright: Copyright (c) LAYE77IE
+License: MIT
+LicenseUrl: https://github.com/Layellie/StandbyAndTimer/blob/main/LICENSE
+Copyright: Copyright (c) 2026 LAYE77IE
 ShortDescription: Lock Windows timer to 0.5 ms, auto-purge standby memory, optimize games.
 Description: |-
   StandbyAndTimer is a Windows desktop utility for gamers and power users.
