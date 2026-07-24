@@ -1,3 +1,5 @@
+![StandbyAndTimer — pins the Windows system timer at 0.5 ms and purges the standby memory list](docs/banner.png)
+
 # StandbyAndTimer
 
 <p align="center">
