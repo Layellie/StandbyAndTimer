@@ -1,6 +1,6 @@
 namespace StandbyAndTimer.Core.Interfaces;
 
-// Owns the WinForms NotifyIcon + its dark-themed context menu. App.xaml.cs
+// Owns the WinForms NotifyIcon + its themed (dark / light) context menu. App.xaml.cs
 // hands it the icon, viewmodel, and localization service; the tray service
 // handles icon swaps, balloon notifications, and menu label refreshes from
 // there on. Keeping this behind an interface means App.xaml.cs no longer
@@ -33,6 +33,9 @@ public interface ITrayIconService : IDisposable
 
     /// <summary>Re-renders just the menu labels — call when language changes.</summary>
     void RefreshLabels();
+
+    /// <summary>Switches the context menu between the dark and light palette — call on start and when the effective theme changes.</summary>
+    void ApplyTheme(bool isDark);
 
     /// <summary>Shows a balloon notification. Title and body are pre-localized.</summary>
     void ShowBalloon(string title, string body);

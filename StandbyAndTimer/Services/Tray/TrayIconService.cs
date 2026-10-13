@@ -4,8 +4,8 @@ using WinForms = System.Windows.Forms;
 
 namespace StandbyAndTimer.Services.Tray;
 
-// Concrete WinForms NotifyIcon wrapper. Owns the dark-themed context menu
-// and re-renders labels / tooltip / icon on demand. App.xaml.cs holds the
+// Concrete WinForms NotifyIcon wrapper. Owns the themed (dark / light)
+// context menu and re-renders labels / tooltip / icon on demand. App.xaml.cs holds the
 // reference and wires the public events to its own handlers (ShowMainWindow,
 // Shutdown, etc.) so this class doesn't need to know about the Application.
 internal sealed class TrayIconService : ITrayIconService
@@ -16,6 +16,8 @@ internal sealed class TrayIconService : ITrayIconService
     private readonly ILocalizationService _localization;
 
     private WinForms.NotifyIcon?        _notifyIcon;
+    private WinForms.ContextMenuStrip?  _menu;
+    private TrayMenuPalette             _palette = TrayMenuPalette.Dark;
     private WinForms.ToolStripMenuItem? _showMenuItem;
     private WinForms.ToolStripMenuItem? _settingsMenuItem;
     private WinForms.ToolStripMenuItem? _timerMenuItem;
@@ -70,12 +72,9 @@ internal sealed class TrayIconService : ITrayIconService
     {
         var menu = new WinForms.ContextMenuStrip
         {
-            Renderer        = new TrayDarkMenuRenderer(),
             ShowImageMargin = false,
             ShowCheckMargin = false,
             Font            = new System.Drawing.Font("Segoe UI", 9.5f, System.Drawing.FontStyle.Regular),
-            BackColor       = TrayDarkPalette.SurfaceBg,
-            ForeColor       = TrayDarkPalette.AppFg,
             Padding         = new WinForms.Padding(2),
         };
 
@@ -99,17 +98,34 @@ internal sealed class TrayIconService : ITrayIconService
         menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add(_exitMenuItem);
 
+        foreach (WinForms.ToolStripItem item in menu.Items)
+            if (item is WinForms.ToolStripMenuItem mi)
+                mi.Padding = new WinForms.Padding(8, 4, 8, 4);
+
+        _menu = menu;
+        ApplyPalette(menu, _palette);
+        return menu;
+    }
+
+    public void ApplyTheme(bool isDark)
+    {
+        _palette = isDark ? TrayMenuPalette.Dark : TrayMenuPalette.Light;
+        if (_menu is not null) ApplyPalette(_menu, _palette);
+    }
+
+    private static void ApplyPalette(WinForms.ContextMenuStrip menu, TrayMenuPalette palette)
+    {
+        menu.Renderer  = new TrayMenuRenderer(palette);
+        menu.BackColor = palette.SurfaceBg;
+        menu.ForeColor = palette.AppFg;
+
         // Per-item color overrides — the menu's BackColor/ForeColor alone
         // don't propagate to children when using a ProfessionalRenderer.
         foreach (WinForms.ToolStripItem item in menu.Items)
         {
-            item.BackColor = TrayDarkPalette.SurfaceBg;
-            item.ForeColor = TrayDarkPalette.AppFg;
-            if (item is WinForms.ToolStripMenuItem mi)
-                mi.Padding = new WinForms.Padding(8, 4, 8, 4);
+            item.BackColor = palette.SurfaceBg;
+            item.ForeColor = palette.AppFg;
         }
-
-        return menu;
     }
 
     public void Refresh(bool timerActive, int purgeCount)
