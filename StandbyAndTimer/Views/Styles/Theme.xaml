@@ -51,9 +51,24 @@
                             Background="{TemplateBinding Background}"
                             CornerRadius="{StaticResource RadiusMedium}"
                             SnapsToDevicePixels="True">
+                        <!-- Explicit TextBlock bound to the Button Foreground
+                             (AccentOnText). The app-level implicit TextBlock
+                             style otherwise painted every lime button label in
+                             AppFg: white on lime in the dark theme (1.24:1,
+                             e.g. "Run in Background"). A local binding outranks
+                             a style setter. -->
                         <ContentPresenter HorizontalAlignment="Center"
                                           VerticalAlignment="Center"
-                                          Margin="{TemplateBinding Padding}"/>
+                                          Margin="{TemplateBinding Padding}">
+                            <ContentPresenter.ContentTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                               FontSize="{Binding FontSize, RelativeSource={RelativeSource AncestorType=Button}}"
+                                               FontWeight="{Binding FontWeight, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                                </DataTemplate>
+                            </ContentPresenter.ContentTemplate>
+                        </ContentPresenter>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
