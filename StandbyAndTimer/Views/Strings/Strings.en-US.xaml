@@ -14,6 +14,9 @@
     <sys:String x:Key="Str_TitleBar_Admin">Administrator</sys:String>
     <sys:String x:Key="Str_Card_TimerTitle">TIMER RESOLUTION</sys:String>
     <sys:String x:Key="Str_Card_TimerLocked">LOCKED</sys:String>
+    <sys:String x:Key="Str_Card_TimerUnlocked">UNLOCKED</sys:String>
+    <sys:String x:Key="Str_Card_TimerLockTipOn">Locked: the timer turns on by itself every time the app starts. Click to unlock.</sys:String>
+    <sys:String x:Key="Str_Card_TimerLockTipOff">Unlocked: the timer only turns on with the TIMER button. Click to lock it on at every start.</sys:String>
     <sys:String x:Key="Str_Card_StandbyTitle">STANDBY MEMORY</sys:String>
     <sys:String x:Key="Str_Card_StandbyClearable">Clearable</sys:String>
     <sys:String x:Key="Str_Card_PurgeTitle">STANDBY PURGE</sys:String>
@@ -35,6 +38,8 @@
     <sys:String x:Key="Str_Game_FileDialogTitle">Select Game Executable</sys:String>
     <sys:String x:Key="Str_Game_FileDialogFilter">Executable Files (*.exe)|*.exe</sys:String>
     <sys:String x:Key="Str_Game_DropHint">Drag &amp; drop .exe files here</sys:String>
+    <sys:String x:Key="Str_Game_AutoTag">AUTO</sys:String>
+    <sys:String x:Key="Str_Game_AutoTagTip">Detected fullscreen and added automatically. Remove it and it will not be added again.</sys:String>
 
     <!-- Bottom controls -->
     <sys:String x:Key="Str_Timer_Inactive">TIMER</sys:String>
@@ -43,14 +48,12 @@
     <sys:String x:Key="Str_Settings_Button">⚙</sys:String>
 
     <!-- Settings panel -->
-    <sys:String x:Key="Str_Settings_Title">SETTINGS</sys:String>
     <sys:String x:Key="Str_Settings_LaunchOnStartup">Launch on Startup (Minimized)</sys:String>
     <sys:String x:Key="Str_Settings_Language">Language</sys:String>
     <sys:String x:Key="Str_Settings_Theme">Theme</sys:String>
     <sys:String x:Key="Str_Theme_Dark">Dark</sys:String>
     <sys:String x:Key="Str_Theme_Light">Light</sys:String>
     <sys:String x:Key="Str_Theme_System">System</sys:String>
-    <sys:String x:Key="Str_Settings_Close">✕</sys:String>
     <sys:String x:Key="Str_Settings_Export">Export Settings</sys:String>
     <sys:String x:Key="Str_Settings_Import">Import Settings</sys:String>
     <sys:String x:Key="Str_Settings_CheckUpdate">Check for Updates</sys:String>
@@ -66,7 +69,7 @@
     <sys:String x:Key="Str_Settings_ImportFail">Import failed</sys:String>
     <sys:String x:Key="Str_Settings_AutoStartFailedOn">Could not enable auto-start (schtasks failed)</sys:String>
     <sys:String x:Key="Str_Settings_AutoStartFailedOff">Could not disable auto-start (schtasks failed)</sys:String>
-    <sys:String x:Key="Str_Settings_BackupSection">Backup &amp; Maintenance</sys:String>
+    <sys:String x:Key="Str_Settings_BackupSection">BACKUP &amp; MAINTENANCE</sys:String>
     <sys:String x:Key="Str_Settings_OpenLog">Open Log Folder</sys:String>
 
     <!-- Language names -->
@@ -75,13 +78,14 @@
 
     <!-- Tray menu -->
     <sys:String x:Key="Str_Tray_Show">Show</sys:String>
+    <sys:String x:Key="Str_Tray_Settings">Settings</sys:String>
     <sys:String x:Key="Str_Tray_TimerEnable">Enable Timer</sys:String>
     <sys:String x:Key="Str_Tray_TimerDisable">Disable Timer</sys:String>
     <sys:String x:Key="Str_Tray_PurgeNow">Purge Standby Now</sys:String>
     <sys:String x:Key="Str_Tray_Exit">Exit</sys:String>
 
     <!-- Tray balloon / tooltip -->
-    <sys:String x:Key="Str_Tray_TooltipFormat">StandbyAndTimer&#x0a;Timer: {0}  •  Purges: {1}</sys:String>
+    <sys:String x:Key="Str_Tray_TooltipFormat" xml:space="preserve">StandbyAndTimer&#x0a;Timer: {0}  •  Purges: {1}</sys:String>
     <sys:String x:Key="Str_Tray_TimerStateOn">ON</sys:String>
     <sys:String x:Key="Str_Tray_TimerStateOff">OFF</sys:String>
     <sys:String x:Key="Str_Tray_NotifyPurgeTitle">Standby cache purged</sys:String>
@@ -90,6 +94,8 @@
     <sys:String x:Key="Str_Tray_NotifyTimerOnBody">System clock locked to {0:F3} ms</sys:String>
     <sys:String x:Key="Str_Tray_NotifyTimerOffTitle">Timer disabled</sys:String>
     <sys:String x:Key="Str_Tray_NotifyTimerOffBody">System clock restored to default</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyUpdateTitle">Update available</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyUpdateBody">New version {0} — open Settings to download.</sys:String>
 
     <!-- Status messages -->
     <sys:String x:Key="Str_Status_Ready">Ready</sys:String>
@@ -98,17 +104,29 @@
     <sys:String x:Key="Str_Status_PurgeFail">Purge failed (requires administrator)</sys:String>
     <sys:String x:Key="Str_Status_TimerActive">Timer active — actual value: {0:F3} ms</sys:String>
     <sys:String x:Key="Str_Status_TimerOff">Timer disabled</sys:String>
+    <sys:String x:Key="Str_Status_TimerLockedOn">Timer locked — it turns on at every start</sys:String>
+    <sys:String x:Key="Str_Status_TimerLockedOff">Timer unlocked — it starts off next time</sys:String>
+    <sys:String x:Key="Str_Status_AutoPurgeOn">Auto purge on</sys:String>
+    <sys:String x:Key="Str_Status_AutoPurgeOff">Auto purge off</sys:String>
     <sys:String x:Key="Str_Status_GameAdded">Game added</sys:String>
     <sys:String x:Key="Str_Status_GameExists">Game is already in the list</sys:String>
     <sys:String x:Key="Str_Status_GameRemoved">Game removed</sys:String>
 
     <!-- About dialog -->
     <sys:String x:Key="Str_About_Title">About &amp; Usage Guide</sys:String>
-    <sys:String x:Key="Str_About_Text">StandbyAndTimer — System Optimization Tool&#x0a;&#x0a;1. Locks system timer to 0.5 ms (NtSetTimerResolution)&#x0a;2. Auto/manual purge of standby memory (NtSetSystemInformation)&#x0a;3. Sets High Priority + CPU Affinity for configured games&#x0a;&#x0a;─── Recommended Purge Thresholds ───&#x0a;•  4 GB RAM → List: 512 MB  | Free: 512 MB&#x0a;•  8 GB RAM → List: 1024 MB | Free: 1024 MB&#x0a;• 16 GB RAM → List: 2048 MB | Free: 1024 MB&#x0a;• 32 GB RAM → List: 4096 MB | Free: 2048 MB&#x0a;• 64 GB RAM → List: 8192 MB | Free: 2048 MB&#x0a;&#x0a;Developer: LAYE77IE</sys:String>
+    <sys:String x:Key="Str_About_Subtitle">System optimization tool</sys:String>
+    <sys:String x:Key="Str_About_Feature1">Locks the system timer to 0.5 ms to cut input latency.</sys:String>
+    <sys:String x:Key="Str_About_Feature2">Purges the standby memory list automatically or on demand.</sys:String>
+    <sys:String x:Key="Str_About_Feature3">Game Mode: High priority and all CPU cores for the games in the list.</sys:String>
+    <sys:String x:Key="Str_About_ThresholdsTitle">RECOMMENDED PURGE THRESHOLDS</sys:String>
+    <sys:String x:Key="Str_About_ColRam">RAM</sys:String>
+    <sys:String x:Key="Str_About_ColList">List at least</sys:String>
+    <sys:String x:Key="Str_About_ColFree">Free below</sys:String>
+    <sys:String x:Key="Str_About_Developer">Developer: LAYE77IE</sys:String>
     <sys:String x:Key="Str_About_Close">Close</sys:String>
 
     <!-- Single instance guard -->
-    <sys:String x:Key="Str_AlreadyRunning">Application is already running in the background.&#x0a;Look for the icon in the system tray.</sys:String>
+    <sys:String x:Key="Str_AlreadyRunning" xml:space="preserve">Application is already running in the background.&#x0a;Look for the icon in the system tray.</sys:String>
 
     <!-- Close confirmation overlay -->
     <sys:String x:Key="Str_Close_Title">Close Application</sys:String>
@@ -118,7 +136,7 @@
 
     <!-- First-run wizard -->
     <sys:String x:Key="Str_Wizard_Title">Welcome to StandbyAndTimer</sys:String>
-    <sys:String x:Key="Str_Wizard_Body">Quick 30-second tour:&#x0a;&#x0a;1. Tap the big Timer button to lock the system clock to 0.5 ms — lower input lag, smoother audio.&#x0a;&#x0a;2. AUTO PURGE is OFF by default. Turn it on and set thresholds only if your standby cache regularly bloats during games. Most people don't need it.&#x0a;&#x0a;3. Drag a game .exe into the Game Mode list to give it High priority + full CPU affinity when it launches.&#x0a;&#x0a;Everything runs from the tray — closing the window keeps it alive.</sys:String>
+    <sys:String x:Key="Str_Wizard_Body" xml:space="preserve">Quick 30-second tour:&#x0a;&#x0a;1. Press TIMER to set the system clock to 0.5 ms — lower input lag, smoother audio. To have it turn on at every start, click UNLOCKED on the Timer card to lock it.&#x0a;&#x0a;2. AUTO PURGE is OFF by default. Turn it on and set thresholds only if your standby cache regularly bloats during games. Most people don't need it.&#x0a;&#x0a;3. Drag a game .exe into the Game Mode list to give it High priority + full CPU affinity when it launches. Games you play fullscreen are added on their own, tagged AUTO.&#x0a;&#x0a;Everything runs from the tray — closing the window keeps it alive.</sys:String>
     <sys:String x:Key="Str_Wizard_Finish">Got it</sys:String>
 
     <!-- Crash reporter -->
@@ -135,8 +153,8 @@
     <sys:String x:Key="Str_Settings_LogsEmpty">No log entries yet.</sys:String>
 
     <!-- Game auto-detect -->
-    <sys:String x:Key="Str_Detect_NotifyTitle">Fullscreen app detected</sys:String>
-    <sys:String x:Key="Str_Detect_NotifyBody">Add "{0}" to the Game Mode list?</sys:String>
+    <sys:String x:Key="Str_Detect_NotifyTitle">Game added to Game Mode</sys:String>
+    <sys:String x:Key="Str_Detect_NotifyBody">"{0}" was detected fullscreen and added to the Game Mode list. Not a game? Remove it from the list.</sys:String>
     <sys:String x:Key="Str_Status_GameAutoAdded">Auto-added game: {0}</sys:String>
 
     <!-- v2.1.0 -->
@@ -150,5 +168,21 @@
     <sys:String x:Key="Str_Settings_HotkeysSection">HOTKEYS</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyPurge">Manual purge</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyTimer">Toggle timer</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyAutoPurge">Toggle auto purge</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyClickToChange">Click, then press the new keys</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyRecording">Press keys… (Esc: cancel)</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyNeedsModifier">Needs at least one of Ctrl, Alt, Shift or Win.</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyUnsupported">Key not supported. Use A–Z, 0–9 or F1–F24.</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyDuplicate">Already assigned to the other action.</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyTaken">In use by another application.</sys:String>
+
+    <!-- Tabs + Settings page (landscape layout) -->
+    <sys:String x:Key="Str_Tab_Status">Status</sys:String>
+    <sys:String x:Key="Str_Tab_Settings">Settings</sys:String>
+    <sys:String x:Key="Str_Settings_StartupSection">STARTUP</sys:String>
+    <sys:String x:Key="Str_Settings_AppearanceSection">APPEARANCE</sys:String>
+    <sys:String x:Key="Str_Settings_LaunchOnStartupDesc">Starts at sign-in via Task Scheduler</sys:String>
+    <sys:String x:Key="Str_Settings_CheckUpdateOnStartup">Check for updates on launch</sys:String>
+    <sys:String x:Key="Str_Settings_CheckUpdateOnStartupDesc">Shows a tray notification when a new version is out</sys:String>
 
 </ResourceDictionary>

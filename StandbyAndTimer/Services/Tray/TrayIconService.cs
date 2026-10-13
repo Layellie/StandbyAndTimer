@@ -4,8 +4,8 @@ using WinForms = System.Windows.Forms;
 
 namespace StandbyAndTimer.Services.Tray;
 
-// Concrete WinForms NotifyIcon wrapper. Owns the dark-themed context menu
-// and re-renders labels / tooltip / icon on demand. App.xaml.cs holds the
+// Concrete WinForms NotifyIcon wrapper. Owns the themed (dark / light)
+// context menu and re-renders labels / tooltip / icon on demand. App.xaml.cs holds the
 // reference and wires the public events to its own handlers (ShowMainWindow,
 // Shutdown, etc.) so this class doesn't need to know about the Application.
 internal sealed class TrayIconService : ITrayIconService
@@ -16,7 +16,10 @@ internal sealed class TrayIconService : ITrayIconService
     private readonly ILocalizationService _localization;
 
     private WinForms.NotifyIcon?        _notifyIcon;
+    private WinForms.ContextMenuStrip?  _menu;
+    private TrayMenuPalette             _palette = TrayMenuPalette.Dark;
     private WinForms.ToolStripMenuItem? _showMenuItem;
+    private WinForms.ToolStripMenuItem? _settingsMenuItem;
     private WinForms.ToolStripMenuItem? _timerMenuItem;
     private WinForms.ToolStripMenuItem? _purgeMenuItem;
     private WinForms.ToolStripMenuItem? _exitMenuItem;
@@ -27,6 +30,7 @@ internal sealed class TrayIconService : ITrayIconService
     private bool _disposed;
 
     public event EventHandler? ShowRequested;
+    public event EventHandler? SettingsRequested;
     public event EventHandler? ToggleRequested;
     public event EventHandler? ExitRequested;
     public event EventHandler? TimerToggleRequested;
@@ -68,43 +72,60 @@ internal sealed class TrayIconService : ITrayIconService
     {
         var menu = new WinForms.ContextMenuStrip
         {
-            Renderer        = new TrayDarkMenuRenderer(),
             ShowImageMargin = false,
             ShowCheckMargin = false,
             Font            = new System.Drawing.Font("Segoe UI", 9.5f, System.Drawing.FontStyle.Regular),
-            BackColor       = TrayDarkPalette.SurfaceBg,
-            ForeColor       = TrayDarkPalette.AppFg,
             Padding         = new WinForms.Padding(2),
         };
 
-        _showMenuItem  = new WinForms.ToolStripMenuItem();
-        _timerMenuItem = new WinForms.ToolStripMenuItem();
-        _purgeMenuItem = new WinForms.ToolStripMenuItem();
-        _exitMenuItem  = new WinForms.ToolStripMenuItem();
+        _showMenuItem     = new WinForms.ToolStripMenuItem();
+        _settingsMenuItem = new WinForms.ToolStripMenuItem();
+        _timerMenuItem    = new WinForms.ToolStripMenuItem();
+        _purgeMenuItem    = new WinForms.ToolStripMenuItem();
+        _exitMenuItem     = new WinForms.ToolStripMenuItem();
 
-        _showMenuItem.Click  += (_, _) => ShowRequested?.Invoke(this, EventArgs.Empty);
-        _timerMenuItem.Click += (_, _) => TimerToggleRequested?.Invoke(this, EventArgs.Empty);
-        _purgeMenuItem.Click += (_, _) => PurgeRequested?.Invoke(this, EventArgs.Empty);
-        _exitMenuItem.Click  += (_, _) => ExitRequested?.Invoke(this, EventArgs.Empty);
+        _showMenuItem.Click     += (_, _) => ShowRequested?.Invoke(this, EventArgs.Empty);
+        _settingsMenuItem.Click += (_, _) => SettingsRequested?.Invoke(this, EventArgs.Empty);
+        _timerMenuItem.Click    += (_, _) => TimerToggleRequested?.Invoke(this, EventArgs.Empty);
+        _purgeMenuItem.Click    += (_, _) => PurgeRequested?.Invoke(this, EventArgs.Empty);
+        _exitMenuItem.Click     += (_, _) => ExitRequested?.Invoke(this, EventArgs.Empty);
 
         menu.Items.Add(_showMenuItem);
+        menu.Items.Add(_settingsMenuItem);
         menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add(_timerMenuItem);
         menu.Items.Add(_purgeMenuItem);
         menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add(_exitMenuItem);
 
+        foreach (WinForms.ToolStripItem item in menu.Items)
+            if (item is WinForms.ToolStripMenuItem mi)
+                mi.Padding = new WinForms.Padding(8, 4, 8, 4);
+
+        _menu = menu;
+        ApplyPalette(menu, _palette);
+        return menu;
+    }
+
+    public void ApplyTheme(bool isDark)
+    {
+        _palette = isDark ? TrayMenuPalette.Dark : TrayMenuPalette.Light;
+        if (_menu is not null) ApplyPalette(_menu, _palette);
+    }
+
+    private static void ApplyPalette(WinForms.ContextMenuStrip menu, TrayMenuPalette palette)
+    {
+        menu.Renderer  = new TrayMenuRenderer(palette);
+        menu.BackColor = palette.SurfaceBg;
+        menu.ForeColor = palette.AppFg;
+
         // Per-item color overrides — the menu's BackColor/ForeColor alone
         // don't propagate to children when using a ProfessionalRenderer.
         foreach (WinForms.ToolStripItem item in menu.Items)
         {
-            item.BackColor = TrayDarkPalette.SurfaceBg;
-            item.ForeColor = TrayDarkPalette.AppFg;
-            if (item is WinForms.ToolStripMenuItem mi)
-                mi.Padding = new WinForms.Padding(8, 4, 8, 4);
+            item.BackColor = palette.SurfaceBg;
+            item.ForeColor = palette.AppFg;
         }
-
-        return menu;
     }
 
     public void Refresh(bool timerActive, int purgeCount)
@@ -133,6 +154,9 @@ internal sealed class TrayIconService : ITrayIconService
     {
         if (_showMenuItem is not null)
             _showMenuItem.Text = _localization.GetString("Str_Tray_Show");
+
+        if (_settingsMenuItem is not null)
+            _settingsMenuItem.Text = _localization.GetString("Str_Tray_Settings");
 
         if (_timerMenuItem is not null)
             _timerMenuItem.Text = _localization.GetString(

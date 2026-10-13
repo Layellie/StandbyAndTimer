@@ -27,6 +27,7 @@ internal sealed class SettingsService : ISettingsService
                 GameModeEnabled       = GetBool(key,     "GameModeEnabled"),
                 AutoStartEnabled      = GetBool(key,     "AutoStartEnabled"),
                 TimerResolutionActive = GetBool(key,     "TimerResolutionActive"),
+                TimerLocked           = GetBool(key,     "TimerLocked"),
                 Language              = GetEnum(key, "Language", Language.English),
                 Theme                 = GetEnum(key, "Theme",    Theme.Dark),
                 UpdateCheckEnabled    = GetBool(key,     "UpdateCheckEnabled", defaultValue: true),
@@ -41,21 +42,23 @@ internal sealed class SettingsService : ISettingsService
 
                 PurgeHotkey           = key.GetValue("PurgeHotkey")?.ToString() ?? "Ctrl+Alt+P",
                 TimerHotkey           = key.GetValue("TimerHotkey")?.ToString() ?? "Ctrl+Alt+T",
+                AutoPurgeHotkey       = key.GetValue("AutoPurgeHotkey")?.ToString() ?? "Ctrl+Alt+O",
             };
 
-            string pathsRaw = key.GetValue("GamePaths")?.ToString() ?? string.Empty;
-            if (!string.IsNullOrWhiteSpace(pathsRaw))
-            {
-                settings.Games = pathsRaw
-                    .Split(';', StringSplitOptions.RemoveEmptyEntries)
-                    .Where(File.Exists)
-                    .Select(p => new GameEntry
-                    {
-                        DisplayName    = Path.GetFileNameWithoutExtension(p),
-                        ExecutablePath = p
-                    })
-                    .ToList();
-            }
+            // AutoGamePaths is the subset of GamePaths that fullscreen
+            // detection added (drives the "AUTO" tag); kept as a separate
+            // value so GamePaths stays readable by older versions.
+            var autoPaths = new HashSet<string>(SplitPaths(key.GetValue("AutoGamePaths")), StringComparer.OrdinalIgnoreCase);
+            settings.Games = SplitPaths(key.GetValue("GamePaths"))
+                .Where(File.Exists)
+                .Select(p => new GameEntry
+                {
+                    DisplayName    = Path.GetFileNameWithoutExtension(p),
+                    ExecutablePath = p,
+                    AutoAdded      = autoPaths.Contains(p)
+                })
+                .ToList();
+            settings.IgnoredGamePaths = SplitPaths(key.GetValue("IgnoredGamePaths")).ToList();
 
             return settings;
         }
@@ -83,6 +86,7 @@ internal sealed class SettingsService : ISettingsService
             key.SetValue("GameModeEnabled",        settings.GameModeEnabled        ? "1" : "0");
             key.SetValue("AutoStartEnabled",       settings.AutoStartEnabled       ? "1" : "0");
             key.SetValue("TimerResolutionActive",  settings.TimerResolutionActive  ? "1" : "0");
+            key.SetValue("TimerLocked",            settings.TimerLocked            ? "1" : "0");
             key.SetValue("UpdateCheckEnabled",     settings.UpdateCheckEnabled     ? "1" : "0");
             key.SetValue("FirstRunCompleted",      settings.FirstRunCompleted      ? "1" : "0");
 
@@ -93,19 +97,30 @@ internal sealed class SettingsService : ISettingsService
             key.SetValue("IdleThresholdMinutes",   settings.IdleThresholdMinutes,  RegistryValueKind.DWord);
             key.SetValue("PurgeHotkey",            settings.PurgeHotkey            ?? "Ctrl+Alt+P");
             key.SetValue("TimerHotkey",            settings.TimerHotkey            ?? "Ctrl+Alt+T");
+            key.SetValue("AutoPurgeHotkey",        settings.AutoPurgeHotkey        ?? "Ctrl+Alt+O");
 
             key.SetValue("Language", settings.Language.ToString());
             key.SetValue("Theme",    settings.Theme.ToString());
 
-            if (settings.Games.Count > 0)
-                key.SetValue("GamePaths", string.Join(";", settings.Games.Select(g => g.ExecutablePath)));
-            else
-                key.DeleteValue("GamePaths", throwOnMissingValue: false);
+            SetPaths(key, "GamePaths",        settings.Games.Select(g => g.ExecutablePath));
+            SetPaths(key, "AutoGamePaths",    settings.Games.Where(g => g.AutoAdded).Select(g => g.ExecutablePath));
+            SetPaths(key, "IgnoredGamePaths", settings.IgnoredGamePaths ?? []);
         }
         catch (Exception ex)
         {
             Logger.Error("SettingsService.Save", ex);
         }
+    }
+
+    // ';'-separated exe path lists (paths cannot contain ';' on Windows).
+    private static string[] SplitPaths(object? raw) =>
+        (raw?.ToString() ?? string.Empty).Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    private static void SetPaths(RegistryKey key, string name, IEnumerable<string> paths)
+    {
+        string joined = string.Join(";", paths);
+        if (joined.Length > 0) key.SetValue(name, joined);
+        else                   key.DeleteValue(name, throwOnMissingValue: false);
     }
 
     // Reads either REG_DWORD (current format) or REG_SZ (legacy / Import JSON

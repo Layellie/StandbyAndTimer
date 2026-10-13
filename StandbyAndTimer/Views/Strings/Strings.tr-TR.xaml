@@ -13,7 +13,10 @@
     <!-- Yeni kart başlıkları ve mikro-etiketler (modern tasarım) -->
     <sys:String x:Key="Str_TitleBar_Admin">Yönetici</sys:String>
     <sys:String x:Key="Str_Card_TimerTitle">TIMER ÇÖZÜNÜRLÜĞÜ</sys:String>
-    <sys:String x:Key="Str_Card_TimerLocked">KİLİT</sys:String>
+    <sys:String x:Key="Str_Card_TimerLocked">KİLİTLİ</sys:String>
+    <sys:String x:Key="Str_Card_TimerUnlocked">KİLİTSİZ</sys:String>
+    <sys:String x:Key="Str_Card_TimerLockTipOn">Kilitli: timer uygulama her açıldığında otomatik açılır. Kilidi açmak için tıkla.</sys:String>
+    <sys:String x:Key="Str_Card_TimerLockTipOff">Kilitsiz: timer sadece TIMER'a basınca açılır. Her açılışta otomatik açılsın diye kilitlemek için tıkla.</sys:String>
     <sys:String x:Key="Str_Card_StandbyTitle">STANDBY BELLEK</sys:String>
     <sys:String x:Key="Str_Card_StandbyClearable">Temizlenebilir</sys:String>
     <sys:String x:Key="Str_Card_PurgeTitle">STANDBY TEMİZLE</sys:String>
@@ -35,6 +38,8 @@
     <sys:String x:Key="Str_Game_FileDialogTitle">Oyun Çalıştırılabilir Dosyasını Seç</sys:String>
     <sys:String x:Key="Str_Game_FileDialogFilter">Yürütülebilir Dosyalar (*.exe)|*.exe</sys:String>
     <sys:String x:Key="Str_Game_DropHint">.exe dosyalarını buraya sürükleyin</sys:String>
+    <sys:String x:Key="Str_Game_AutoTag">OTO</sys:String>
+    <sys:String x:Key="Str_Game_AutoTagTip">Tam ekranda algılanıp otomatik eklendi. Silersen bir daha eklenmez.</sys:String>
 
     <!-- Alt kontroller -->
     <sys:String x:Key="Str_Timer_Inactive">TIMER</sys:String>
@@ -43,14 +48,12 @@
     <sys:String x:Key="Str_Settings_Button">⚙</sys:String>
 
     <!-- Ayarlar paneli -->
-    <sys:String x:Key="Str_Settings_Title">AYARLAR</sys:String>
     <sys:String x:Key="Str_Settings_LaunchOnStartup">Başlangıçta Başlat (Simge Durumunda)</sys:String>
     <sys:String x:Key="Str_Settings_Language">Dil</sys:String>
     <sys:String x:Key="Str_Settings_Theme">Tema</sys:String>
     <sys:String x:Key="Str_Theme_Dark">Koyu</sys:String>
     <sys:String x:Key="Str_Theme_Light">Açık</sys:String>
     <sys:String x:Key="Str_Theme_System">Sistem</sys:String>
-    <sys:String x:Key="Str_Settings_Close">✕</sys:String>
     <sys:String x:Key="Str_Settings_Export">Ayarları Dışa Aktar</sys:String>
     <sys:String x:Key="Str_Settings_Import">Ayarları İçe Aktar</sys:String>
     <sys:String x:Key="Str_Settings_CheckUpdate">Güncellemeleri Kontrol Et</sys:String>
@@ -66,7 +69,7 @@
     <sys:String x:Key="Str_Settings_ImportFail">İçe aktarma başarısız</sys:String>
     <sys:String x:Key="Str_Settings_AutoStartFailedOn">Otomatik başlatma açılamadı (schtasks başarısız)</sys:String>
     <sys:String x:Key="Str_Settings_AutoStartFailedOff">Otomatik başlatma kapatılamadı (schtasks başarısız)</sys:String>
-    <sys:String x:Key="Str_Settings_BackupSection">Yedekleme ve Bakım</sys:String>
+    <sys:String x:Key="Str_Settings_BackupSection">YEDEKLEME VE BAKIM</sys:String>
     <sys:String x:Key="Str_Settings_OpenLog">Log Klasörünü Aç</sys:String>
 
     <!-- Dil isimleri -->
@@ -75,13 +78,14 @@
 
     <!-- Tray menü -->
     <sys:String x:Key="Str_Tray_Show">Göster</sys:String>
+    <sys:String x:Key="Str_Tray_Settings">Ayarlar</sys:String>
     <sys:String x:Key="Str_Tray_TimerEnable">Timer'ı Aç</sys:String>
     <sys:String x:Key="Str_Tray_TimerDisable">Timer'ı Kapat</sys:String>
     <sys:String x:Key="Str_Tray_PurgeNow">Standby'ı Temizle</sys:String>
     <sys:String x:Key="Str_Tray_Exit">Çıkış</sys:String>
 
     <!-- Tray balloon / tooltip -->
-    <sys:String x:Key="Str_Tray_TooltipFormat">StandbyAndTimer&#x0a;Timer: {0}  •  Temizleme: {1}</sys:String>
+    <sys:String x:Key="Str_Tray_TooltipFormat" xml:space="preserve">StandbyAndTimer&#x0a;Timer: {0}  •  Temizleme: {1}</sys:String>
     <sys:String x:Key="Str_Tray_TimerStateOn">AÇIK</sys:String>
     <sys:String x:Key="Str_Tray_TimerStateOff">KAPALI</sys:String>
     <sys:String x:Key="Str_Tray_NotifyPurgeTitle">Standby bellek temizlendi</sys:String>
@@ -90,6 +94,8 @@
     <sys:String x:Key="Str_Tray_NotifyTimerOnBody">Sistem saati {0:F3} ms olarak kilitlendi</sys:String>
     <sys:String x:Key="Str_Tray_NotifyTimerOffTitle">Timer devre dışı</sys:String>
     <sys:String x:Key="Str_Tray_NotifyTimerOffBody">Sistem saati varsayılana döndü</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyUpdateTitle">Güncelleme var</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyUpdateBody">Yeni sürüm {0} — indirmek için Ayarlar'ı aç.</sys:String>
 
     <!-- Durum mesajları -->
     <sys:String x:Key="Str_Status_Ready">Hazır</sys:String>
@@ -98,17 +104,29 @@
     <sys:String x:Key="Str_Status_PurgeFail">Temizleme başarısız (yönetici yetkisi gerekli)</sys:String>
     <sys:String x:Key="Str_Status_TimerActive">Timer aktif — gerçek değer: {0:F3} ms</sys:String>
     <sys:String x:Key="Str_Status_TimerOff">Timer devre dışı</sys:String>
+    <sys:String x:Key="Str_Status_TimerLockedOn">Timer kilitlendi — her açılışta otomatik açılacak</sys:String>
+    <sys:String x:Key="Str_Status_TimerLockedOff">Timer kilidi açıldı — sonraki açılışta kapalı başlayacak</sys:String>
+    <sys:String x:Key="Str_Status_AutoPurgeOn">Oto temizle açık</sys:String>
+    <sys:String x:Key="Str_Status_AutoPurgeOff">Oto temizle kapalı</sys:String>
     <sys:String x:Key="Str_Status_GameAdded">Oyun eklendi</sys:String>
     <sys:String x:Key="Str_Status_GameExists">Bu oyun zaten listede</sys:String>
     <sys:String x:Key="Str_Status_GameRemoved">Oyun kaldırıldı</sys:String>
 
     <!-- Hakkında penceresi -->
     <sys:String x:Key="Str_About_Title">Hakkında ve Kullanım Kılavuzu</sys:String>
-    <sys:String x:Key="Str_About_Text">StandbyAndTimer — Sistem Optimizasyon Aracı&#x0a;&#x0a;1. Sistem timer'ını 0.5 ms'ye kilitler (NtSetTimerResolution)&#x0a;2. Standby bellek listesini otomatik/manuel temizler (NtSetSystemInformation)&#x0a;3. Oyunlar için Yüksek Öncelik + CPU Affinity ayarlar&#x0a;&#x0a;─── Önerilen Purge Eşikleri ───&#x0a;•  4 GB RAM → Liste: 512 MB  | Serbest: 512 MB&#x0a;•  8 GB RAM → Liste: 1024 MB | Serbest: 1024 MB&#x0a;• 16 GB RAM → Liste: 2048 MB | Serbest: 1024 MB&#x0a;• 32 GB RAM → Liste: 4096 MB | Serbest: 2048 MB&#x0a;• 64 GB RAM → Liste: 8192 MB | Serbest: 2048 MB&#x0a;&#x0a;Geliştirici: LAYE77IE</sys:String>
+    <sys:String x:Key="Str_About_Subtitle">Sistem optimizasyon aracı</sys:String>
+    <sys:String x:Key="Str_About_Feature1">Sistem timer'ını 0.5 ms'ye kilitler; girdi gecikmesini azaltır.</sys:String>
+    <sys:String x:Key="Str_About_Feature2">Standby bellek listesini otomatik ya da elle temizler.</sys:String>
+    <sys:String x:Key="Str_About_Feature3">Game Mode: listedeki oyunlara Yüksek öncelik ve tüm CPU çekirdeklerini verir.</sys:String>
+    <sys:String x:Key="Str_About_ThresholdsTitle">ÖNERİLEN TEMİZLEME EŞİKLERİ</sys:String>
+    <sys:String x:Key="Str_About_ColRam">RAM</sys:String>
+    <sys:String x:Key="Str_About_ColList">Liste en az</sys:String>
+    <sys:String x:Key="Str_About_ColFree">Serbest altında</sys:String>
+    <sys:String x:Key="Str_About_Developer">Geliştirici: LAYE77IE</sys:String>
     <sys:String x:Key="Str_About_Close">Kapat</sys:String>
 
     <!-- Tek instance uyarısı -->
-    <sys:String x:Key="Str_AlreadyRunning">Uygulama zaten arka planda çalışıyor.&#x0a;Sistem tepsisindeki simgeye bakın.</sys:String>
+    <sys:String x:Key="Str_AlreadyRunning" xml:space="preserve">Uygulama zaten arka planda çalışıyor.&#x0a;Sistem tepsisindeki simgeye bakın.</sys:String>
 
     <!-- Kapatma onay ekranı -->
     <sys:String x:Key="Str_Close_Title">Uygulamayı Kapat</sys:String>
@@ -118,7 +136,7 @@
 
     <!-- İlk açılış sihirbazı -->
     <sys:String x:Key="Str_Wizard_Title">StandbyAndTimer'a hoş geldin</sys:String>
-    <sys:String x:Key="Str_Wizard_Body">30 saniyelik mini tur:&#x0a;&#x0a;1. Büyük Timer butonuna basıp sistem saatini 0.5 ms'ye kilitle — daha düşük input lag, daha pürüzsüz ses.&#x0a;&#x0a;2. AUTO PURGE varsayılan olarak KAPALI. Sadece oyunlarda standby cache şişiyorsa aç ve eşikleri ayarla. Çoğu kullanıcının buna ihtiyacı yok.&#x0a;&#x0a;3. Game Mode listesine bir oyun .exe'sini sürükle — çalıştığında ona High öncelik + tüm CPU affinity verilir.&#x0a;&#x0a;Her şey tepsiden çalışır — pencereyi kapatmak uygulamayı kapatmaz.</sys:String>
+    <sys:String x:Key="Str_Wizard_Body" xml:space="preserve">30 saniyelik mini tur:&#x0a;&#x0a;1. TIMER butonuna basıp sistem saatini 0.5 ms'ye ayarla — daha düşük input lag, daha pürüzsüz ses. Her açılışta kendiliğinden açılsın istersen Timer kartındaki KİLİTSİZ'e tıklayıp kilitle.&#x0a;&#x0a;2. AUTO PURGE varsayılan olarak KAPALI. Sadece oyunlarda standby cache şişiyorsa aç ve eşikleri ayarla. Çoğu kullanıcının buna ihtiyacı yok.&#x0a;&#x0a;3. Game Mode listesine bir oyun .exe'sini sürükle — çalıştığında ona High öncelik + tüm CPU affinity verilir. Tam ekran açtığın oyunlar da OTO etiketiyle kendiliğinden eklenir.&#x0a;&#x0a;Her şey tepsiden çalışır — pencereyi kapatmak uygulamayı kapatmaz.</sys:String>
     <sys:String x:Key="Str_Wizard_Finish">Anladım</sys:String>
 
     <!-- Çökme raporu -->
@@ -135,8 +153,8 @@
     <sys:String x:Key="Str_Settings_LogsEmpty">Henüz log girdisi yok.</sys:String>
 
     <!-- Oyun otomatik tespit -->
-    <sys:String x:Key="Str_Detect_NotifyTitle">Tam ekran uygulama tespit edildi</sys:String>
-    <sys:String x:Key="Str_Detect_NotifyBody">"{0}" Game Mode listesine eklensin mi?</sys:String>
+    <sys:String x:Key="Str_Detect_NotifyTitle">Game Mode'a oyun eklendi</sys:String>
+    <sys:String x:Key="Str_Detect_NotifyBody">"{0}" tam ekranda algılandı ve Game Mode listesine eklendi. Oyun değilse listeden silebilirsin.</sys:String>
     <sys:String x:Key="Str_Status_GameAutoAdded">Otomatik eklendi: {0}</sys:String>
 
     <!-- v2.1.0 -->
@@ -150,5 +168,21 @@
     <sys:String x:Key="Str_Settings_HotkeysSection">KISAYOLLAR</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyPurge">Manuel temizle</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyTimer">Zamanlayıcı aç/kapa</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyAutoPurge">Oto temizle aç/kapa</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyClickToChange">Değiştirmek için tıkla, sonra yeni tuşlara bas</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyRecording">Tuşlara bas… (Esc: iptal)</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyNeedsModifier">En az bir Ctrl, Alt, Shift ya da Win tuşu gerekli.</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyUnsupported">Bu tuş desteklenmiyor. A–Z, 0–9 ya da F1–F24 kullan.</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyDuplicate">Bu kısayol diğer işleme zaten atanmış.</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyTaken">Bu kısayolu başka bir uygulama kullanıyor.</sys:String>
+
+    <!-- Sekmeler + Ayarlar sayfası (yatay düzen) -->
+    <sys:String x:Key="Str_Tab_Status">Durum</sys:String>
+    <sys:String x:Key="Str_Tab_Settings">Ayarlar</sys:String>
+    <sys:String x:Key="Str_Settings_StartupSection">BAŞLANGIÇ</sys:String>
+    <sys:String x:Key="Str_Settings_AppearanceSection">GÖRÜNÜM</sys:String>
+    <sys:String x:Key="Str_Settings_LaunchOnStartupDesc">Oturum açılınca Görev Zamanlayıcı ile başlar</sys:String>
+    <sys:String x:Key="Str_Settings_CheckUpdateOnStartup">Açılışta güncelleme kontrolü</sys:String>
+    <sys:String x:Key="Str_Settings_CheckUpdateOnStartupDesc">Yeni sürüm varsa tepside bildirim gösterir</sys:String>
 
 </ResourceDictionary>

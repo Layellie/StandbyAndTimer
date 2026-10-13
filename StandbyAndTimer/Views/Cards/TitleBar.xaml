@@ -2,15 +2,17 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
-             FontFamily="Segoe UI" FontSize="13">
+             FontFamily="{StaticResource AppFont}" FontSize="13">
 
     <!-- Custom title bar — the window has WindowStyle=None, so we render
-         caption, app name, admin badge, and Settings/About/Minimize/Close
-         buttons ourselves. shell:WindowChrome on MainWindow makes the bar
-         draggable; the action buttons opt out via IsHitTestVisibleInChrome. -->
-    <Border Background="{DynamicResource SurfaceBg}"
-            BorderBrush="{DynamicResource BorderColor}"
-            BorderThickness="0,0,0,1"
+         caption, app name, admin badge, and About/Minimize/Close buttons
+         ourselves (Settings is a tab now, not a title-bar button).
+         shell:WindowChrome on MainWindow makes the bar draggable; the
+         action buttons opt out via IsHitTestVisibleInChrome. -->
+    <!-- Same tone as the window (WhichGPU-style): the segment tab strip right
+         below already separates chrome from content, a divider line here
+         just doubled it. -->
+    <Border Background="{DynamicResource AppBg}"
             Height="36">
         <Grid>
             <Grid.ColumnDefinitions>
@@ -28,7 +30,7 @@
                          VerticalAlignment="Center"
                          Margin="0,0,9,0"/>
                 <TextBlock Text="StandbyAndTimer"
-                           FontSize="12"
+                           FontSize="13"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource AppFg}"
                            VerticalAlignment="Center"/>
@@ -44,7 +46,7 @@
                 <Border Style="{StaticResource SuccessBadgeStyle}" Margin="0,0,8,0">
                     <StackPanel Orientation="Horizontal">
                         <Path Data="M5,0 L5,3 L9,3 L9,8 L1,8 L1,3 L5,3 M3,3 L3,1.5 A2,2 0 0 1 7,1.5 L7,3"
-                              Stroke="{DynamicResource SuccessColor}"
+                              Stroke="{DynamicResource AccentText}"
                               StrokeThickness="1"
                               Width="10" Height="9"
                               Stretch="Uniform"
@@ -53,16 +55,10 @@
                         <TextBlock Text="{DynamicResource Str_TitleBar_Admin}"
                                    FontSize="10"
                                    FontWeight="SemiBold"
-                                   Foreground="{DynamicResource SuccessColor}"
+                                   Foreground="{DynamicResource AccentText}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
                 </Border>
-
-                <Button Style="{StaticResource TitleBarIconButtonStyle}"
-                        Content="⚙"
-                        FontSize="14"
-                        Command="{Binding OpenSettingsCommand}"
-                        ToolTip="Settings"/>
 
                 <Button Style="{StaticResource TitleBarIconButtonStyle}"
                         Content="?"

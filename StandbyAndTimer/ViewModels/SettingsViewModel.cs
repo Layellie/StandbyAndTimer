@@ -54,6 +54,45 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool     _notifyOnGameDetected = true;
     [ObservableProperty] private string   _purgeHotkeyText      = "Ctrl+Alt+P";
     [ObservableProperty] private string   _timerHotkeyText      = "Ctrl+Alt+T";
+    [ObservableProperty] private string   _autoPurgeHotkeyText  = "Ctrl+Alt+O";
+
+    // Hotkey rebinding. RecordingHotkeyId is the id being recorded (one of
+    // HotkeyIds) or null; HotkeyError is shown under the Hotkeys group and
+    // cleared when a new recording starts.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsRecordingPurge), nameof(IsRecordingTimer), nameof(IsRecordingAutoPurge))]
+    private string? _recordingHotkeyId;
+
+    [ObservableProperty] private string   _hotkeyError          = string.Empty;
+
+    public const string HotkeyIdPurge     = "purge";
+    public const string HotkeyIdTimer     = "timer";
+    public const string HotkeyIdAutoPurge = "autopurge";
+
+    private static readonly string[] HotkeyIds = [HotkeyIdPurge, HotkeyIdTimer, HotkeyIdAutoPurge];
+
+    public bool IsRecordingPurge     => RecordingHotkeyId == HotkeyIdPurge;
+    public bool IsRecordingTimer     => RecordingHotkeyId == HotkeyIdTimer;
+    public bool IsRecordingAutoPurge => RecordingHotkeyId == HotkeyIdAutoPurge;
+
+    private string HotkeyText(string id) => id switch
+    {
+        HotkeyIdPurge     => PurgeHotkeyText,
+        HotkeyIdTimer     => TimerHotkeyText,
+        HotkeyIdAutoPurge => AutoPurgeHotkeyText,
+        _                 => throw new ArgumentOutOfRangeException(nameof(id), id, null)
+    };
+
+    private void SetHotkeyText(string id, string text)
+    {
+        switch (id)
+        {
+            case HotkeyIdPurge:     PurgeHotkeyText     = text; break;
+            case HotkeyIdTimer:     TimerHotkeyText     = text; break;
+            case HotkeyIdAutoPurge: AutoPurgeHotkeyText = text; break;
+            default: throw new ArgumentOutOfRangeException(nameof(id), id, null);
+        }
+    }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(DownloadAndInstallCommand))]
@@ -97,6 +136,13 @@ public sealed partial class SettingsViewModel : ObservableObject
     // Set by MainViewModel after Initialize so Export/Import can serialize a snapshot.
     internal Func<AppSettings>? SnapshotProvider { get; set; }
 
+    // Set by App once the hotkey service is attached to the window. App owns
+    // the registrations (it knows which command each id fires); the view
+    // model only decides WHAT to register. RegisterHotkey returns false when
+    // Win32 refuses the combo (taken by another app, unparsable text).
+    internal Func<string, string, bool>? RegisterHotkey   { get; set; }
+    internal Action<string>?             UnregisterHotkey { get; set; }
+
     public SettingsViewModel(
         IAutoStartService    autoStartService,
         ILocalizationService localization,
@@ -116,7 +162,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     public void Initialize(
         bool autoStartEnabled, Language language, bool updateCheckEnabled, Theme theme,
         bool notifyOnPurge, bool notifyOnTimerToggle, bool notifyOnGameDetected,
-        string purgeHotkey, string timerHotkey)
+        string purgeHotkey, string timerHotkey, string autoPurgeHotkey)
     {
         using (new InitScope(v => _isInitializing = v))
         {
@@ -129,22 +175,133 @@ public sealed partial class SettingsViewModel : ObservableObject
             NotifyOnGameDetected = notifyOnGameDetected;
             PurgeHotkeyText      = purgeHotkey;
             TimerHotkeyText      = timerHotkey;
+            AutoPurgeHotkeyText  = autoPurgeHotkey;
         }
     }
 
     [RelayCommand]
-    private void Close() => IsOpen = false;
-
-    [RelayCommand]
     private Task RefreshLogsAsync() => LoadLogTailAsync();
 
-    // Auto-refresh whenever the panel opens so the user always sees current
-    // logs without an extra click; bumping the ticket on close ensures any
+    // IsOpen = "the Settings tab is on screen" (bound to the main TabControl).
+    // Auto-refresh whenever the tab is shown so the user always sees current
+    // logs without an extra click; bumping the ticket on leave ensures any
     // still-in-flight read that returns later won't overwrite RecentLogs.
     partial void OnIsOpenChanged(bool value)
     {
         if (value) _ = LoadLogTailAsync();
         else       System.Threading.Interlocked.Increment(ref _logReadTicket);
+
+        // Leaving the Settings tab must never strand the hotkeys suspended.
+        if (!value) CancelHotkeyRecording();
+    }
+
+    // ── Hotkey rebinding ──────────────────────────────────────────────────────
+
+    // All global hotkeys are released while recording: RegisterHotKey
+    // swallows the combo before the window sees the key, so pressing a
+    // current shortcut would fire its action instead of being recorded.
+    [RelayCommand]
+    private void StartHotkeyRecording(string? id)
+    {
+        if (id is null || Array.IndexOf(HotkeyIds, id) < 0) return;
+        if (RegisterHotkey is null || UnregisterHotkey is null) return;
+
+        if (RecordingHotkeyId is not null) CancelHotkeyRecording();
+
+        HotkeyError       = string.Empty;
+        RecordingHotkeyId = id;
+        foreach (string hid in HotkeyIds) UnregisterHotkey(hid);
+    }
+
+    /// <summary>Ends a recording without changes and re-registers all hotkeys.</summary>
+    public void CancelHotkeyRecording()
+    {
+        if (RecordingHotkeyId is null) return;
+        RecordingHotkeyId = null;
+        RegisterAll();
+    }
+
+    /// <summary>
+    /// Called by the view with the pressed combo (Win32 MOD_* mask + virtual
+    /// key). Invalid combos keep recording and show why; a valid one is
+    /// registered, persisted and ends the recording. If Win32 refuses it the
+    /// previous binding is restored.
+    /// </summary>
+    public void CompleteHotkeyRecording(uint modifiers, uint virtualKey)
+    {
+        string? id = RecordingHotkeyId;
+        if (id is null || RegisterHotkey is null) return;
+
+        var candidate = new HotkeyBinding(modifiers, virtualKey);
+        if (modifiers == 0)
+        {
+            HotkeyError = _localization.GetString("Str_Settings_HotkeyNeedsModifier");
+            return;
+        }
+        string? text = candidate.Format();
+        if (text is null)
+        {
+            HotkeyError = _localization.GetString("Str_Settings_HotkeyUnsupported");
+            return;
+        }
+
+        if (HotkeyIds.Any(other => other != id && HotkeyBinding.Parse(HotkeyText(other)) == candidate))
+        {
+            HotkeyError = _localization.GetString("Str_Settings_HotkeyDuplicate");
+            return;
+        }
+
+        RecordingHotkeyId = null;
+        if (RegisterHotkey(id, text))
+        {
+            // Property change → OnXHotkeyTextChanged → SettingsChanged →
+            // MainViewModel.PersistSettings writes it to the registry.
+            SetHotkeyText(id, text);
+            HotkeyError = string.Empty;
+            Logger.Info($"Hotkey '{id}' rebound to {text}");
+        }
+        else
+        {
+            HotkeyError = _localization.GetString("Str_Settings_HotkeyTaken");
+            Logger.Warn($"Hotkey '{id}': {text} refused by RegisterHotKey, keeping previous binding");
+        }
+        RegisterAll();
+    }
+
+    // Re-registers whatever the texts currently hold. Register replaces an
+    // existing registration for the same id, so this is safe to call after
+    // a successful rebind or an import too. Returns false if any failed
+    // (true when no registrar is attached yet: nothing to re-apply).
+    private bool RegisterAll()
+    {
+        if (RegisterHotkey is null) return true;
+        bool ok = true;
+        foreach (string id in HotkeyIds)
+        {
+            string text = HotkeyText(id);
+            if (RegisterHotkey(id, text)) continue;
+            ok = false;
+            Logger.Warn($"Hotkey '{id}': could not register {text}");
+        }
+        return ok;
+    }
+
+    partial void OnPurgeHotkeyTextChanged(string value)
+    {
+        if (_isInitializing) return;
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    partial void OnTimerHotkeyTextChanged(string value)
+    {
+        if (_isInitializing) return;
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    partial void OnAutoPurgeHotkeyTextChanged(string value)
+    {
+        if (_isInitializing) return;
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private async Task LoadLogTailAsync()
@@ -271,9 +428,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             var imported = JsonSerializer.Deserialize<AppSettings>(json);
             if (imported is null) throw new InvalidDataException("Empty settings file");
 
-            _settingsService.Save(imported);
-            SettingsImported?.Invoke(this, imported);
-            UpdateStatus = _localization.GetString("Str_Settings_ImportOk");
+            ApplyImportedSettings(imported);
             Logger.Info($"Settings imported from {dlg.FileName}");
         }
         catch (Exception ex)
@@ -281,6 +436,23 @@ public sealed partial class SettingsViewModel : ObservableObject
             Logger.Error("ImportSettings", ex);
             UpdateStatus = _localization.GetString("Str_Settings_ImportFail") + ": " + ex.Message;
         }
+    }
+
+    // Everything after the file was read: persist, re-apply to the running
+    // session, re-register the hotkeys. Split from ImportSettings so it can
+    // be exercised without the file dialog.
+    internal void ApplyImportedSettings(AppSettings imported)
+    {
+        _settingsService.Save(imported);
+        SettingsImported?.Invoke(this, imported);
+
+        // The import set the hotkey texts through Initialize (no change
+        // events), so the global registrations still held the old combos.
+        HotkeyError = RegisterAll()
+            ? string.Empty
+            : _localization.GetString("Str_Settings_HotkeyTaken");
+
+        UpdateStatus = _localization.GetString("Str_Settings_ImportOk");
     }
 
     // ── Update check ──────────────────────────────────────────────────────────
