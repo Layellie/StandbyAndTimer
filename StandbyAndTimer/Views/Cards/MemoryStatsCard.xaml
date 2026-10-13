@@ -71,7 +71,7 @@
                                    FontSize="13"
                                    FontWeight="SemiBold"
                                    HorizontalAlignment="Left"
-                                   Foreground="{DynamicResource AccentPrimary}"/>
+                                   Foreground="{DynamicResource AccentText}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                         <TextBlock Text="{DynamicResource Str_Memory_FreeShort}"
@@ -83,7 +83,7 @@
                                    FontSize="13"
                                    FontWeight="SemiBold"
                                    HorizontalAlignment="Center"
-                                   Foreground="{DynamicResource SuccessColor}"/>
+                                   Foreground="{DynamicResource AccentText}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2" HorizontalAlignment="Right">
                         <TextBlock Text="{DynamicResource Str_Memory_PurgesShort}"

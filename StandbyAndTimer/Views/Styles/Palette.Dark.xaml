@@ -18,6 +18,9 @@
     <SolidColorBrush x:Key="AccentPressed"    Color="#98C92E"/>
     <SolidColorBrush x:Key="AccentSubtle"     Color="#1F2E0A"/>
     <SolidColorBrush x:Key="AccentOnText"     Color="#0A140A"/>
+    <!-- Accent as TEXT / thin strokes; on dark the fill lime already reads
+         at 12.3:1, so it is the same colour. -->
+    <SolidColorBrush x:Key="AccentText"       Color="#B8F03A"/>
     <SolidColorBrush x:Key="InputBg"          Color="#141619"/>
     <SolidColorBrush x:Key="InputFg"          Color="#E9ECF0"/>
     <SolidColorBrush x:Key="InputBorder"      Color="#343942"/>

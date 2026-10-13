@@ -17,6 +17,10 @@
     <SolidColorBrush x:Key="AccentPressed"    Color="#5F8E18"/>
     <SolidColorBrush x:Key="AccentSubtle"     Color="#ECF7CF"/>
     <SolidColorBrush x:Key="AccentOnText"     Color="#1A1F0F"/>
+    <!-- Accent as TEXT / thin strokes. AccentPrimary (#7AB320) is a fill
+         colour: as text on white it is only 2.5:1. This is 5.1:1 on
+         SurfaceBg, 4.75:1 on AppBg. -->
+    <SolidColorBrush x:Key="AccentText"       Color="#4F7A12"/>
     <SolidColorBrush x:Key="InputBg"          Color="#F6F7F9"/>
     <SolidColorBrush x:Key="InputFg"          Color="#1E2126"/>
     <SolidColorBrush x:Key="InputBorder"      Color="#C7CCD4"/>

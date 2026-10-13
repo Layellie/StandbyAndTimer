@@ -46,7 +46,7 @@
                 <Border Style="{StaticResource SuccessBadgeStyle}" Margin="0,0,8,0">
                     <StackPanel Orientation="Horizontal">
                         <Path Data="M5,0 L5,3 L9,3 L9,8 L1,8 L1,3 L5,3 M3,3 L3,1.5 A2,2 0 0 1 7,1.5 L7,3"
-                              Stroke="{DynamicResource SuccessColor}"
+                              Stroke="{DynamicResource AccentText}"
                               StrokeThickness="1"
                               Width="10" Height="9"
                               Stretch="Uniform"
@@ -55,7 +55,7 @@
                         <TextBlock Text="{DynamicResource Str_TitleBar_Admin}"
                                    FontSize="10"
                                    FontWeight="SemiBold"
-                                   Foreground="{DynamicResource SuccessColor}"
+                                   Foreground="{DynamicResource AccentText}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
                 </Border>
