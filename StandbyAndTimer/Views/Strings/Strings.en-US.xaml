@@ -14,6 +14,9 @@
     <sys:String x:Key="Str_TitleBar_Admin">Administrator</sys:String>
     <sys:String x:Key="Str_Card_TimerTitle">TIMER RESOLUTION</sys:String>
     <sys:String x:Key="Str_Card_TimerLocked">LOCKED</sys:String>
+    <sys:String x:Key="Str_Card_TimerUnlocked">UNLOCKED</sys:String>
+    <sys:String x:Key="Str_Card_TimerLockTipOn">Locked: the timer turns on by itself every time the app starts. Click to unlock.</sys:String>
+    <sys:String x:Key="Str_Card_TimerLockTipOff">Unlocked: the timer only turns on with the TIMER button. Click to lock it on at every start.</sys:String>
     <sys:String x:Key="Str_Card_StandbyTitle">STANDBY MEMORY</sys:String>
     <sys:String x:Key="Str_Card_StandbyClearable">Clearable</sys:String>
     <sys:String x:Key="Str_Card_PurgeTitle">STANDBY PURGE</sys:String>
@@ -101,6 +104,8 @@
     <sys:String x:Key="Str_Status_PurgeFail">Purge failed (requires administrator)</sys:String>
     <sys:String x:Key="Str_Status_TimerActive">Timer active — actual value: {0:F3} ms</sys:String>
     <sys:String x:Key="Str_Status_TimerOff">Timer disabled</sys:String>
+    <sys:String x:Key="Str_Status_TimerLockedOn">Timer locked — it turns on at every start</sys:String>
+    <sys:String x:Key="Str_Status_TimerLockedOff">Timer unlocked — it starts off next time</sys:String>
     <sys:String x:Key="Str_Status_AutoPurgeOn">Auto purge on</sys:String>
     <sys:String x:Key="Str_Status_AutoPurgeOff">Auto purge off</sys:String>
     <sys:String x:Key="Str_Status_GameAdded">Game added</sys:String>

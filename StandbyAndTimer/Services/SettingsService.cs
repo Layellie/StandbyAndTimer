@@ -27,6 +27,7 @@ internal sealed class SettingsService : ISettingsService
                 GameModeEnabled       = GetBool(key,     "GameModeEnabled"),
                 AutoStartEnabled      = GetBool(key,     "AutoStartEnabled"),
                 TimerResolutionActive = GetBool(key,     "TimerResolutionActive"),
+                TimerLocked           = GetBool(key,     "TimerLocked"),
                 Language              = GetEnum(key, "Language", Language.English),
                 Theme                 = GetEnum(key, "Theme",    Theme.Dark),
                 UpdateCheckEnabled    = GetBool(key,     "UpdateCheckEnabled", defaultValue: true),
@@ -85,6 +86,7 @@ internal sealed class SettingsService : ISettingsService
             key.SetValue("GameModeEnabled",        settings.GameModeEnabled        ? "1" : "0");
             key.SetValue("AutoStartEnabled",       settings.AutoStartEnabled       ? "1" : "0");
             key.SetValue("TimerResolutionActive",  settings.TimerResolutionActive  ? "1" : "0");
+            key.SetValue("TimerLocked",            settings.TimerLocked            ? "1" : "0");
             key.SetValue("UpdateCheckEnabled",     settings.UpdateCheckEnabled     ? "1" : "0");
             key.SetValue("FirstRunCompleted",      settings.FirstRunCompleted      ? "1" : "0");
 

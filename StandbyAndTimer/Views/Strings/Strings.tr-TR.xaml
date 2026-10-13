@@ -13,7 +13,10 @@
     <!-- Yeni kart başlıkları ve mikro-etiketler (modern tasarım) -->
     <sys:String x:Key="Str_TitleBar_Admin">Yönetici</sys:String>
     <sys:String x:Key="Str_Card_TimerTitle">TIMER ÇÖZÜNÜRLÜĞÜ</sys:String>
-    <sys:String x:Key="Str_Card_TimerLocked">KİLİT</sys:String>
+    <sys:String x:Key="Str_Card_TimerLocked">KİLİTLİ</sys:String>
+    <sys:String x:Key="Str_Card_TimerUnlocked">KİLİTSİZ</sys:String>
+    <sys:String x:Key="Str_Card_TimerLockTipOn">Kilitli: timer uygulama her açıldığında otomatik açılır. Kilidi açmak için tıkla.</sys:String>
+    <sys:String x:Key="Str_Card_TimerLockTipOff">Kilitsiz: timer sadece TIMER'a basınca açılır. Her açılışta otomatik açılsın diye kilitlemek için tıkla.</sys:String>
     <sys:String x:Key="Str_Card_StandbyTitle">STANDBY BELLEK</sys:String>
     <sys:String x:Key="Str_Card_StandbyClearable">Temizlenebilir</sys:String>
     <sys:String x:Key="Str_Card_PurgeTitle">STANDBY TEMİZLE</sys:String>
@@ -101,6 +104,8 @@
     <sys:String x:Key="Str_Status_PurgeFail">Temizleme başarısız (yönetici yetkisi gerekli)</sys:String>
     <sys:String x:Key="Str_Status_TimerActive">Timer aktif — gerçek değer: {0:F3} ms</sys:String>
     <sys:String x:Key="Str_Status_TimerOff">Timer devre dışı</sys:String>
+    <sys:String x:Key="Str_Status_TimerLockedOn">Timer kilitlendi — her açılışta otomatik açılacak</sys:String>
+    <sys:String x:Key="Str_Status_TimerLockedOff">Timer kilidi açıldı — sonraki açılışta kapalı başlayacak</sys:String>
     <sys:String x:Key="Str_Status_AutoPurgeOn">Oto temizle açık</sys:String>
     <sys:String x:Key="Str_Status_AutoPurgeOff">Oto temizle kapalı</sys:String>
     <sys:String x:Key="Str_Status_GameAdded">Oyun eklendi</sys:String>

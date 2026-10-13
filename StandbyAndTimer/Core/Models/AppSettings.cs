@@ -7,7 +7,13 @@ public sealed class AppSettings
     public bool        AutoPurgeEnabled      { get; set; }
     public bool        GameModeEnabled       { get; set; }
     public bool        AutoStartEnabled      { get; set; }
+    // Last session's timer state. Saved for reference / export only: it no
+    // longer decides start-up (that restored the timer silently on every
+    // launch after it had been left on once). TimerLocked does.
     public bool        TimerResolutionActive { get; set; }
+    // v2.2.0 — the lock on the Timer card. Locked = the timer turns on by
+    // itself every time the app starts; unlocked = only the TIMER button.
+    public bool        TimerLocked           { get; set; }
     public Language    Language              { get; set; } = Language.English;
     public Theme       Theme                 { get; set; } = Theme.Dark;
     public bool        UpdateCheckEnabled    { get; set; } = true;

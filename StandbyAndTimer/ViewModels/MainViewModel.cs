@@ -47,6 +47,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private int     _idleThresholdMinutes = 5;
     [ObservableProperty] private bool    _gameModeEnabled;
     [ObservableProperty] private bool    _timerActive;
+    // The lock on the Timer card: locked = the timer turns on by itself at
+    // every app start. Independent of TimerActive (the TIMER button can
+    // still switch the timer off for this session while it stays locked).
+    [ObservableProperty] private bool    _timerLocked;
     [ObservableProperty] private double  _actualTimerMs;
     [ObservableProperty] private string  _statusMessage  = string.Empty;
     [ObservableProperty] private GameEntry? _selectedGame;
@@ -114,10 +118,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         System.Diagnostics.Process.GetCurrentProcess().PriorityClass =
             System.Diagnostics.ProcessPriorityClass.High;
 
-        if (settings.TimerResolutionActive)
+        // Only the lock turns the timer on at start-up. This used to restore
+        // the last session's state, so a timer left on once came back by
+        // itself on every launch.
+        if (settings.TimerLocked)
             await ActivateTimerInternalAsync(silent: true).ConfigureAwait(true);
 
-        StatusMessage = _localization.GetString("Str_Status_Ready");
+        // Don't overwrite "Timer active — 0.50 ms" with "Ready".
+        SetIdleStatus();
 
         await _memoryService.StartAsync(_appCts.Token).ConfigureAwait(false);
         await _gameDetection.StartAsync(_appCts.Token).ConfigureAwait(false);
@@ -141,7 +149,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             AutoPurgeIdleOnly    = s.AutoPurgeIdleOnly;
             IdleThresholdMinutes = s.IdleThresholdMinutes > 0 ? s.IdleThresholdMinutes : 5;
             GameModeEnabled      = s.GameModeEnabled;
-            TimerActive          = s.TimerResolutionActive;
+            // TimerActive is NOT taken from settings: it mirrors the timer
+            // service. Setting it here showed the timer as active at start-up
+            // before anything ran, and after an import without activating it.
+            TimerLocked          = s.TimerLocked;
             _firstRunCompleted   = s.FirstRunCompleted;
 
             Games.Clear();
@@ -241,6 +252,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         GameModeEnabled       = GameModeEnabled,
         AutoStartEnabled      = Settings.AutoStartEnabled,
         TimerResolutionActive = TimerActive,
+        TimerLocked           = TimerLocked,
         Language              = Settings.SelectedLanguage,
         Theme                 = Settings.SelectedTheme,
         UpdateCheckEnabled    = Settings.UpdateCheckEnabled,
@@ -280,7 +292,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private void OnLanguageChanged(object? sender, EventArgs e) =>
         Application.Current.Dispatcher.InvokeAsync(() =>
         {
-            StatusMessage = _localization.GetString("Str_Status_Ready");
+            SetIdleStatus();
             OnPropertyChanged(nameof(TimerButtonLabel));
             OnPropertyChanged(nameof(AboutTitle));
             OnPropertyChanged(nameof(AboutText));
@@ -397,6 +409,28 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
         PersistSettings();
     }
+
+    // Timer card lock. Locking also switches the timer on now (locked means
+    // "always on"); unlocking leaves the running session alone and only
+    // affects the next start. App auto-start is a separate setting.
+    [RelayCommand]
+    private async Task ToggleTimerLockAsync()
+    {
+        TimerLocked = !TimerLocked;
+        if (TimerLocked && !TimerActive)
+            await ActivateTimerInternalAsync(silent: false).ConfigureAwait(true);
+
+        StatusMessage = _localization.GetString(
+            TimerLocked ? "Str_Status_TimerLockedOn" : "Str_Status_TimerLockedOff");
+        Logger.Info($"Timer lock {(TimerLocked ? "ON" : "OFF")} (timer active={TimerActive})");
+        PersistSettings();
+    }
+
+    // Idle status line: the live timer reading while the timer runs, else "Ready".
+    private void SetIdleStatus() =>
+        StatusMessage = TimerActive
+            ? string.Format(CultureInfo.CurrentCulture, _localization.GetString("Str_Status_TimerActive"), ActualTimerMs)
+            : _localization.GetString("Str_Status_Ready");
 
     // Global hotkey target (Settings -> Hotkeys). Flips the AUTO PURGE master
     // switch; OnAutoPurgeEnabledChanged syncs the monitor and persists.
