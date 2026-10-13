@@ -10,20 +10,20 @@ namespace StandbyAndTimer.Services.Tray;
 internal sealed class TrayMenuPalette
 {
     internal static readonly TrayMenuPalette Dark = new(
-        surfaceBg:   Color.FromArgb(0x1C, 0x1F, 0x24), // SurfaceBg
+        surfaceBg:   Color.FromArgb(0x16, 0x18, 0x1B), // SurfaceBg
         appFg:       Color.FromArgb(0xF3, 0xF5, 0xF8), // AppFg
-        hoverBg:     Color.FromArgb(0x26, 0x2A, 0x31), // HoverBg
+        hoverBg:     Color.FromArgb(0x1F, 0x22, 0x26), // HoverBg
         pressedBg:   Color.FromArgb(0x1F, 0x2E, 0x0A), // AccentSubtle
-        borderColor: Color.FromArgb(0x2A, 0x2E, 0x35), // BorderColor
-        disabledFg:  Color.FromArgb(0x8E, 0x95, 0x9F)); // 5.5:1 on SurfaceBg
+        borderColor: Color.FromArgb(0x24, 0x27, 0x2C), // BorderColor
+        disabledFg:  Color.FromArgb(0x8E, 0x95, 0x9F)); // 5.9:1 on SurfaceBg
 
     internal static readonly TrayMenuPalette Light = new(
-        surfaceBg:   Color.FromArgb(0xFF, 0xFF, 0xFF), // SurfaceBg
+        surfaceBg:   Color.FromArgb(0xF5, 0xF6, 0xF8), // SurfaceBg
         appFg:       Color.FromArgb(0x16, 0x18, 0x1C), // AppFg
-        hoverBg:     Color.FromArgb(0xEE, 0xF0, 0xF3), // HoverBg
-        pressedBg:   Color.FromArgb(0xEC, 0xF7, 0xCF), // AccentSubtle
-        borderColor: Color.FromArgb(0xDF, 0xE3, 0xE8), // BorderColor
-        disabledFg:  Color.FromArgb(0x68, 0x70, 0x7A)); // 5.0:1 on SurfaceBg
+        hoverBg:     Color.FromArgb(0xE6, 0xE9, 0xED), // HoverBg
+        pressedBg:   Color.FromArgb(0xE1, 0xF3, 0xD8), // AccentSubtle
+        borderColor: Color.FromArgb(0xD5, 0xDA, 0xE0), // BorderColor
+        disabledFg:  Color.FromArgb(0x68, 0x70, 0x7A)); // 4.6:1 on SurfaceBg
 
     internal Color SurfaceBg   { get; }
     internal Color AppFg       { get; }

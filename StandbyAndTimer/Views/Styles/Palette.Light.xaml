@@ -3,11 +3,12 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- Light palette — same lime accent as dark for brand continuity.
-         Neutrals follow the WhichGPU family. WCAG contrast on SurfaceBg:
-         AppFg 17.8:1, AppFgDim 7.4:1. -->
-    <SolidColorBrush x:Key="AppBg"            Color="#F6F7F9"/>
-    <SolidColorBrush x:Key="SurfaceBg"        Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="Surface2Bg"       Color="#FFFFFF"/>
+         Soft off-white instead of pure white (#E9ECEF page, #F5F6F8 cards)
+         to cut glare. WCAG contrast on SurfaceBg: AppFg 16.4:1,
+         AppFgDim 6.9:1, AccentText 5.4:1 (4.95:1 on AppBg). -->
+    <SolidColorBrush x:Key="AppBg"            Color="#E9ECEF"/>
+    <SolidColorBrush x:Key="SurfaceBg"        Color="#F5F6F8"/>
+    <SolidColorBrush x:Key="Surface2Bg"       Color="#F5F6F8"/>
     <SolidColorBrush x:Key="AppFg"            Color="#16181C"/>
     <SolidColorBrush x:Key="AppFgDim"         Color="#4F5660"/>
     <!-- Non-text only (scrollbar thumb, toggle-off track) -->
@@ -15,26 +16,27 @@
     <SolidColorBrush x:Key="AccentPrimary"    Color="#7AB320"/>
     <SolidColorBrush x:Key="AccentHover"      Color="#8FC92F"/>
     <SolidColorBrush x:Key="AccentPressed"    Color="#5F8E18"/>
-    <SolidColorBrush x:Key="AccentSubtle"     Color="#ECF7CF"/>
+    <!-- Green-leaning tint (hue 100°): the old #ECF7CF (76°) read as yellow
+         on the selected tab. -->
+    <SolidColorBrush x:Key="AccentSubtle"     Color="#E1F3D8"/>
     <SolidColorBrush x:Key="AccentOnText"     Color="#1A1F0F"/>
     <!-- Accent as TEXT / thin strokes. AccentPrimary (#7AB320) is a fill
-         colour: as text on white it is only 2.5:1. This is 5.1:1 on
-         SurfaceBg, 4.75:1 on AppBg. -->
-    <SolidColorBrush x:Key="AccentText"       Color="#4F7A12"/>
-    <SolidColorBrush x:Key="InputBg"          Color="#F6F7F9"/>
+         colour: as text it is only ~2.3:1 here. -->
+    <SolidColorBrush x:Key="AccentText"       Color="#45700F"/>
+    <SolidColorBrush x:Key="InputBg"          Color="#ECEEF1"/>
     <SolidColorBrush x:Key="InputFg"          Color="#1E2126"/>
-    <SolidColorBrush x:Key="InputBorder"      Color="#C7CCD4"/>
+    <SolidColorBrush x:Key="InputBorder"      Color="#C3C8D0"/>
     <SolidColorBrush x:Key="InputFocusBorder" Color="#7AB320"/>
-    <SolidColorBrush x:Key="BorderColor"      Color="#DFE3E8"/>
-    <SolidColorBrush x:Key="SeparatorBrush"   Color="#E8EBEF"/>
-    <SolidColorBrush x:Key="SelectionBg"      Color="#DDEEC2"/>
+    <SolidColorBrush x:Key="BorderColor"      Color="#D5DAE0"/>
+    <SolidColorBrush x:Key="SeparatorBrush"   Color="#DFE2E7"/>
+    <SolidColorBrush x:Key="SelectionBg"      Color="#D4ECC9"/>
     <SolidColorBrush x:Key="SelectionFg"      Color="#16181C"/>
-    <SolidColorBrush x:Key="HoverBg"          Color="#EEF0F3"/>
+    <SolidColorBrush x:Key="HoverBg"          Color="#E6E9ED"/>
     <SolidColorBrush x:Key="SuccessColor"     Color="#7AB320"/>
     <SolidColorBrush x:Key="DangerColor"      Color="#DC2626"/>
 
     <!-- Modal overlay background — soft tint of AppBg -->
-    <SolidColorBrush x:Key="ModalOverlayBrush" Color="#C0F6F7F9"/>
+    <SolidColorBrush x:Key="ModalOverlayBrush" Color="#C0E9ECEF"/>
 
     <!-- Title bar DWM mode hint: 1 = dark, 0 = light -->
     <sys:Int32 x:Key="DwmDarkMode" xmlns:sys="clr-namespace:System;assembly=System.Runtime">0</sys:Int32>
