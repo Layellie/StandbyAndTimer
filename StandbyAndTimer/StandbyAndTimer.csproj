@@ -46,6 +46,12 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
   </ItemGroup>
 
+  <!-- Unit tests reach internal view-model and service members.
+       Nothing else uses this. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="StandbyAndTimer.Tests" />
+  </ItemGroup>
+
   <ItemGroup>
     <Resource Include="app_icon.ico" />
   </ItemGroup>

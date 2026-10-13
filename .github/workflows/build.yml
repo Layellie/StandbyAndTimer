@@ -42,6 +42,11 @@ jobs:
       - name: Build (warnings as errors)
         run: dotnet build StandbyAndTimer/StandbyAndTimer.csproj -c Release --no-restore -warnaserror
 
+      - name: Test
+        # Fakes only: no registry, timer, standby list or process changes,
+        # so this is safe on the hosted runner.
+        run: dotnet test StandbyAndTimer.Tests/StandbyAndTimer.Tests.csproj -c Release --nologo
+
       - name: Publish (smoke check)
         # No --no-restore: the publish profile pins RuntimeIdentifier=win-x64,
         # which needs a RID-aware restore. The first restore above is RID-less
