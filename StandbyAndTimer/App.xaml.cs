@@ -437,9 +437,15 @@ public partial class App : Application
             var result = await svc.CheckAsync().ConfigureAwait(false);
             if (result.IsNewer)
             {
+                // Strings are read inside the dispatcher call: GetString looks
+                // up Application.Current.Resources, which belongs to the UI
+                // thread, and this method resumes on the thread pool.
                 await Dispatcher.InvokeAsync(() =>
-                    _tray?.ShowBalloon("Update available",
-                        $"New version {result.LatestVersion} — open Settings to download."));
+                    _tray?.ShowBalloon(
+                        _localization!.GetString("Str_Tray_NotifyUpdateTitle"),
+                        string.Format(CultureInfo.CurrentCulture,
+                            _localization.GetString("Str_Tray_NotifyUpdateBody"),
+                            result.LatestVersion)));
             }
         }
         catch (Exception ex) { Logger.Warn($"SilentUpdateCheck: {ex.Message}"); }

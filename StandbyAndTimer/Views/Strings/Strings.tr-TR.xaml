@@ -88,6 +88,8 @@
     <sys:String x:Key="Str_Tray_NotifyTimerOnBody">Sistem saati {0:F3} ms olarak kilitlendi</sys:String>
     <sys:String x:Key="Str_Tray_NotifyTimerOffTitle">Timer devre dışı</sys:String>
     <sys:String x:Key="Str_Tray_NotifyTimerOffBody">Sistem saati varsayılana döndü</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyUpdateTitle">Güncelleme var</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyUpdateBody">Yeni sürüm {0} — indirmek için Ayarlar'ı aç.</sys:String>
 
     <!-- Durum mesajları -->
     <sys:String x:Key="Str_Status_Ready">Hazır</sys:String>

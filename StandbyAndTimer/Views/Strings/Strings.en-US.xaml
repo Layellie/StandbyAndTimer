@@ -88,6 +88,8 @@
     <sys:String x:Key="Str_Tray_NotifyTimerOnBody">System clock locked to {0:F3} ms</sys:String>
     <sys:String x:Key="Str_Tray_NotifyTimerOffTitle">Timer disabled</sys:String>
     <sys:String x:Key="Str_Tray_NotifyTimerOffBody">System clock restored to default</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyUpdateTitle">Update available</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyUpdateBody">New version {0} — open Settings to download.</sys:String>
 
     <!-- Status messages -->
     <sys:String x:Key="Str_Status_Ready">Ready</sys:String>
