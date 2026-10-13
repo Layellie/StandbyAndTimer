@@ -192,7 +192,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private void SyncMonitorGames()
     {
         var paths = Games.Select(g => g.ExecutablePath).ToList();
-        _memoryService.GamePaths = paths;
+        // Per-game switches: boost-off games are left to other tools (e.g.
+        // Process Lasso) entirely; every listed game is still watched, for
+        // the auto-purge pause and the "only in games" options.
+        _memoryService.GamePaths            = Games.Where(g => g.BoostPriority).Select(g => g.ExecutablePath).ToList();
+        _memoryService.WatchedGamePaths     = paths;
+        _memoryService.NoAutoPurgeGamePaths = Games.Where(g => !g.AllowAutoPurge).Select(g => g.ExecutablePath).ToList();
         // Also keep the detection service in sync — without this, a game the
         // user just added would be re-detected on the next poll, and a game
         // the user removed after auto-add would come straight back.
@@ -386,8 +391,36 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     partial void OnTimerActiveChanged(bool value) =>
         OnPropertyChanged(nameof(TimerButtonLabel));
 
-    partial void OnSelectedGameChanged(GameEntry? value) =>
+    partial void OnSelectedGameChanged(GameEntry? value)
+    {
         RemoveGameCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(SelectedGameBoost));
+        OnPropertyChanged(nameof(SelectedGameAutoPurge));
+    }
+
+    // Per-game switches for the selected list entry (the strip under the
+    // Game Mode list). Each change re-syncs the monitor and persists.
+    public bool SelectedGameBoost
+    {
+        get => SelectedGame?.BoostPriority ?? true;
+        set => SetSelectedGameRule(g => g.BoostPriority = value);
+    }
+
+    public bool SelectedGameAutoPurge
+    {
+        get => SelectedGame?.AllowAutoPurge ?? true;
+        set => SetSelectedGameRule(g => g.AllowAutoPurge = value);
+    }
+
+    private void SetSelectedGameRule(Action<GameEntry> apply)
+    {
+        if (SelectedGame is null) return;
+        apply(SelectedGame);
+        OnPropertyChanged(nameof(SelectedGameBoost));
+        OnPropertyChanged(nameof(SelectedGameAutoPurge));
+        SyncMonitorGames();
+        PersistSettings();
+    }
 
     // ── Commands ──────────────────────────────────────────────────────────────
 

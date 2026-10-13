@@ -43,6 +43,11 @@
     <sys:String x:Key="Str_Game_DropHint">Drag &amp; drop .exe files here</sys:String>
     <sys:String x:Key="Str_Game_AutoTag">AUTO</sys:String>
     <sys:String x:Key="Str_Game_AutoTagTip">Detected fullscreen and added automatically. Remove it and it will not be added again.</sys:String>
+    <sys:String x:Key="Str_Game_CustomTagTip">Priority boost or auto purge is turned off for this game.</sys:String>
+    <sys:String x:Key="Str_Game_BoostLabel">Give high priority</sys:String>
+    <sys:String x:Key="Str_Game_BoostTip">When off, the app never touches this game (priority, cores, EcoQoS). Turn it off if a tool like Process Lasso manages it. Takes effect the next time the game starts.</sys:String>
+    <sys:String x:Key="Str_Game_AutoPurgeLabel">Auto purge while it runs</sys:String>
+    <sys:String x:Key="Str_Game_AutoPurgeTip">When off, automatic purges pause while this game runs. The purge button and the hotkey still work.</sys:String>
 
     <!-- Bottom controls -->
     <sys:String x:Key="Str_Timer_Inactive">TIMER</sys:String>

@@ -50,13 +50,19 @@ internal sealed class SettingsService : ISettingsService
             // detection added (drives the "AUTO" tag); kept as a separate
             // value so GamePaths stays readable by older versions.
             var autoPaths = new HashSet<string>(SplitPaths(key.GetValue("AutoGamePaths")), StringComparer.OrdinalIgnoreCase);
+            // Per-game switches are stored as exception lists (default on),
+            // so games saved by older versions keep the old behaviour.
+            var noBoost   = new HashSet<string>(SplitPaths(key.GetValue("NoBoostGamePaths")), StringComparer.OrdinalIgnoreCase);
+            var noPurge   = new HashSet<string>(SplitPaths(key.GetValue("NoAutoPurgeGamePaths")), StringComparer.OrdinalIgnoreCase);
             settings.Games = SplitPaths(key.GetValue("GamePaths"))
                 .Where(File.Exists)
                 .Select(p => new GameEntry
                 {
                     DisplayName    = Path.GetFileNameWithoutExtension(p),
                     ExecutablePath = p,
-                    AutoAdded      = autoPaths.Contains(p)
+                    AutoAdded      = autoPaths.Contains(p),
+                    BoostPriority  = !noBoost.Contains(p),
+                    AllowAutoPurge = !noPurge.Contains(p)
                 })
                 .ToList();
             settings.IgnoredGamePaths = SplitPaths(key.GetValue("IgnoredGamePaths")).ToList();
@@ -107,6 +113,8 @@ internal sealed class SettingsService : ISettingsService
             SetPaths(key, "GamePaths",        settings.Games.Select(g => g.ExecutablePath));
             SetPaths(key, "AutoGamePaths",    settings.Games.Where(g => g.AutoAdded).Select(g => g.ExecutablePath));
             SetPaths(key, "IgnoredGamePaths", settings.IgnoredGamePaths ?? []);
+            SetPaths(key, "NoBoostGamePaths",     settings.Games.Where(g => !g.BoostPriority).Select(g => g.ExecutablePath));
+            SetPaths(key, "NoAutoPurgeGamePaths", settings.Games.Where(g => !g.AllowAutoPurge).Select(g => g.ExecutablePath));
         }
         catch (Exception ex)
         {

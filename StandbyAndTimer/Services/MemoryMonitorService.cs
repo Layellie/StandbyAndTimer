@@ -34,7 +34,10 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
     public bool GameModeEnabled   { get; set; }
     public bool AutoPurgeIdleOnly { get; set; }
     public int  IdleThresholdMs   { get; set; }
-    public IReadOnlyList<string> GamePaths { get; set; } = [];
+    public bool AutoPurgeOnlyInGames { get; set; }
+    public IReadOnlyList<string> GamePaths            { get; set; } = [];
+    public IReadOnlyList<string> WatchedGamePaths     { get; set; } = [];
+    public IReadOnlyList<string> NoAutoPurgeGamePaths { get; set; } = [];
 
     public event EventHandler<MemorySnapshot>? SnapshotUpdated;
 
@@ -113,25 +116,27 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
         {
             while (await timer.WaitForNextTickAsync(ct).ConfigureAwait(false))
             {
-                var snapshot = ReadSnapshot();
+                // Which listed games run right now: one process enumeration
+                // per tick, and only when there is a list to check.
+                var watched = WatchedGamePaths;
+                List<string> running = watched.Count > 0
+                    ? RunningGames.Match(watched, RunningGames.CurrentProcessNames())
+                    : [];
+
+                var snapshot = ReadSnapshot() with { RunningGamePaths = running };
                 SnapshotUpdated?.Invoke(this, snapshot);
 
-                // Master switch: AutoPurgeEnabled must be ON, and both thresholds
-                // must be > 0. Defaults ship as OFF + 0/0 so a fresh install never
-                // touches the standby list until the user explicitly opts in.
                 // Idle gate: when AutoPurgeIdleOnly is on, suppress the purge
-                // until the user has been quiet for IdleThresholdMs. Defaults
-                // to "always allowed" if the flag is off, so existing users
-                // see no behaviour change on upgrade.
+                // until the user has been quiet for IdleThresholdMs.
                 bool idleGate = !AutoPurgeIdleOnly
                              || _idleMonitor.TimeSinceLastInput.TotalMilliseconds >= IdleThresholdMs;
 
-                bool purgeNeeded = AutoPurgeEnabled
-                    && StandbyLimitMb > 0
-                    && FreeLimitMb    > 0
-                    && snapshot.StandbyMb >= StandbyLimitMb
-                    && snapshot.FreeMb    <= FreeLimitMb
-                    && idleGate;
+                var noPurge = NoAutoPurgeGamePaths;
+                bool blocked = noPurge.Count > 0
+                    && running.Any(p => noPurge.Contains(p, StringComparer.OrdinalIgnoreCase));
+
+                bool purgeNeeded = ShouldAutoPurge(AutoPurgeEnabled, StandbyLimitMb, FreeLimitMb, snapshot,
+                    idleGate, blocked, AutoPurgeOnlyInGames, running.Count > 0);
 
                 if (purgeNeeded)
                     await _purgeService.PurgeAsync().ConfigureAwait(false);
@@ -142,6 +147,25 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
         }
         catch (OperationCanceledException) { }
     }
+
+    /// <summary>
+    /// The automatic purge decision, Win32-free. Master switch on, both
+    /// thresholds set (> 0) and crossed, the idle gate passed, no running
+    /// game that pauses auto purge, and, with "only in games", a listed game
+    /// running. Defaults ship as OFF + 0/0 so a fresh install never touches
+    /// the standby list until the user opts in.
+    /// </summary>
+    internal static bool ShouldAutoPurge(bool enabled, int standbyLimitMb, int freeLimitMb,
+        MemorySnapshot snapshot, bool idleGatePassed, bool blockingGameRunning,
+        bool onlyInGames, bool anyGameRunning) =>
+        enabled
+        && standbyLimitMb > 0
+        && freeLimitMb    > 0
+        && snapshot.StandbyMb >= standbyLimitMb
+        && snapshot.FreeMb    <= freeLimitMb
+        && idleGatePassed
+        && !blockingGameRunning
+        && (!onlyInGames || anyGameRunning);
 
     private MemorySnapshot ReadSnapshot()
     {
