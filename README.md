@@ -33,7 +33,7 @@ StandbyAndTimer runs in the system tray and does three separate jobs. You can us
 3. Leave **AUTO PURGE** off unless your games stutter when RAM fills up. If they do, turn it on and set the two limits. The **?** button has a table of suggested values for each RAM size.
 4. Close the window when you are done. The app keeps working from the tray; right click the tray icon for quick actions.
 
-Hotkeys work from anywhere: `Ctrl+Alt+P` clears standby memory, `Ctrl+Alt+T` switches the timer, `Ctrl+Alt+O` switches auto purge. You can change them under Settings.
+Hotkeys work from anywhere: `Ctrl+Alt+P` clears standby memory, `Ctrl+Alt+T` turns the timer on or off, `Ctrl+Alt+O` turns auto purge on or off. You can change them under Settings.
 
 ## Requirements
 
@@ -75,7 +75,7 @@ StandbyAndTimer sistem tepsisinde çalışır ve birbirinden bağımsız üç i�
 
 - Windows normalde sistem zamanlayıcısını yaklaşık 15,6 ms'de bir çalıştırır. Uygulama bunun yerine 0,5 ms ister; bu da oyunlarda fare tepkisini ve kare zamanlamasını daha düzenli hale getirebilir.
 - Windows yakın zamanda kullanılan dosyaları RAM'de "standby" bellek olarak tutar. Boş RAM azaldığında bu önbellek takılmalara yol açabilir. Uygulama bu belleği siz butona bastığınızda ya da boş bellek belirlediğiniz sınırın altına düştüğünde kendiliğinden temizler.
-- Game Mode açıkken listedeki oyunlar çalışırken Yüksek CPU önceliği ve tüm işlemci çekirdeklerini alır. Oyunun `.exe` dosyasını listeye sürükleyebilir ya da uygulamanın tam ekranda çalışan oyunları kendisinin eklemesini bekleyebilirsiniz.
+- Game Mode açıksa listedeki oyunlar, çalıştıkları sürece Yüksek CPU önceliği ve tüm işlemci çekirdeklerini alır. Oyunun `.exe` dosyasını listeye sürükleyebilir ya da uygulamanın tam ekranda çalışan oyunları kendisinin eklemesini bekleyebilirsiniz.
 
 ## Nasıl kullanılır?
 
@@ -88,7 +88,7 @@ Kısayollar her yerden çalışır: `Ctrl+Alt+P` standby belleği temizler, `Ctr
 
 ## Gereksinimler
 
-Windows 10 (21H1 ve sonrası) ya da Windows 11, 64 bit, yönetici yetkisi. Ayrıca .NET kurmanıza gerek yoktur; kurulum dosyası gereken her şeyi içerir.
+Windows 10 (21H1 ve sonrası) ya da Windows 11, 64 bit, yönetici yetkisi. .NET kurmanıza gerek yoktur; kurulum dosyası gereken her şeyi içerir.
 
 Paket winget'te onaylandığında şu komutla da kurabilirsiniz:
 
