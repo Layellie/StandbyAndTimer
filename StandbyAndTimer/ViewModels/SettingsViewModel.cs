@@ -55,6 +55,21 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string   _purgeHotkeyText      = "Ctrl+Alt+P";
     [ObservableProperty] private string   _timerHotkeyText      = "Ctrl+Alt+T";
 
+    // Hotkey rebinding. RecordingHotkeyId is the id being recorded
+    // (HotkeyIdPurge / HotkeyIdTimer) or null; HotkeyError is shown under the
+    // Hotkeys group and cleared when a new recording starts.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsRecordingPurge), nameof(IsRecordingTimer))]
+    private string? _recordingHotkeyId;
+
+    [ObservableProperty] private string   _hotkeyError          = string.Empty;
+
+    public const string HotkeyIdPurge = "purge";
+    public const string HotkeyIdTimer = "timer";
+
+    public bool IsRecordingPurge => RecordingHotkeyId == HotkeyIdPurge;
+    public bool IsRecordingTimer => RecordingHotkeyId == HotkeyIdTimer;
+
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(DownloadAndInstallCommand))]
     private bool _updateAvailable;
@@ -96,6 +111,13 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     // Set by MainViewModel after Initialize so Export/Import can serialize a snapshot.
     internal Func<AppSettings>? SnapshotProvider { get; set; }
+
+    // Set by App once the hotkey service is attached to the window. App owns
+    // the registrations (it knows which command each id fires); the view
+    // model only decides WHAT to register. RegisterHotkey returns false when
+    // Win32 refuses the combo (taken by another app, unparsable text).
+    internal Func<string, string, bool>? RegisterHotkey   { get; set; }
+    internal Action<string>?             UnregisterHotkey { get; set; }
 
     public SettingsViewModel(
         IAutoStartService    autoStartService,
@@ -143,6 +165,110 @@ public sealed partial class SettingsViewModel : ObservableObject
     {
         if (value) _ = LoadLogTailAsync();
         else       System.Threading.Interlocked.Increment(ref _logReadTicket);
+
+        // Leaving the Settings tab must never strand the hotkeys suspended.
+        if (!value) CancelHotkeyRecording();
+    }
+
+    // ── Hotkey rebinding ──────────────────────────────────────────────────────
+
+    // Both global hotkeys are released while recording: RegisterHotKey
+    // swallows the combo before the window sees the key, so pressing the
+    // current shortcut would fire purge/timer instead of being recorded.
+    [RelayCommand]
+    private void StartHotkeyRecording(string? id)
+    {
+        if (id is not (HotkeyIdPurge or HotkeyIdTimer)) return;
+        if (RegisterHotkey is null || UnregisterHotkey is null) return;
+
+        if (RecordingHotkeyId is not null) CancelHotkeyRecording();
+
+        HotkeyError       = string.Empty;
+        RecordingHotkeyId = id;
+        UnregisterHotkey(HotkeyIdPurge);
+        UnregisterHotkey(HotkeyIdTimer);
+    }
+
+    /// <summary>Ends a recording without changes and re-registers both hotkeys.</summary>
+    public void CancelHotkeyRecording()
+    {
+        if (RecordingHotkeyId is null) return;
+        RecordingHotkeyId = null;
+        RegisterBoth();
+    }
+
+    /// <summary>
+    /// Called by the view with the pressed combo (Win32 MOD_* mask + virtual
+    /// key). Invalid combos keep recording and show why; a valid one is
+    /// registered, persisted and ends the recording. If Win32 refuses it the
+    /// previous binding is restored.
+    /// </summary>
+    public void CompleteHotkeyRecording(uint modifiers, uint virtualKey)
+    {
+        string? id = RecordingHotkeyId;
+        if (id is null || RegisterHotkey is null) return;
+
+        var candidate = new HotkeyBinding(modifiers, virtualKey);
+        if (modifiers == 0)
+        {
+            HotkeyError = _localization.GetString("Str_Settings_HotkeyNeedsModifier");
+            return;
+        }
+        string? text = candidate.Format();
+        if (text is null)
+        {
+            HotkeyError = _localization.GetString("Str_Settings_HotkeyUnsupported");
+            return;
+        }
+
+        bool   isPurge   = id == HotkeyIdPurge;
+        string otherText = isPurge ? TimerHotkeyText : PurgeHotkeyText;
+        if (HotkeyBinding.Parse(otherText) == candidate)
+        {
+            HotkeyError = _localization.GetString("Str_Settings_HotkeyDuplicate");
+            return;
+        }
+
+        RecordingHotkeyId = null;
+        if (RegisterHotkey(id, text))
+        {
+            // Property change → OnXHotkeyTextChanged → SettingsChanged →
+            // MainViewModel.PersistSettings writes it to the registry.
+            if (isPurge) PurgeHotkeyText = text;
+            else         TimerHotkeyText = text;
+            HotkeyError = string.Empty;
+            Logger.Info($"Hotkey '{id}' rebound to {text}");
+        }
+        else
+        {
+            HotkeyError = _localization.GetString("Str_Settings_HotkeyTaken");
+            Logger.Warn($"Hotkey '{id}': {text} refused by RegisterHotKey, keeping previous binding");
+        }
+        RegisterBoth();
+    }
+
+    // Re-registers whatever the texts currently hold. Register replaces an
+    // existing registration for the same id, so this is safe to call after
+    // a successful rebind too.
+    private void RegisterBoth()
+    {
+        if (RegisterHotkey is null) return;
+        if (!RegisterHotkey(HotkeyIdPurge, PurgeHotkeyText))
+            Logger.Warn($"Hotkey '{HotkeyIdPurge}': could not re-register {PurgeHotkeyText}");
+        if (!RegisterHotkey(HotkeyIdTimer, TimerHotkeyText))
+            Logger.Warn($"Hotkey '{HotkeyIdTimer}': could not re-register {TimerHotkeyText}");
+    }
+
+    partial void OnPurgeHotkeyTextChanged(string value)
+    {
+        if (_isInitializing) return;
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    partial void OnTimerHotkeyTextChanged(string value)
+    {
+        if (_isInitializing) return;
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private async Task LoadLogTailAsync()

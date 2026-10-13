@@ -3,12 +3,70 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="clr-namespace:StandbyAndTimer.Views.Converters"
              xmlns:cards="clr-namespace:StandbyAndTimer.Views.Cards"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              FontFamily="{StaticResource AppFont}" FontSize="13">
 
     <UserControl.Resources>
         <conv:LanguageDisplayConverter x:Key="LangConv"/>
         <conv:ThemeDisplayConverter    x:Key="ThemeConv"/>
         <BooleanToVisibilityConverter  x:Key="BoolToVis"/>
+
+        <!-- Hotkey pill: shows the combo; while its row is recording (Tag =
+             IsRecordingX = true) it swaps to the "press keys" prompt in an
+             accent outline. Explicit TextBlocks so the app-level implicit
+             TextBlock style can't override size/colour. -->
+        <Style x:Key="HotkeyButtonStyle" TargetType="Button">
+            <Setter Property="Cursor"           Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="ToolTip"          Value="{DynamicResource Str_Settings_HotkeyClickToChange}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd"
+                                Background="Transparent"
+                                BorderBrush="{DynamicResource BorderColor}"
+                                BorderThickness="1"
+                                CornerRadius="{StaticResource RadiusSmall}"
+                                Padding="7,2"
+                                MinWidth="72"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <TextBlock x:Name="combo"
+                                           Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}"
+                                           FontSize="11" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AppFg}"
+                                           HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="prompt"
+                                           Text="{DynamicResource Str_Settings_HotkeyRecording}"
+                                           FontSize="11" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AccentText}"
+                                           HorizontalAlignment="Center"
+                                           Visibility="Collapsed"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{DynamicResource AccentPrimary}"/>
+                                <Setter TargetName="bd" Property="Background"  Value="{DynamicResource HoverBg}"/>
+                            </Trigger>
+                            <!-- Property trigger on the button's own Tag, with a
+                                 typed value: Tag is object, so a plain
+                                 Value="True" stays a string and never equals
+                                 the bound bool. -->
+                            <Trigger Property="Tag">
+                                <Trigger.Value>
+                                    <sys:Boolean>True</sys:Boolean>
+                                </Trigger.Value>
+                                <Setter TargetName="bd"     Property="BorderBrush" Value="{DynamicResource AccentPrimary}"/>
+                                <Setter TargetName="bd"     Property="Background"  Value="{DynamicResource AccentSubtle}"/>
+                                <Setter TargetName="combo"  Property="Visibility"  Value="Collapsed"/>
+                                <Setter TargetName="prompt" Property="Visibility"  Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <!-- Settings TAB page (was a 270 px slide-in panel). WhichGPU-style:
@@ -119,7 +177,9 @@
                 </StackPanel>
             </Border>
 
-            <!-- ── Hotkeys (read-only display; rebind UI is a later version) ── -->
+            <!-- ── Hotkeys: click a pill, press the new combo (Esc cancels).
+                 Key capture lives in the code-behind (OnPreviewKeyDown); the
+                 rules and registration in SettingsViewModel. ── -->
             <TextBlock Text="{DynamicResource Str_Settings_HotkeysSection}"
                        Style="{StaticResource PageSectionLabelStyle}"/>
             <Border Style="{StaticResource SettingsGroupStyle}" Margin="0">
@@ -132,12 +192,12 @@
                         <TextBlock Text="{DynamicResource Str_Settings_HotkeyPurge}"
                                    Style="{StaticResource SettingTitleStyle}"
                                    VerticalAlignment="Center"/>
-                        <!-- Muted pill + AppFg text instead of accent-coloured
-                             text: lime text on white is only 2.5:1. -->
-                        <Border Grid.Column="1" Style="{StaticResource MutedBadgeStyle}">
-                            <TextBlock Text="{Binding PurgeHotkeyText}"
-                                       FontSize="11" FontWeight="SemiBold"/>
-                        </Border>
+                        <Button Grid.Column="1"
+                                Style="{StaticResource HotkeyButtonStyle}"
+                                Content="{Binding PurgeHotkeyText}"
+                                Tag="{Binding IsRecordingPurge}"
+                                Command="{Binding StartHotkeyRecordingCommand}"
+                                CommandParameter="purge"/>
                     </Grid>
 
                     <Grid Margin="0,4,0,2">
@@ -148,11 +208,30 @@
                         <TextBlock Text="{DynamicResource Str_Settings_HotkeyTimer}"
                                    Style="{StaticResource SettingTitleStyle}"
                                    VerticalAlignment="Center"/>
-                        <Border Grid.Column="1" Style="{StaticResource MutedBadgeStyle}">
-                            <TextBlock Text="{Binding TimerHotkeyText}"
-                                       FontSize="11" FontWeight="SemiBold"/>
-                        </Border>
+                        <Button Grid.Column="1"
+                                Style="{StaticResource HotkeyButtonStyle}"
+                                Content="{Binding TimerHotkeyText}"
+                                Tag="{Binding IsRecordingTimer}"
+                                Command="{Binding StartHotkeyRecordingCommand}"
+                                CommandParameter="timer"/>
                     </Grid>
+
+                    <!-- Why the last combo was rejected; collapsed while empty. -->
+                    <TextBlock Text="{Binding HotkeyError}"
+                               Foreground="{DynamicResource DangerColor}"
+                               FontSize="11"
+                               TextWrapping="Wrap"
+                               Margin="0,4,0,2">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Style.Triggers>
+                                    <Trigger Property="Text" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                 </StackPanel>
             </Border>
         </StackPanel>

@@ -57,4 +57,32 @@ public sealed record HotkeyBinding(uint Modifiers, uint VirtualKey)
 
         return (mods != 0 && vk != 0) ? new HotkeyBinding(mods, vk) : null;
     }
+
+    /// <summary>
+    /// Inverse of <see cref="Parse"/>: "Ctrl+Alt+Shift+Win+Key", modifiers in
+    /// that fixed order. Returns null when the binding has no modifier or the
+    /// key is outside what Parse accepts (A–Z, 0–9, F1–F24), so whatever this
+    /// returns is guaranteed to round-trip through Parse.
+    /// </summary>
+    public string? Format()
+    {
+        if ((Modifiers & (MOD_CONTROL | MOD_ALT | MOD_SHIFT | MOD_WIN)) == 0) return null;
+
+        string? key = VirtualKey switch
+        {
+            >= 'A' and <= 'Z'  => ((char)VirtualKey).ToString(),
+            >= '0' and <= '9'  => ((char)VirtualKey).ToString(),
+            >= 0x70 and <= 0x87 => "F" + (VirtualKey - 0x70 + 1),
+            _                  => null
+        };
+        if (key is null) return null;
+
+        var parts = new List<string>(5);
+        if ((Modifiers & MOD_CONTROL) != 0) parts.Add("Ctrl");
+        if ((Modifiers & MOD_ALT)     != 0) parts.Add("Alt");
+        if ((Modifiers & MOD_SHIFT)   != 0) parts.Add("Shift");
+        if ((Modifiers & MOD_WIN)     != 0) parts.Add("Win");
+        parts.Add(key);
+        return string.Join("+", parts);
+    }
 }

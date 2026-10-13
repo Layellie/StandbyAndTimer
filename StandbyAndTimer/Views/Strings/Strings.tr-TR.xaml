@@ -151,6 +151,12 @@
     <sys:String x:Key="Str_Settings_HotkeysSection">KISAYOLLAR</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyPurge">Manuel temizle</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyTimer">Zamanlayıcı aç/kapa</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyClickToChange">Değiştirmek için tıkla, sonra yeni tuşlara bas</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyRecording">Tuşlara bas… (Esc: iptal)</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyNeedsModifier">En az bir Ctrl, Alt, Shift ya da Win tuşu gerekli.</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyUnsupported">Bu tuş desteklenmiyor. A–Z, 0–9 ya da F1–F24 kullan.</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyDuplicate">Bu kısayol diğer işleme zaten atanmış.</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyTaken">Bu kısayolu başka bir uygulama kullanıyor.</sys:String>
 
     <!-- Sekmeler + Ayarlar sayfası (yatay düzen) -->
     <sys:String x:Key="Str_Tab_Status">Durum</sys:String>

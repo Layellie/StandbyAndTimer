@@ -174,10 +174,19 @@ public partial class App : Application
         // does the dispatcher hop work.
         var hotkeys = _services.GetRequiredService<IHotkeyService>();
         hotkeys.AttachTo(_mainWindow.WindowHandle);
-        RegisterHotkeyFromSetting(hotkeys, "purge", savedSettings.PurgeHotkey,
-            () => _viewModel.ManualPurgeCommand.Execute(null));
-        RegisterHotkeyFromSetting(hotkeys, "timer", savedSettings.TimerHotkey,
-            () => _viewModel.ToggleTimerResolutionCommand.Execute(null));
+        var vm = _viewModel;
+        Action HandlerFor(string id) => id == SettingsViewModel.HotkeyIdPurge
+            ? () => vm.ManualPurgeCommand.Execute(null)
+            : () => vm.ToggleTimerResolutionCommand.Execute(null);
+
+        RegisterHotkeyFromSetting(hotkeys, SettingsViewModel.HotkeyIdPurge, savedSettings.PurgeHotkey,
+            HandlerFor(SettingsViewModel.HotkeyIdPurge));
+        RegisterHotkeyFromSetting(hotkeys, SettingsViewModel.HotkeyIdTimer, savedSettings.TimerHotkey,
+            HandlerFor(SettingsViewModel.HotkeyIdTimer));
+
+        // Settings → Hotkeys rebinding goes through the same registration path.
+        _viewModel.Settings.RegisterHotkey   = (id, text) => RegisterHotkeyFromSetting(hotkeys, id, text, HandlerFor(id));
+        _viewModel.Settings.UnregisterHotkey = hotkeys.Unregister;
         Mark("hotkeys registered");
 
         // Live tooltip updater — every 3 s, refresh icon and text. Cheap.
@@ -344,18 +353,18 @@ public partial class App : Application
         _viewModel.Settings.IsOpen = true;
     }
 
-    private static void RegisterHotkeyFromSetting(IHotkeyService svc, string id, string? text, Action handler)
+    private static bool RegisterHotkeyFromSetting(IHotkeyService svc, string id, string? text, Action handler)
     {
         var parsed = HotkeyBinding.Parse(text ?? string.Empty);
         if (parsed is null)
         {
             Logger.Warn($"Hotkey '{id}': could not parse '{text}', skipping");
-            return;
+            return false;
         }
         // Marshal the handler onto the dispatcher — RelayCommand.Execute on
         // off-thread can race with the WPF binding system. BeginInvoke is fine
         // here; the user won't notice a one-frame latency on a hotkey fire.
-        svc.Register(id, parsed, () =>
+        return svc.Register(id, parsed, () =>
             Application.Current.Dispatcher.BeginInvoke(handler));
     }
 

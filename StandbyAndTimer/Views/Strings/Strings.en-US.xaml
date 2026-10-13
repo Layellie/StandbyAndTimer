@@ -151,6 +151,12 @@
     <sys:String x:Key="Str_Settings_HotkeysSection">HOTKEYS</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyPurge">Manual purge</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyTimer">Toggle timer</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyClickToChange">Click, then press the new keys</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyRecording">Press keys… (Esc: cancel)</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyNeedsModifier">Needs at least one of Ctrl, Alt, Shift or Win.</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyUnsupported">Key not supported. Use A–Z, 0–9 or F1–F24.</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyDuplicate">Already assigned to the other action.</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyTaken">In use by another application.</sys:String>
 
     <!-- Tabs + Settings page (landscape layout) -->
     <sys:String x:Key="Str_Tab_Status">Status</sys:String>
