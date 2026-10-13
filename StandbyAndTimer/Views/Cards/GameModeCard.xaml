@@ -22,7 +22,8 @@
                 <RowDefinition Height="Auto"/>  <!-- 1 Description -->
                 <RowDefinition Height="*"/>     <!-- 2 Game list -->
                 <RowDefinition Height="Auto"/>  <!-- 3 Drop hint -->
-                <RowDefinition Height="Auto"/>  <!-- 4 DEL / ADD -->
+                <RowDefinition Height="Auto"/>  <!-- 4 Per-game switches -->
+                <RowDefinition Height="Auto"/>  <!-- 5 DEL / ADD -->
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0" Margin="0,0,0,4">
@@ -113,33 +114,25 @@
                 </ListBox.ItemTemplate>
             </ListBox>
 
-            <!-- Row 3 shows the drop hint while nothing is selected, and the
-                 selected game's own switches once a row is picked (same
-                 space, so the list does not shrink). -->
+            <!-- Own row: next to two buttons the ~238 px column left the
+                 hint about 70 px and it got clipped. -->
             <TextBlock Grid.Row="3"
                        Text="{DynamicResource Str_Game_DropHint}"
                        FontSize="11"
                        TextWrapping="Wrap"
                        Foreground="{DynamicResource AppFgDim}"
-                       Margin="0,0,0,8">
-                <TextBlock.Style>
-                    <Style TargetType="TextBlock">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding SelectedGame}" Value="{x:Null}">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBlock.Style>
-            </TextBlock>
+                       Margin="0,0,0,8"/>
 
-            <StackPanel Grid.Row="3" Margin="0,0,0,8">
+            <!-- The selected game's own switches. Always shown so the user
+                 sees they exist; greyed (like DEL) until a row is picked,
+                 showing the defaults (both on). Tooltips still open while
+                 greyed so the switches explain themselves. -->
+            <StackPanel Grid.Row="4" Margin="0,0,0,8">
                 <StackPanel.Style>
                     <Style TargetType="StackPanel">
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding SelectedGame}" Value="{x:Null}">
-                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Setter Property="IsEnabled" Value="False"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -147,15 +140,17 @@
                 <CheckBox Content="{DynamicResource Str_Game_BoostLabel}"
                           IsChecked="{Binding SelectedGameBoost}"
                           ToolTip="{DynamicResource Str_Game_BoostTip}"
+                          ToolTipService.ShowOnDisabled="True"
                           Style="{StaticResource DarkCheckBoxStyle}"
                           Margin="0,0,0,6"/>
                 <CheckBox Content="{DynamicResource Str_Game_AutoPurgeLabel}"
                           IsChecked="{Binding SelectedGameAutoPurge}"
                           ToolTip="{DynamicResource Str_Game_AutoPurgeTip}"
+                          ToolTipService.ShowOnDisabled="True"
                           Style="{StaticResource DarkCheckBoxStyle}"/>
             </StackPanel>
 
-            <Grid Grid.Row="4">
+            <Grid Grid.Row="5">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="6"/>
