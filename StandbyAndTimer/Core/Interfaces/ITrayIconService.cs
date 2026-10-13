@@ -10,6 +10,9 @@ public interface ITrayIconService : IDisposable
     /// <summary>Invoked when the user picks "Show" from the tray context menu — always surfaces the window.</summary>
     event EventHandler? ShowRequested;
 
+    /// <summary>Invoked when the user picks "Settings" from the tray menu — App surfaces the window on the Settings tab.</summary>
+    event EventHandler? SettingsRequested;
+
     /// <summary>Invoked on a left-click / double-click of the tray icon — App toggles window visibility.</summary>
     event EventHandler? ToggleRequested;
 

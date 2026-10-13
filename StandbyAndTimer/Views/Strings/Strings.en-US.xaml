@@ -73,6 +73,7 @@
 
     <!-- Tray menu -->
     <sys:String x:Key="Str_Tray_Show">Show</sys:String>
+    <sys:String x:Key="Str_Tray_Settings">Settings</sys:String>
     <sys:String x:Key="Str_Tray_TimerEnable">Enable Timer</sys:String>
     <sys:String x:Key="Str_Tray_TimerDisable">Disable Timer</sys:String>
     <sys:String x:Key="Str_Tray_PurgeNow">Purge Standby Now</sys:String>

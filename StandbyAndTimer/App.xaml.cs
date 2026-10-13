@@ -138,6 +138,7 @@ public partial class App : Application
         _viewModel.SettingsPersisted        += (_, latest) => _userSettings = latest;
 
         _tray.ShowRequested        += (_, _) => ShowMainWindow();
+        _tray.SettingsRequested    += (_, _) => ShowSettings();
         _tray.ToggleRequested      += (_, _) => ToggleMainWindow();
         _tray.ExitRequested        += (_, _) => Shutdown();
         _tray.TimerToggleRequested += (_, _) => _viewModel.ToggleTimerResolutionCommand.Execute(null);
@@ -330,6 +331,15 @@ public partial class App : Application
     // ── Event handlers / forwarders ──────────────────────────────────────────
 
     private void ShowMainWindow() => _mainWindow?.ShowFromOffscreen();
+
+    // Tray "Settings": surface the window and switch to the Settings tab.
+    // Settings.IsOpen is bound to the tab selection (and refreshes the logs).
+    private void ShowSettings()
+    {
+        if (_mainWindow is null || _viewModel is null) return;
+        SurfaceMainWindow();
+        _viewModel.Settings.IsOpen = true;
+    }
 
     private static void RegisterHotkeyFromSetting(IHotkeyService svc, string id, string? text, Action handler)
     {

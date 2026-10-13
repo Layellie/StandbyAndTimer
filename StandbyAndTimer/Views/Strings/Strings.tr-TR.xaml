@@ -73,6 +73,7 @@
 
     <!-- Tray menü -->
     <sys:String x:Key="Str_Tray_Show">Göster</sys:String>
+    <sys:String x:Key="Str_Tray_Settings">Ayarlar</sys:String>
     <sys:String x:Key="Str_Tray_TimerEnable">Timer'ı Aç</sys:String>
     <sys:String x:Key="Str_Tray_TimerDisable">Timer'ı Kapat</sys:String>
     <sys:String x:Key="Str_Tray_PurgeNow">Standby'ı Temizle</sys:String>

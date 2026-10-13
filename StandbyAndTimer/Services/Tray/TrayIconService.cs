@@ -17,6 +17,7 @@ internal sealed class TrayIconService : ITrayIconService
 
     private WinForms.NotifyIcon?        _notifyIcon;
     private WinForms.ToolStripMenuItem? _showMenuItem;
+    private WinForms.ToolStripMenuItem? _settingsMenuItem;
     private WinForms.ToolStripMenuItem? _timerMenuItem;
     private WinForms.ToolStripMenuItem? _purgeMenuItem;
     private WinForms.ToolStripMenuItem? _exitMenuItem;
@@ -27,6 +28,7 @@ internal sealed class TrayIconService : ITrayIconService
     private bool _disposed;
 
     public event EventHandler? ShowRequested;
+    public event EventHandler? SettingsRequested;
     public event EventHandler? ToggleRequested;
     public event EventHandler? ExitRequested;
     public event EventHandler? TimerToggleRequested;
@@ -77,17 +79,20 @@ internal sealed class TrayIconService : ITrayIconService
             Padding         = new WinForms.Padding(2),
         };
 
-        _showMenuItem  = new WinForms.ToolStripMenuItem();
-        _timerMenuItem = new WinForms.ToolStripMenuItem();
-        _purgeMenuItem = new WinForms.ToolStripMenuItem();
-        _exitMenuItem  = new WinForms.ToolStripMenuItem();
+        _showMenuItem     = new WinForms.ToolStripMenuItem();
+        _settingsMenuItem = new WinForms.ToolStripMenuItem();
+        _timerMenuItem    = new WinForms.ToolStripMenuItem();
+        _purgeMenuItem    = new WinForms.ToolStripMenuItem();
+        _exitMenuItem     = new WinForms.ToolStripMenuItem();
 
-        _showMenuItem.Click  += (_, _) => ShowRequested?.Invoke(this, EventArgs.Empty);
-        _timerMenuItem.Click += (_, _) => TimerToggleRequested?.Invoke(this, EventArgs.Empty);
-        _purgeMenuItem.Click += (_, _) => PurgeRequested?.Invoke(this, EventArgs.Empty);
-        _exitMenuItem.Click  += (_, _) => ExitRequested?.Invoke(this, EventArgs.Empty);
+        _showMenuItem.Click     += (_, _) => ShowRequested?.Invoke(this, EventArgs.Empty);
+        _settingsMenuItem.Click += (_, _) => SettingsRequested?.Invoke(this, EventArgs.Empty);
+        _timerMenuItem.Click    += (_, _) => TimerToggleRequested?.Invoke(this, EventArgs.Empty);
+        _purgeMenuItem.Click    += (_, _) => PurgeRequested?.Invoke(this, EventArgs.Empty);
+        _exitMenuItem.Click     += (_, _) => ExitRequested?.Invoke(this, EventArgs.Empty);
 
         menu.Items.Add(_showMenuItem);
+        menu.Items.Add(_settingsMenuItem);
         menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add(_timerMenuItem);
         menu.Items.Add(_purgeMenuItem);
@@ -133,6 +138,9 @@ internal sealed class TrayIconService : ITrayIconService
     {
         if (_showMenuItem is not null)
             _showMenuItem.Text = _localization.GetString("Str_Tray_Show");
+
+        if (_settingsMenuItem is not null)
+            _settingsMenuItem.Text = _localization.GetString("Str_Tray_Settings");
 
         if (_timerMenuItem is not null)
             _timerMenuItem.Text = _localization.GetString(
