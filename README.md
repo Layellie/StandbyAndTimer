@@ -1,90 +1,115 @@
-![StandbyAndTimer — pins the Windows system timer at 0.5 ms and purges the standby memory list](docs/banner.png)
+![StandbyAndTimer: pins the Windows system timer at 0.5 ms and clears the standby memory list](docs/banner.png)
 
 # StandbyAndTimer
 
+A small Windows app for gamers: it makes the system timer finer, frees memory Windows is holding on to, and gives your games priority.
+
+**[English](#english) · [Türkçe](#türkçe)**
+
 <p align="center">
-  <img src="docs/screenshot.png" width="60%" alt="StandbyAndTimer main window" />
+  <img src="docs/screenshot.png" width="70%" alt="StandbyAndTimer main window" />
 </p>
 
-A Windows desktop utility for reducing input latency and managing system memory — designed for gamers and power users.
+[![Latest release](https://img.shields.io/github/v/release/Layellie/StandbyAndTimer?label=latest)](https://github.com/Layellie/StandbyAndTimer/releases/latest)
 
-> **v2.1.0** — Five user-visible features bundled under the new "batch fixes, don't ship per-commit" cadence:
->
-> - **Global hotkeys** — `Ctrl+Alt+P` manual purge, `Ctrl+Alt+T` timer toggle.
-> - **Tray single-click** toggles window visibility instead of always showing.
-> - **Notification preferences** — per-balloon toggles in Settings (purge / timer / game).
-> - **Idle-only auto-purge** — threshold purges wait until you've been idle, so gaming isn't interrupted.
-> - **Single-instance signal** — re-launching while the app is running silently surfaces the live window.
->
-> Memory card bottom strip refreshed to `Total | Free | Purges` with left / center / right symmetry. The original WinForms release is preserved as [`v1.0.0`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v1.0.0) on the [`winforms-archive`](https://github.com/Layellie/StandbyAndTimer/tree/winforms-archive) branch.
+---
 
-## Features
+<a id="english"></a>
 
-- **Timer Resolution Lock** — pins the system timer at 0.5 ms via `NtSetTimerResolution` for lower input latency
-- **Standby Memory Purge** — manual and automatic cleanup of the Windows Standby memory list via `NtSetSystemInformation`
-- **Game Mode** — sets High CPU priority and full affinity on user-configured game processes
-- **System Tray** — runs in the background with optional launch at Windows startup
-- **Dark / Light themes** with English & Turkish localization
-- **Built-in update checker** against GitHub Releases (download & install from inside the app)
+# English
 
-## Installation
+## What it does
 
-1. Go to [Releases](https://github.com/Layellie/StandbyAndTimer/releases) and download the latest `StandbyAndTimer_Setup_X.Y.Z.exe`
-2. Run the installer (UAC will prompt — Administrator privileges required)
-3. Launch from the Start Menu
+StandbyAndTimer runs in the system tray and does three separate jobs. You can use any of them on its own.
 
-**Requirements:** Windows 10 21H1+ or Windows 11, x64, Administrator privileges. No separate .NET runtime install needed — the installer ships a self-contained .NET 10 build.
+- Windows normally ticks its system timer about every 15.6 ms. The app asks for 0.5 ms instead, which can make mouse input and frame timing in games more even.
+- Windows keeps recently used files cached in RAM as "standby" memory. When free RAM runs low, this cache can cause stutters. The app clears it when you press the button, or by itself when free memory drops below a limit you set.
+- In Game Mode, the games in your list get High CPU priority and all CPU cores while they run. Drag a game's `.exe` into the list, or let the app add games it sees running fullscreen.
 
-## Architecture
+## How to use it
 
-WPF (.NET 10) with MVVM. All Win32 P/Invoke calls are isolated in `Services/Native/NativeMethods.cs`. See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the full design breakdown.
+1. Download the installer from the [latest release](https://github.com/Layellie/StandbyAndTimer/releases/latest) and run it. It asks for administrator rights, because changing the timer and memory settings needs them.
+2. Press **TIMER**. If you want the timer on every time the app starts, click **UNLOCKED** on the Timer card to lock it.
+3. Leave **AUTO PURGE** off unless your games stutter when RAM fills up. If they do, turn it on and set the two limits. The **?** button has a table of suggested values for each RAM size.
+4. Close the window when you are done. The app keeps working from the tray; right click the tray icon for quick actions.
 
-## Build from source
+Hotkeys work from anywhere: `Ctrl+Alt+P` clears standby memory, `Ctrl+Alt+T` turns the timer on or off, `Ctrl+Alt+O` turns auto purge on or off. You can change them under Settings.
 
-```powershell
-# Build (Debug or Release)
-dotnet build StandbyAndTimer/StandbyAndTimer.csproj -c Release
+## Requirements
 
-# Run (must be Administrator for the P/Invoke calls to succeed)
-dotnet run --project StandbyAndTimer/StandbyAndTimer.csproj
-```
+Windows 10 (21H1 or later) or Windows 11, 64 bit, administrator rights. You do not need to install .NET; the installer includes everything.
 
-To produce a redistributable installer ([Inno Setup 6](https://jrsoftware.org/isdl.php) required):
-
-```powershell
-.\build-installer.ps1 -Version 2.1.0
-```
-
-Output: `installer/dist/StandbyAndTimer_Setup_2.1.0.exe` (~72 MB self-contained).
-
-## Install via winget
-
-Once the package is published to the community repository:
+Once the package is approved on winget you can also install it with:
 
 ```powershell
 winget install Layellie.StandbyAndTimer
 ```
 
-The manifest lives at [`winget-manifests/`](winget-manifests/) and is submitted to [microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs) with each release.
+## Versions
 
-## Version history
+Release notes for every version are on the [Releases page](https://github.com/Layellie/StandbyAndTimer/releases). The app checks for updates on launch and can install them for you. The original WinForms version is kept as [`v1.0.0`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v1.0.0) on the [`winforms-archive`](https://github.com/Layellie/StandbyAndTimer/tree/winforms-archive) branch.
 
-Full per-release notes are on the [Releases page](https://github.com/Layellie/StandbyAndTimer/releases). v2.0.8, v2.0.9, and v2.0.10 are rapid-iteration interim builds of the Settings-panel refresh and are marked pre-release on GitHub — install **v2.0.11** instead.
+## Building from source
 
-| Tag | Notes |
-|---|---|
-| [`v2.1.0`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.1.0) | **Current** — global hotkeys, tray single-click toggle, per-balloon notification preferences, idle-only auto-purge, single-instance signal, Memory card `Total / Free / Purges` strip with left/center/right symmetry |
-| [`v2.0.11`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.11) | Settings panel no longer shows an outer vertical scrollbar; log viewer absorbs the leftover space and the version footer stays pinned |
-| [`v2.0.7`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.7) | Settings panel UI polish (readable logs, refresh button no-clip, no window shift on Settings/Timer click) |
-| [`v2.0.6`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.6) | First-run wizard, crash reporter, logs viewer, game auto-detect, winget manifest |
-| [`v2.0.5`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.5) | Game Mode EcoQoS opt-out fix, dedicated AVRT watchdog thread for tighter 0.5 ms lock |
-| [`v2.0.4`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.4) | AUTO PURGE master switch + safer defaults (0 MB thresholds) |
-| [`v2.0.3`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.3) | Sub-500 ms startup, accurate Free-RAM accounting, timer auto-lock on launch |
-| [`v2.0.2`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.2) | Card UI + lime accent, timer auto-start fix |
-| [`v2.0.1`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.1) | P0 fixes + update integrity verification |
-| [`v2.0.0`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v2.0.0) | First WPF rewrite — replaces the original WinForms build |
-| [`v1.0.0`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v1.0.0) | Original WinForms (.NET Framework) — archived on the [`winforms-archive`](https://github.com/Layellie/StandbyAndTimer/tree/winforms-archive) branch |
+WPF on .NET 10, MVVM. Every Windows API call lives in `Services/Native/NativeMethods.cs`; [`ARCHITECTURE.md`](ARCHITECTURE.md) has the full design.
+
+```powershell
+dotnet build StandbyAndTimer/StandbyAndTimer.csproj -c Release
+dotnet run --project StandbyAndTimer/StandbyAndTimer.csproj   # run as administrator
+.\build-installer.ps1 -Version 2.2.1                          # needs Inno Setup 6
+```
 
 ## License
 
-[MIT](LICENSE) — Copyright © 2026 LAYE77IE
+[MIT](LICENSE). Copyright © 2026 LAYE77IE.
+
+---
+
+<a id="türkçe"></a>
+
+# Türkçe
+
+## Ne işe yarar?
+
+StandbyAndTimer sistem tepsisinde çalışır ve birbirinden bağımsız üç iş yapar. İstediğinizi tek başına kullanabilirsiniz.
+
+- Windows normalde sistem zamanlayıcısını yaklaşık 15,6 ms'de bir çalıştırır. Uygulama bunun yerine 0,5 ms ister; bu da oyunlarda fare tepkisini ve kare zamanlamasını daha düzenli hale getirebilir.
+- Windows yakın zamanda kullanılan dosyaları RAM'de "standby" bellek olarak tutar. Boş RAM azaldığında bu önbellek takılmalara yol açabilir. Uygulama bu belleği siz butona bastığınızda ya da boş bellek belirlediğiniz sınırın altına düştüğünde kendiliğinden temizler.
+- Game Mode açıksa listedeki oyunlar, çalıştıkları sürece Yüksek CPU önceliği ve tüm işlemci çekirdeklerini alır. Oyunun `.exe` dosyasını listeye sürükleyebilir ya da uygulamanın tam ekranda çalışan oyunları kendisinin eklemesini bekleyebilirsiniz.
+
+## Nasıl kullanılır?
+
+1. Kurulum dosyasını [son sürümden](https://github.com/Layellie/StandbyAndTimer/releases/latest) indirip çalıştırın. Timer ve bellek ayarlarını değiştirmek yönetici yetkisi gerektirdiği için kurulum bu yetkiyi ister.
+2. **TIMER** butonuna basın. Timer'ın uygulama her açıldığında açık gelmesini istiyorsanız Timer kartındaki **KİLİTSİZ** yazısına tıklayıp kilitleyin.
+3. Oyunlarınız RAM dolduğunda takılmıyorsa **OTO TEMİZLE**'yi kapalı bırakın. Takılıyorsa açın ve iki sınırı ayarlayın. **?** butonunda her RAM boyutu için önerilen değerlerin tablosu var.
+4. İşiniz bitince pencereyi kapatın. Uygulama tepside çalışmaya devam eder; hızlı işlemler için tepsi simgesine sağ tıklayın.
+
+Kısayollar her yerden çalışır: `Ctrl+Alt+P` standby belleği temizler, `Ctrl+Alt+T` timer'ı açıp kapatır, `Ctrl+Alt+O` oto temizlemeyi açıp kapatır. Ayarlar sekmesinden değiştirebilirsiniz.
+
+## Gereksinimler
+
+Windows 10 (21H1 ve sonrası) ya da Windows 11, 64 bit, yönetici yetkisi. .NET kurmanıza gerek yoktur; kurulum dosyası gereken her şeyi içerir.
+
+Paket winget'te onaylandığında şu komutla da kurabilirsiniz:
+
+```powershell
+winget install Layellie.StandbyAndTimer
+```
+
+## Sürümler
+
+Her sürümün notları [Releases sayfasında](https://github.com/Layellie/StandbyAndTimer/releases). Uygulama açılışta güncellemeleri kontrol eder ve yeni sürümü sizin yerinize kurabilir. İlk WinForms sürümü, [`winforms-archive`](https://github.com/Layellie/StandbyAndTimer/tree/winforms-archive) dalında [`v1.0.0`](https://github.com/Layellie/StandbyAndTimer/releases/tag/v1.0.0) olarak saklanıyor.
+
+## Kaynaktan derleme
+
+.NET 10 üzerinde WPF, MVVM. Windows API çağrılarının hepsi `Services/Native/NativeMethods.cs` içinde; tasarımın tamamı [`ARCHITECTURE.md`](ARCHITECTURE.md) dosyasında.
+
+```powershell
+dotnet build StandbyAndTimer/StandbyAndTimer.csproj -c Release
+dotnet run --project StandbyAndTimer/StandbyAndTimer.csproj   # yönetici olarak çalıştırın
+.\build-installer.ps1 -Version 2.2.1                          # Inno Setup 6 gerekir
+```
+
+## Lisans
+
+[MIT](LICENSE). Telif hakkı © 2026 LAYE77IE.
