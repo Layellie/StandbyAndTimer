@@ -33,7 +33,8 @@
     <SolidColorBrush x:Key="SelectionFg"      Color="#16181C"/>
     <SolidColorBrush x:Key="HoverBg"          Color="#E6E9ED"/>
     <SolidColorBrush x:Key="SuccessColor"     Color="#7AB320"/>
-    <SolidColorBrush x:Key="DangerColor"      Color="#DC2626"/>
+    <!-- 5.2:1 on SurfaceBg (the old #DC2626 fell to 4.47:1 on the off-white) -->
+    <SolidColorBrush x:Key="DangerColor"      Color="#C62828"/>
 
     <!-- Modal overlay background — soft tint of AppBg -->
     <SolidColorBrush x:Key="ModalOverlayBrush" Color="#C0E9ECEF"/>
