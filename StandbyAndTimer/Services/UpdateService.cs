@@ -15,8 +15,9 @@ internal sealed partial class UpdateService : IUpdateService
     private const string ReleasesUrl =
         "https://api.github.com/repos/Layellie/StandbyAndTimer/releases/latest";
 
-    // Matches "SHA256: abcdef..." or "sha-256 = abcdef..." in release body text.
-    [GeneratedRegex(@"\bSHA[-\s]?256\b\s*[:=]?\s*([0-9a-fA-F]{64})", RegexOptions.IgnoreCase)]
+    // Matches "SHA256: abcdef...", "sha-256 = abcdef..." or the release
+    // notes' Markdown form "SHA256: `abcdef...`" in release body text.
+    [GeneratedRegex(@"\bSHA[-\s]?256\b\s*[:=]?\s*`?([0-9a-fA-F]{64})\b", RegexOptions.IgnoreCase)]
     private static partial Regex Sha256Pattern();
 
     // Separate clients: short timeout for the JSON metadata fetch, no timeout for the
@@ -54,14 +55,13 @@ internal sealed partial class UpdateService : IUpdateService
             string? url = doc.RootElement.TryGetProperty("html_url", out var urlEl) ? urlEl.GetString() : null;
             if (string.IsNullOrWhiteSpace(tag)) return UpdateCheckResult.None();
 
-            var latest  = ParseVersion(tag);
-            var current = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0, 0);
-            bool newer  = latest > current;
+            string current = CurrentVersion();
+            bool   newer   = IsNewer(tag, current);
 
             string assetUrl = newer ? FindSetupAssetUrl(doc.RootElement) : string.Empty;
             string sha256   = newer ? await ResolveSha256Async(doc.RootElement, ct).ConfigureAwait(false) : string.Empty;
 
-            Logger.Info($"UpdateCheck: current={current} latest={latest} newer={newer} " +
+            Logger.Info($"UpdateCheck: current={current} latest={tag} newer={newer} " +
                         $"asset={(assetUrl.Length > 0)} sha256={(sha256.Length > 0 ? "yes" : "no")}");
             return new UpdateCheckResult(newer, tag!, url ?? string.Empty, assetUrl, sha256);
         }
@@ -131,7 +131,34 @@ internal sealed partial class UpdateService : IUpdateService
         Logger.Info($"Update download finished: {downloaded:N0} bytes -> {targetPath}");
     }
 
-    private static string FindSetupAssetUrl(JsonElement root)
+    // InformationalVersion keeps a "-beta1" suffix (the assembly version
+    // drops it), so a beta build sees its own final release as newer.
+    private static string CurrentVersion()
+    {
+        var asm = Assembly.GetExecutingAssembly();
+        return asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+            ?? asm.GetName().Version?.ToString()
+            ?? "1.0.0";
+    }
+
+    /// <summary>
+    /// Whether release <paramref name="tag"/> ("v2.4.0") is ahead of the
+    /// running <paramref name="current"/> version ("2.3.1", "2.4.0-beta1",
+    /// "2.4.0-beta1+3f2a1c9"). Numeric parts compare first; on a tie a final
+    /// release beats a pre-release. A pre-release tag is never offered (the
+    /// /releases/latest endpoint skips them anyway), nor is an unreadable one.
+    /// </summary>
+    internal static bool IsNewer(string tag, string current)
+    {
+        if (!TryParseVersion(tag, out var latest, out bool latestIsPre) || latestIsPre)
+            return false;
+        if (!TryParseVersion(current, out var running, out bool runningIsPre))
+            return true;   // unreadable own version: let the user decide
+        int cmp = latest.CompareTo(running);
+        return cmp > 0 || (cmp == 0 && runningIsPre);
+    }
+
+    internal static string FindSetupAssetUrl(JsonElement root)
     {
         if (!root.TryGetProperty("assets", out var assets) || assets.ValueKind != JsonValueKind.Array)
             return string.Empty;
@@ -156,12 +183,15 @@ internal sealed partial class UpdateService : IUpdateService
         if (fromAsset.Length == 64) return fromAsset;
 
         if (root.TryGetProperty("body", out var bodyEl) && bodyEl.ValueKind == JsonValueKind.String)
-        {
-            string body = bodyEl.GetString() ?? string.Empty;
-            var match = Sha256Pattern().Match(body);
-            if (match.Success) return match.Groups[1].Value.ToLowerInvariant();
-        }
+            return Sha256FromBody(bodyEl.GetString() ?? string.Empty);
         return string.Empty;
+    }
+
+    // "SHA256: <hex>" line in a release body, lower-cased; "" if none.
+    internal static string Sha256FromBody(string body)
+    {
+        var match = Sha256Pattern().Match(body);
+        return match.Success ? match.Groups[1].Value.ToLowerInvariant() : string.Empty;
     }
 
     private static async Task<string> TryFetchSha256AssetAsync(JsonElement root, CancellationToken ct)
@@ -202,21 +232,29 @@ internal sealed partial class UpdateService : IUpdateService
         return string.Empty;
     }
 
-    private static Version ParseVersion(string tag)
+    // "v2.4.0-beta1+3f2a1c9" -> 2.4.0.0, isPreRelease = true. Build metadata
+    // after '+' is ignored; anything after '-' marks a pre-release.
+    private static bool TryParseVersion(string text, out Version version, out bool isPreRelease)
     {
-        var s = tag.TrimStart('v', 'V').Trim();
+        var s = text.Trim().TrimStart('v', 'V');
+        int plus = s.IndexOf('+');
+        if (plus >= 0) s = s[..plus];
+        int dash = s.IndexOf('-');
+        isPreRelease = dash >= 0;
+        if (dash >= 0) s = s[..dash];
+
         if (!Version.TryParse(s, out var v))
-            return new Version(0, 0, 0, 0);
+        {
+            version = new Version(0, 0, 0, 0);
+            return false;
+        }
         // A 3-part tag (e.g. "v2.0.2") parses to Version(2,0,2) with
         // Revision = -1. Assembly versions always have 4 parts
         // (Version(2,0,2,0)), and Version comparison treats -1 < 0, so the
         // tag would compare as *less* than its own assembly even when both
         // are nominally "2.0.2". Normalise undefined components to 0 so the
         // comparison reflects real version equality.
-        return new Version(
-            v.Major,
-            v.Minor,
-            Math.Max(v.Build,    0),
-            Math.Max(v.Revision, 0));
+        version = new Version(v.Major, v.Minor, Math.Max(v.Build, 0), Math.Max(v.Revision, 0));
+        return true;
     }
 }
