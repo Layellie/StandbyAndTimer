@@ -2,33 +2,35 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Light palette — same lime accent as dark for brand continuity -->
-    <SolidColorBrush x:Key="AppBg"            Color="#F5F5FA"/>
+    <!-- Light palette — same lime accent as dark for brand continuity.
+         Neutrals follow the WhichGPU family. WCAG contrast on SurfaceBg:
+         AppFg 17.8:1, AppFgDim 7.4:1. -->
+    <SolidColorBrush x:Key="AppBg"            Color="#F6F7F9"/>
     <SolidColorBrush x:Key="SurfaceBg"        Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="Surface2Bg"       Color="#F0F0F8"/>
-    <SolidColorBrush x:Key="AppFg"            Color="#1A1A24"/>
-    <SolidColorBrush x:Key="AppFgDim"         Color="#6A6A78"/>
-    <SolidColorBrush x:Key="AppFgMuted"       Color="#B0B0B8"/>
+    <SolidColorBrush x:Key="Surface2Bg"       Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="AppFg"            Color="#16181C"/>
+    <SolidColorBrush x:Key="AppFgDim"         Color="#4F5660"/>
+    <!-- Non-text only (scrollbar thumb, toggle-off track) -->
+    <SolidColorBrush x:Key="AppFgMuted"       Color="#9AA1AB"/>
     <SolidColorBrush x:Key="AccentPrimary"    Color="#7AB320"/>
     <SolidColorBrush x:Key="AccentHover"      Color="#8FC92F"/>
     <SolidColorBrush x:Key="AccentPressed"    Color="#5F8E18"/>
     <SolidColorBrush x:Key="AccentSubtle"     Color="#ECF7CF"/>
     <SolidColorBrush x:Key="AccentOnText"     Color="#1A1F0F"/>
-    <SolidColorBrush x:Key="InputBg"          Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="InputFg"          Color="#2A2A35"/>
-    <SolidColorBrush x:Key="InputBorder"      Color="#D5D5DC"/>
+    <SolidColorBrush x:Key="InputBg"          Color="#F6F7F9"/>
+    <SolidColorBrush x:Key="InputFg"          Color="#1E2126"/>
+    <SolidColorBrush x:Key="InputBorder"      Color="#C7CCD4"/>
     <SolidColorBrush x:Key="InputFocusBorder" Color="#7AB320"/>
-    <SolidColorBrush x:Key="BorderColor"      Color="#D5D5DC"/>
-    <SolidColorBrush x:Key="SeparatorBrush"   Color="#E8E8EC"/>
+    <SolidColorBrush x:Key="BorderColor"      Color="#DFE3E8"/>
+    <SolidColorBrush x:Key="SeparatorBrush"   Color="#E8EBEF"/>
     <SolidColorBrush x:Key="SelectionBg"      Color="#DDEEC2"/>
-    <SolidColorBrush x:Key="SelectionFg"      Color="#1A1A24"/>
-    <SolidColorBrush x:Key="HoverBg"          Color="#EFEFF2"/>
+    <SolidColorBrush x:Key="SelectionFg"      Color="#16181C"/>
+    <SolidColorBrush x:Key="HoverBg"          Color="#EEF0F3"/>
     <SolidColorBrush x:Key="SuccessColor"     Color="#7AB320"/>
     <SolidColorBrush x:Key="DangerColor"      Color="#DC2626"/>
 
-    <!-- Overlay backgrounds — lighter, soft white tint for light theme -->
-    <SolidColorBrush x:Key="DimOverlayBrush"  Color="#CCEDEDF5"/>
-    <SolidColorBrush x:Key="ModalOverlayBrush" Color="#C0EDEDF5"/>
+    <!-- Modal overlay background — soft tint of AppBg -->
+    <SolidColorBrush x:Key="ModalOverlayBrush" Color="#C0F6F7F9"/>
 
     <!-- Title bar DWM mode hint: 1 = dark, 0 = light -->
     <sys:Int32 x:Key="DwmDarkMode" xmlns:sys="clr-namespace:System;assembly=System.Runtime">0</sys:Int32>

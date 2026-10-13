@@ -133,13 +133,11 @@ public sealed partial class SettingsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Close() => IsOpen = false;
-
-    [RelayCommand]
     private Task RefreshLogsAsync() => LoadLogTailAsync();
 
-    // Auto-refresh whenever the panel opens so the user always sees current
-    // logs without an extra click; bumping the ticket on close ensures any
+    // IsOpen = "the Settings tab is on screen" (bound to the main TabControl).
+    // Auto-refresh whenever the tab is shown so the user always sees current
+    // logs without an extra click; bumping the ticket on leave ensures any
     // still-in-flight read that returns later won't overwrite RecentLogs.
     partial void OnIsOpenChanged(bool value)
     {

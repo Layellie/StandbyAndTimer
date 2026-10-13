@@ -43,14 +43,12 @@
     <sys:String x:Key="Str_Settings_Button">⚙</sys:String>
 
     <!-- Settings panel -->
-    <sys:String x:Key="Str_Settings_Title">SETTINGS</sys:String>
     <sys:String x:Key="Str_Settings_LaunchOnStartup">Launch on Startup (Minimized)</sys:String>
     <sys:String x:Key="Str_Settings_Language">Language</sys:String>
     <sys:String x:Key="Str_Settings_Theme">Theme</sys:String>
     <sys:String x:Key="Str_Theme_Dark">Dark</sys:String>
     <sys:String x:Key="Str_Theme_Light">Light</sys:String>
     <sys:String x:Key="Str_Theme_System">System</sys:String>
-    <sys:String x:Key="Str_Settings_Close">✕</sys:String>
     <sys:String x:Key="Str_Settings_Export">Export Settings</sys:String>
     <sys:String x:Key="Str_Settings_Import">Import Settings</sys:String>
     <sys:String x:Key="Str_Settings_CheckUpdate">Check for Updates</sys:String>
@@ -66,7 +64,7 @@
     <sys:String x:Key="Str_Settings_ImportFail">Import failed</sys:String>
     <sys:String x:Key="Str_Settings_AutoStartFailedOn">Could not enable auto-start (schtasks failed)</sys:String>
     <sys:String x:Key="Str_Settings_AutoStartFailedOff">Could not disable auto-start (schtasks failed)</sys:String>
-    <sys:String x:Key="Str_Settings_BackupSection">Backup &amp; Maintenance</sys:String>
+    <sys:String x:Key="Str_Settings_BackupSection">BACKUP &amp; MAINTENANCE</sys:String>
     <sys:String x:Key="Str_Settings_OpenLog">Open Log Folder</sys:String>
 
     <!-- Language names -->
@@ -150,5 +148,14 @@
     <sys:String x:Key="Str_Settings_HotkeysSection">HOTKEYS</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyPurge">Manual purge</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyTimer">Toggle timer</sys:String>
+
+    <!-- Tabs + Settings page (landscape layout) -->
+    <sys:String x:Key="Str_Tab_Status">Status</sys:String>
+    <sys:String x:Key="Str_Tab_Settings">Settings</sys:String>
+    <sys:String x:Key="Str_Settings_StartupSection">STARTUP</sys:String>
+    <sys:String x:Key="Str_Settings_AppearanceSection">APPEARANCE</sys:String>
+    <sys:String x:Key="Str_Settings_LaunchOnStartupDesc">Starts at sign-in via Task Scheduler</sys:String>
+    <sys:String x:Key="Str_Settings_CheckUpdateOnStartup">Check for updates on launch</sys:String>
+    <sys:String x:Key="Str_Settings_CheckUpdateOnStartupDesc">Shows a tray notification when a new version is out</sys:String>
 
 </ResourceDictionary>

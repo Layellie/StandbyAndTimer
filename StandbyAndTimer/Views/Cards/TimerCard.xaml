@@ -1,7 +1,7 @@
 <UserControl x:Class="StandbyAndTimer.Views.Cards.TimerCard"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             FontFamily="Segoe UI" FontSize="13">
+             FontFamily="{StaticResource AppFont}" FontSize="13">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
@@ -9,7 +9,7 @@
     <!-- Hero card — actual timer resolution + toggle button. Binds to
          TimerActive / ActualTimerMs / TimerButtonLabel / ToggleTimerResolutionCommand
          on MainViewModel. -->
-    <Border Style="{StaticResource SectionBorderStyle}" Padding="18,14">
+    <Border Style="{StaticResource SectionBorderStyle}" Padding="16,14">
         <StackPanel>
             <!-- MinHeight reserves the badge's vertical footprint so toggling
                  the timer ON doesn't grow the title row by a few px and shift
@@ -40,33 +40,26 @@
                 </Border>
             </Grid>
 
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <!-- Value above, full-width button below: in the landscape
+                 three-column layout the card is ~238 px wide, too narrow
+                 for the 56 px hero value and a 120 px button side by side. -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                <TextBlock Text="{Binding ActualTimerMs, StringFormat={}{0:F2}}"
+                           Style="{StaticResource HeroValueStyle}"/>
+                <TextBlock Text="ms"
+                           FontSize="18"
+                           FontWeight="Light"
+                           Foreground="{DynamicResource AppFgDim}"
+                           VerticalAlignment="Bottom"
+                           Margin="6,0,0,12"/>
+            </StackPanel>
 
-                <StackPanel Grid.Column="0"
-                            Orientation="Horizontal"
-                            VerticalAlignment="Center">
-                    <TextBlock Text="{Binding ActualTimerMs, StringFormat={}{0:F2}}"
-                               Style="{StaticResource HeroValueStyle}"/>
-                    <TextBlock Text="ms"
-                               FontSize="18"
-                               FontWeight="Light"
-                               Foreground="{DynamicResource AppFgDim}"
-                               VerticalAlignment="Bottom"
-                               Margin="6,0,0,12"/>
-                </StackPanel>
-
-                <Button Grid.Column="1"
-                        Content="{Binding TimerButtonLabel}"
-                        Command="{Binding ToggleTimerResolutionCommand}"
-                        Style="{StaticResource DarkButtonStyle}"
-                        MinWidth="120" Height="38"
-                        VerticalAlignment="Center"
-                        FontSize="13"/>
-            </Grid>
+            <Button Content="{Binding TimerButtonLabel}"
+                    Command="{Binding ToggleTimerResolutionCommand}"
+                    Style="{StaticResource DarkButtonStyle}"
+                    Height="34"
+                    HorizontalAlignment="Stretch"
+                    FontSize="13"/>
         </StackPanel>
     </Border>
 </UserControl>

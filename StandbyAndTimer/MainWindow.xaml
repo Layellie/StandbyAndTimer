@@ -5,14 +5,15 @@
         xmlns:views="clr-namespace:StandbyAndTimer.Views"
         xmlns:cards="clr-namespace:StandbyAndTimer.Views.Cards"
         xmlns:overlays="clr-namespace:StandbyAndTimer.Views.Overlays"
+        xmlns:conv="clr-namespace:StandbyAndTimer.Views.Converters"
         Title="StandbyAndTimer"
-        Width="540"
-        Height="600"
+        Width="760"
+        Height="520"
         ResizeMode="CanMinimize"
         WindowStyle="None"
         Background="{DynamicResource AppBg}"
         Foreground="{DynamicResource AppFg}"
-        FontFamily="Segoe UI"
+        FontFamily="{StaticResource AppFont}"
         FontSize="13" Icon="/app_icon.ico">
 
     <shell:WindowChrome.WindowChrome>
@@ -28,24 +29,21 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Views/Styles/Theme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <conv:SettingsTabIndexConverter x:Key="SettingsTabIndexConv"/>
         </ResourceDictionary>
     </Window.Resources>
 
     <!-- Outer container with a 1px border so the borderless window still has a visible edge -->
     <Border BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" Background="{DynamicResource AppBg}">
 
-        <!-- Root grid: title bar + main content + overlays -->
+        <!-- Root grid: title bar + tabbed content + status strip + overlays -->
         <Grid x:Name="RootGrid" ClipToBounds="True">
             <Grid.RowDefinitions>
-                <!-- Row 0 = title bar, locked to 36 px. Was Height="Auto" but
-                     when the Settings panel opens, its RowSpan="2" +
-                     VerticalAlignment="Stretch" content height was bleeding
-                     into Row 0 and inflating the title bar by a few pixels —
-                     the user saw the bar "grow upward" each time Settings
-                     was toggled. A fixed row height makes the title bar
-                     immune to whatever lives in the overlay layer. -->
+                <!-- Row 0 = title bar, locked to 36 px so nothing in the
+                     content or overlay layers can inflate it. -->
                 <RowDefinition Height="36"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <!-- ═══════════════════ TITLE BAR ═══════════════════ -->
@@ -53,60 +51,56 @@
                             MinimizeRequested="OnTitleBarMinimize"
                             CloseRequested="OnTitleBarClose"/>
 
-            <!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
-            <StackPanel Grid.Row="1" Margin="14,12,14,10">
-                <cards:TimerCard/>
+            <!-- ═══════════════════ TABBED CONTENT ═══════════════════
+                 Two fixed-size pages, neither scrolls. SelectedIndex is bound
+                 to Settings.IsOpen so "Settings page visible" keeps driving
+                 the log-tail refresh in SettingsViewModel. -->
+            <TabControl Grid.Row="1"
+                        Margin="14,12,14,0"
+                        Style="{StaticResource SegmentTabControlStyle}"
+                        ItemContainerStyle="{StaticResource SegmentTabItemStyle}"
+                        SelectedIndex="{Binding Settings.IsOpen, Mode=TwoWay, Converter={StaticResource SettingsTabIndexConv}}">
 
-                <!-- Memory Stats (left) + Standby Purge (right) side-by-side -->
-                <Grid Margin="0,0,0,8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="8"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <cards:MemoryStatsCard  Grid.Column="0"/>
-                    <cards:StandbyPurgeCard Grid.Column="2"/>
-                </Grid>
+                <TabItem Header="{DynamicResource Str_Tab_Status}">
+                    <!-- Three columns: Timer + Memory | Purge | Game Mode.
+                         Game Mode takes the full column height so the
+                         game list gets real room instead of a 60 px strip. -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
 
-                <cards:GameModeCard GameDropped="OnGameDropped"/>
-                <cards:StatusBar/>
-            </StackPanel>
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <cards:TimerCard Grid.Row="0"/>
+                            <cards:MemoryStatsCard Grid.Row="1"/>
+                        </Grid>
 
-            <!-- ═══════════════════ DIM OVERLAY ═══════════════════ -->
-            <Border x:Name="DimOverlay"
-                    Grid.Row="0" Grid.RowSpan="2"
-                    Panel.ZIndex="5"
-                    Background="{DynamicResource DimOverlayBrush}"
-                    Opacity="0"
-                    Visibility="Collapsed">
-                <Border.InputBindings>
-                    <MouseBinding MouseAction="LeftClick"
-                                  Command="{Binding Settings.CloseCommand}"/>
-                </Border.InputBindings>
-            </Border>
+                        <cards:StandbyPurgeCard Grid.Column="2"/>
+                        <cards:GameModeCard Grid.Column="4" GameDropped="OnGameDropped"/>
+                    </Grid>
+                </TabItem>
 
-            <!-- ═══════════════════ SETTINGS PANEL (slides in from right) ═══════════════════ -->
-            <Border x:Name="SettingsPanelContainer"
-                    Grid.Row="0" Grid.RowSpan="2"
-                    Panel.ZIndex="10"
-                    Width="270"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Stretch"
-                    Background="{DynamicResource SurfaceBg}"
-                    BorderBrush="{DynamicResource BorderColor}"
-                    BorderThickness="1,0,0,0"
-                    Visibility="Collapsed">
-                <Border.RenderTransform>
-                    <TranslateTransform x:Name="PanelTranslate" X="270"/>
-                </Border.RenderTransform>
-                <views:SettingsPanelView DataContext="{Binding Settings}"/>
-            </Border>
+                <TabItem Header="{DynamicResource Str_Tab_Settings}">
+                    <views:SettingsPanelView DataContext="{Binding Settings}"/>
+                </TabItem>
+            </TabControl>
+
+            <!-- ═══════════════════ STATUS STRIP ═══════════════════ -->
+            <cards:StatusBar Grid.Row="2" Margin="14,0,14,8"/>
 
             <!-- ═══════════════════ MODAL OVERLAYS ═══════════════════ -->
-            <overlays:AboutOverlay  Grid.Row="0" Grid.RowSpan="2" Panel.ZIndex="18"/>
-            <overlays:WizardOverlay Grid.Row="0" Grid.RowSpan="2" Panel.ZIndex="19"/>
+            <overlays:AboutOverlay  Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="18"/>
+            <overlays:WizardOverlay Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="19"/>
             <overlays:CloseConfirmationOverlay x:Name="CloseDialog"
-                                               Grid.Row="0" Grid.RowSpan="2"
+                                               Grid.Row="0" Grid.RowSpan="3"
                                                Panel.ZIndex="20"
                                                MinimizeRequested="OnCloseDialogMinimize"
                                                ExitRequested="OnCloseDialogExit"/>

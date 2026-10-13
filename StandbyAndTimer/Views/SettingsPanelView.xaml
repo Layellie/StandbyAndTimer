@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="clr-namespace:StandbyAndTimer.Views.Converters"
              xmlns:cards="clr-namespace:StandbyAndTimer.Views.Cards"
-             FontFamily="Segoe UI" FontSize="13">
+             FontFamily="{StaticResource AppFont}" FontSize="13">
 
     <UserControl.Resources>
         <conv:LanguageDisplayConverter x:Key="LangConv"/>
@@ -11,255 +11,281 @@
         <BooleanToVisibilityConverter  x:Key="BoolToVis"/>
     </UserControl.Resources>
 
-    <!-- No outer ScrollViewer: the only variable-height region is the Logs
-         viewer card (Row 39 = *). Everything else has a known intrinsic
-         height that fits in the fixed window, so the panel never needs to
-         scroll vertically — the log viewer absorbs all slack and its own
-         internal ScrollViewer handles long log content.
+    <!-- Settings TAB page (was a 270 px slide-in panel). WhichGPU-style:
+         small section label above a grouped card of rows, title (+ optional
+         description) on the left, control on the right.
 
-         v2.1.0 inserted Notifications (rows 14-20) + Hotkeys (rows 22-26)
-         between Theme picker and Backup section; the * Logs row absorbed
-         the height, no overall layout shift below. -->
-    <Grid Margin="18,12">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="30"/>    <!-- 0  Header -->
-            <RowDefinition Height="12"/>    <!-- 1 -->
-            <RowDefinition Height="Auto"/>  <!-- 2  AutoStart -->
-            <RowDefinition Height="10"/>    <!-- 3 -->
-            <RowDefinition Height="Auto"/>  <!-- 4  UpdateCheck -->
-            <RowDefinition Height="14"/>    <!-- 5 -->
-            <RowDefinition Height="Auto"/>  <!-- 6  Language label -->
-            <RowDefinition Height="6"/>     <!-- 7 -->
-            <RowDefinition Height="Auto"/>  <!-- 8  Language picker -->
-            <RowDefinition Height="10"/>    <!-- 9 -->
-            <RowDefinition Height="Auto"/>  <!-- 10 Theme label -->
-            <RowDefinition Height="6"/>     <!-- 11 -->
-            <RowDefinition Height="Auto"/>  <!-- 12 Theme picker -->
-            <RowDefinition Height="14"/>    <!-- 13 -->
-            <RowDefinition Height="Auto"/>  <!-- 14 NOTIFICATIONS section label -->
-            <RowDefinition Height="6"/>     <!-- 15 -->
-            <RowDefinition Height="Auto"/>  <!-- 16 Notify on purge -->
-            <RowDefinition Height="4"/>     <!-- 17 -->
-            <RowDefinition Height="Auto"/>  <!-- 18 Notify on timer -->
-            <RowDefinition Height="4"/>     <!-- 19 -->
-            <RowDefinition Height="Auto"/>  <!-- 20 Notify on game -->
-            <RowDefinition Height="14"/>    <!-- 21 -->
-            <RowDefinition Height="Auto"/>  <!-- 22 HOTKEYS section label -->
-            <RowDefinition Height="6"/>     <!-- 23 -->
-            <RowDefinition Height="Auto"/>  <!-- 24 Purge hotkey row -->
-            <RowDefinition Height="4"/>     <!-- 25 -->
-            <RowDefinition Height="Auto"/>  <!-- 26 Timer hotkey row -->
-            <RowDefinition Height="16"/>    <!-- 27 -->
-            <RowDefinition Height="Auto"/>  <!-- 28 Backup section label -->
-            <RowDefinition Height="6"/>     <!-- 29 -->
-            <RowDefinition Height="Auto"/>  <!-- 30 Export -->
-            <RowDefinition Height="4"/>     <!-- 31 -->
-            <RowDefinition Height="Auto"/>  <!-- 32 Import -->
-            <RowDefinition Height="4"/>     <!-- 33 -->
-            <RowDefinition Height="Auto"/>  <!-- 34 Check Update + Download -->
-            <RowDefinition Height="4"/>     <!-- 35 -->
-            <RowDefinition Height="Auto"/>  <!-- 36 Open Log -->
-            <RowDefinition Height="10"/>    <!-- 37 -->
-            <RowDefinition Height="Auto"/>  <!-- 38 Update status text -->
-            <RowDefinition Height="10"/>    <!-- 39 -->
-            <RowDefinition Height="*"/>     <!-- 40 Logs viewer card (fills slack) -->
-            <RowDefinition Height="Auto"/>  <!-- 41 Version footer -->
-        </Grid.RowDefinitions>
+         No ScrollViewer: every group has a known intrinsic height that fits
+         the fixed 760x520 window. The only variable-height region is the
+         Logs viewer (right column, Row 4 = *), which absorbs the slack and
+         scrolls internally. -->
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="12"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-        <!-- ── Header ───────────────────────────────────────────────────────── -->
-        <Grid Grid.Row="0">
-            <TextBlock Text="{DynamicResource Str_Settings_Title}"
-                       FontSize="14" FontWeight="SemiBold"
-                       Foreground="{DynamicResource AppFg}"
-                       VerticalAlignment="Center"/>
-            <Button Content="{DynamicResource Str_Settings_Close}"
-                    Command="{Binding CloseCommand}"
-                    Style="{StaticResource IconButtonStyle}"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Padding="0"
-                    FontSize="15"
-                    Width="30" Height="30"/>
-        </Grid>
+        <!-- ═══════════════════ LEFT COLUMN ═══════════════════ -->
+        <StackPanel Grid.Column="0">
 
-        <Border Grid.Row="0" VerticalAlignment="Bottom" Height="1"
-                Background="{DynamicResource SeparatorBrush}"
-                Margin="0,26,0,-6"/>
+            <!-- ── Startup ─────────────────────────────────────────────── -->
+            <TextBlock Text="{DynamicResource Str_Settings_StartupSection}"
+                       Style="{StaticResource PageSectionLabelStyle}"/>
+            <Border Style="{StaticResource SettingsGroupStyle}">
+                <StackPanel>
+                    <Grid Margin="0,2,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <TextBlock Text="{DynamicResource Str_Settings_LaunchOnStartup}"
+                                       Style="{StaticResource SettingTitleStyle}"/>
+                            <TextBlock Text="{DynamicResource Str_Settings_LaunchOnStartupDesc}"
+                                       Style="{StaticResource SettingDescStyle}"/>
+                        </StackPanel>
+                        <CheckBox Grid.Column="1"
+                                  IsChecked="{Binding AutoStartEnabled}"
+                                  Style="{StaticResource ToggleSwitchStyle}"/>
+                    </Grid>
 
-        <!-- ── Launch on Startup ────────────────────────────────────────────── -->
-        <CheckBox Grid.Row="2"
-                  Content="{DynamicResource Str_Settings_LaunchOnStartup}"
-                  IsChecked="{Binding AutoStartEnabled}"
-                  Style="{StaticResource DarkCheckBoxStyle}"/>
+                    <Grid Margin="0,6,0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <TextBlock Text="{DynamicResource Str_Settings_CheckUpdateOnStartup}"
+                                       Style="{StaticResource SettingTitleStyle}"/>
+                            <TextBlock Text="{DynamicResource Str_Settings_CheckUpdateOnStartupDesc}"
+                                       Style="{StaticResource SettingDescStyle}"/>
+                        </StackPanel>
+                        <CheckBox Grid.Column="1"
+                                  IsChecked="{Binding UpdateCheckEnabled}"
+                                  Style="{StaticResource ToggleSwitchStyle}"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
 
-        <!-- ── Update check on startup ──────────────────────────────────────── -->
-        <CheckBox Grid.Row="4"
-                  Content="{DynamicResource Str_Settings_CheckUpdate}"
-                  IsChecked="{Binding UpdateCheckEnabled}"
-                  Style="{StaticResource DarkCheckBoxStyle}"/>
+            <!-- ── Appearance ──────────────────────────────────────────── -->
+            <TextBlock Text="{DynamicResource Str_Settings_AppearanceSection}"
+                       Style="{StaticResource PageSectionLabelStyle}"/>
+            <Border Style="{StaticResource SettingsGroupStyle}">
+                <StackPanel>
+                    <Grid Margin="0,2,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="140"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="{DynamicResource Str_Settings_Language}"
+                                   Style="{StaticResource SettingTitleStyle}"
+                                   VerticalAlignment="Center"/>
+                        <ComboBox Grid.Column="1"
+                                  ItemsSource="{Binding LanguageOptions}"
+                                  SelectedItem="{Binding SelectedLanguage}"
+                                  Style="{StaticResource SettingsComboBoxStyle}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource LangConv}}"
+                                               Foreground="{DynamicResource InputFg}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </Grid>
 
-        <!-- ── Language label ───────────────────────────────────────────────── -->
-        <TextBlock Grid.Row="6"
-                   Text="{DynamicResource Str_Settings_Language}"
-                   Foreground="{DynamicResource AppFgDim}"
-                   FontSize="11" FontWeight="SemiBold"/>
+                    <Grid Margin="0,4,0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="140"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="{DynamicResource Str_Settings_Theme}"
+                                   Style="{StaticResource SettingTitleStyle}"
+                                   VerticalAlignment="Center"/>
+                        <ComboBox Grid.Column="1"
+                                  ItemsSource="{Binding ThemeOptions}"
+                                  SelectedItem="{Binding SelectedTheme}"
+                                  Style="{StaticResource SettingsComboBoxStyle}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource ThemeConv}}"
+                                               Foreground="{DynamicResource InputFg}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </Grid>
+                </StackPanel>
+            </Border>
 
-        <ComboBox Grid.Row="8"
-                  ItemsSource="{Binding LanguageOptions}"
-                  SelectedItem="{Binding SelectedLanguage}"
-                  Style="{StaticResource SettingsComboBoxStyle}">
-            <ComboBox.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock Text="{Binding Converter={StaticResource LangConv}}"
-                               Foreground="{DynamicResource InputFg}"/>
-                </DataTemplate>
-            </ComboBox.ItemTemplate>
-        </ComboBox>
+            <!-- ── Hotkeys (read-only display; rebind UI is a later version) ── -->
+            <TextBlock Text="{DynamicResource Str_Settings_HotkeysSection}"
+                       Style="{StaticResource PageSectionLabelStyle}"/>
+            <Border Style="{StaticResource SettingsGroupStyle}" Margin="0">
+                <StackPanel>
+                    <Grid Margin="0,2,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Str_Settings_HotkeyPurge}"
+                                   Style="{StaticResource SettingTitleStyle}"
+                                   VerticalAlignment="Center"/>
+                        <!-- Muted pill + AppFg text instead of accent-coloured
+                             text: lime text on white is only 2.5:1. -->
+                        <Border Grid.Column="1" Style="{StaticResource MutedBadgeStyle}">
+                            <TextBlock Text="{Binding PurgeHotkeyText}"
+                                       FontSize="11" FontWeight="SemiBold"/>
+                        </Border>
+                    </Grid>
 
-        <!-- ── Theme label ──────────────────────────────────────────────────── -->
-        <TextBlock Grid.Row="10"
-                   Text="{DynamicResource Str_Settings_Theme}"
-                   Foreground="{DynamicResource AppFgDim}"
-                   FontSize="11" FontWeight="SemiBold"/>
-
-        <ComboBox Grid.Row="12"
-                  ItemsSource="{Binding ThemeOptions}"
-                  SelectedItem="{Binding SelectedTheme}"
-                  Style="{StaticResource SettingsComboBoxStyle}">
-            <ComboBox.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock Text="{Binding Converter={StaticResource ThemeConv}}"
-                               Foreground="{DynamicResource InputFg}"/>
-                </DataTemplate>
-            </ComboBox.ItemTemplate>
-        </ComboBox>
-
-        <!-- ── Notifications ────────────────────────────────────────────────── -->
-        <TextBlock Grid.Row="14"
-                   Text="{DynamicResource Str_Settings_NotificationsSection}"
-                   Foreground="{DynamicResource AppFgDim}"
-                   FontSize="11" FontWeight="SemiBold"/>
-
-        <CheckBox Grid.Row="16"
-                  Content="{DynamicResource Str_Settings_NotifyOnPurge}"
-                  IsChecked="{Binding NotifyOnPurge}"
-                  Style="{StaticResource DarkCheckBoxStyle}"/>
-
-        <CheckBox Grid.Row="18"
-                  Content="{DynamicResource Str_Settings_NotifyOnTimer}"
-                  IsChecked="{Binding NotifyOnTimerToggle}"
-                  Style="{StaticResource DarkCheckBoxStyle}"/>
-
-        <CheckBox Grid.Row="20"
-                  Content="{DynamicResource Str_Settings_NotifyOnGame}"
-                  IsChecked="{Binding NotifyOnGameDetected}"
-                  Style="{StaticResource DarkCheckBoxStyle}"/>
-
-        <!-- ── Hotkeys (read-only display for v2.1.0; rebind UI in v2.2) ────── -->
-        <TextBlock Grid.Row="22"
-                   Text="{DynamicResource Str_Settings_HotkeysSection}"
-                   Foreground="{DynamicResource AppFgDim}"
-                   FontSize="11" FontWeight="SemiBold"/>
-
-        <Grid Grid.Row="24">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="{DynamicResource Str_Settings_HotkeyPurge}"
-                       VerticalAlignment="Center"
-                       Foreground="{DynamicResource AppFg}" FontSize="12"/>
-            <TextBlock Grid.Column="1"
-                       Text="{Binding PurgeHotkeyText}"
-                       VerticalAlignment="Center"
-                       Foreground="{DynamicResource AccentPrimary}"
-                       FontSize="12" FontWeight="SemiBold"/>
-        </Grid>
-
-        <Grid Grid.Row="26">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="{DynamicResource Str_Settings_HotkeyTimer}"
-                       VerticalAlignment="Center"
-                       Foreground="{DynamicResource AppFg}" FontSize="12"/>
-            <TextBlock Grid.Column="1"
-                       Text="{Binding TimerHotkeyText}"
-                       VerticalAlignment="Center"
-                       Foreground="{DynamicResource AccentPrimary}"
-                       FontSize="12" FontWeight="SemiBold"/>
-        </Grid>
-
-        <!-- ── Backup & Maintenance ─────────────────────────────────────────── -->
-        <TextBlock Grid.Row="28"
-                   Text="{DynamicResource Str_Settings_BackupSection}"
-                   Foreground="{DynamicResource AppFgDim}"
-                   FontSize="11" FontWeight="SemiBold"/>
-
-        <Button Grid.Row="30"
-                Content="{DynamicResource Str_Settings_Export}"
-                Command="{Binding ExportSettingsCommand}"
-                Style="{StaticResource GhostButtonStyle}"
-                Height="28"
-                HorizontalAlignment="Stretch"/>
-
-        <Button Grid.Row="32"
-                Content="{DynamicResource Str_Settings_Import}"
-                Command="{Binding ImportSettingsCommand}"
-                Style="{StaticResource GhostButtonStyle}"
-                Height="28"
-                HorizontalAlignment="Stretch"/>
-
-        <StackPanel Grid.Row="34" Orientation="Vertical">
-            <Button Content="{DynamicResource Str_Settings_CheckUpdate}"
-                    Command="{Binding CheckUpdateCommand}"
-                    Style="{StaticResource DarkButtonStyle}"
-                    Height="28"
-                    HorizontalAlignment="Stretch"/>
-            <Button Content="{DynamicResource Str_Settings_DownloadInstall}"
-                    Command="{Binding DownloadAndInstallCommand}"
-                    Style="{StaticResource DarkButtonStyle}"
-                    Height="28"
-                    Margin="0,6,0,0"
-                    HorizontalAlignment="Stretch"
-                    Visibility="{Binding UpdateAvailable, Converter={StaticResource BoolToVis}}"/>
+                    <Grid Margin="0,4,0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Str_Settings_HotkeyTimer}"
+                                   Style="{StaticResource SettingTitleStyle}"
+                                   VerticalAlignment="Center"/>
+                        <Border Grid.Column="1" Style="{StaticResource MutedBadgeStyle}">
+                            <TextBlock Text="{Binding TimerHotkeyText}"
+                                       FontSize="11" FontWeight="SemiBold"/>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </Border>
         </StackPanel>
 
-        <Button Grid.Row="36"
-                Content="{DynamicResource Str_Settings_OpenLog}"
-                Command="{Binding OpenLogFolderCommand}"
-                Style="{StaticResource GhostButtonStyle}"
-                Height="28"
-                HorizontalAlignment="Stretch"/>
+        <!-- ═══════════════════ RIGHT COLUMN ═══════════════════ -->
+        <Grid Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>  <!-- 0 Notifications label -->
+                <RowDefinition Height="Auto"/>  <!-- 1 Notifications group -->
+                <RowDefinition Height="Auto"/>  <!-- 2 Backup label -->
+                <RowDefinition Height="Auto"/>  <!-- 3 Backup group -->
+                <RowDefinition Height="*"/>     <!-- 4 Logs viewer (fills slack) -->
+            </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="38"
-                   Text="{Binding UpdateStatus}"
-                   Foreground="{DynamicResource AppFgDim}"
-                   TextWrapping="Wrap"
-                   FontSize="11"/>
+            <!-- ── Notifications ───────────────────────────────────────── -->
+            <TextBlock Grid.Row="0"
+                       Text="{DynamicResource Str_Settings_NotificationsSection}"
+                       Style="{StaticResource PageSectionLabelStyle}"/>
+            <Border Grid.Row="1" Style="{StaticResource SettingsGroupStyle}">
+                <StackPanel>
+                    <Grid Margin="0,2,0,3">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Str_Settings_NotifyOnPurge}"
+                                   Style="{StaticResource SettingTitleStyle}"
+                                   VerticalAlignment="Center"/>
+                        <CheckBox Grid.Column="1"
+                                  IsChecked="{Binding NotifyOnPurge}"
+                                  Style="{StaticResource ToggleSwitchStyle}"/>
+                    </Grid>
+                    <Grid Margin="0,3">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Str_Settings_NotifyOnTimer}"
+                                   Style="{StaticResource SettingTitleStyle}"
+                                   VerticalAlignment="Center"/>
+                        <CheckBox Grid.Column="1"
+                                  IsChecked="{Binding NotifyOnTimerToggle}"
+                                  Style="{StaticResource ToggleSwitchStyle}"/>
+                    </Grid>
+                    <Grid Margin="0,3,0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Str_Settings_NotifyOnGame}"
+                                   Style="{StaticResource SettingTitleStyle}"
+                                   VerticalAlignment="Center"/>
+                        <CheckBox Grid.Column="1"
+                                  IsChecked="{Binding NotifyOnGameDetected}"
+                                  Style="{StaticResource ToggleSwitchStyle}"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
 
-        <!-- ── Logs viewer ──────────────────────────────────────────────────
-             Thin card that owns its own header (label + Refresh button) and
-             the wrap-enabled tail box. Bound to RecentLogs / RefreshLogsCommand
-             on the inherited SettingsViewModel DataContext. Row 40 = *, so
-             this card absorbs all leftover vertical space — that's what
-             eliminates the outer scrollbar without forcing a window resize. -->
-        <cards:LogsViewerCard Grid.Row="40"/>
+            <!-- ── Backup & Maintenance ────────────────────────────────── -->
+            <TextBlock Grid.Row="2"
+                       Text="{DynamicResource Str_Settings_BackupSection}"
+                       Style="{StaticResource PageSectionLabelStyle}"/>
+            <!-- Buttons: Padding 6,0 — the default 10,5 left a 16 px content
+                 box inside a bordered 28 px button, clipping descenders by
+                 1 px, and was 4 px short for "Güncellemeleri Kontrol Et". -->
+            <Border Grid.Row="3" Style="{StaticResource SettingsGroupStyle}" Padding="10">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="6"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="6"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Button Grid.Row="0" Grid.Column="0"
+                                Content="{DynamicResource Str_Settings_Export}"
+                                Command="{Binding ExportSettingsCommand}"
+                                Style="{StaticResource GhostButtonStyle}"
+                                Height="28" Padding="6,0"/>
+                        <Button Grid.Row="0" Grid.Column="2"
+                                Content="{DynamicResource Str_Settings_Import}"
+                                Command="{Binding ImportSettingsCommand}"
+                                Style="{StaticResource GhostButtonStyle}"
+                                Height="28" Padding="6,0"/>
+                        <Button Grid.Row="2" Grid.Column="0"
+                                Content="{DynamicResource Str_Settings_CheckUpdate}"
+                                Command="{Binding CheckUpdateCommand}"
+                                Style="{StaticResource DarkButtonStyle}"
+                                Height="28" Padding="6,0"/>
+                        <Button Grid.Row="2" Grid.Column="2"
+                                Content="{DynamicResource Str_Settings_OpenLog}"
+                                Command="{Binding OpenLogFolderCommand}"
+                                Style="{StaticResource GhostButtonStyle}"
+                                Height="28" Padding="6,0"/>
+                    </Grid>
 
-        <!-- ── Version footer ──────────────────────────────────────────────────
-             Pinned to the bottom of the panel. The "v" prefix matches the
-             GitHub release tag format (v2.0.5) so what the user sees here
-             is the same string they'd see on the release page.
-             CurrentVersion is computed from the assembly so it
-             auto-updates with every -p:Version=X.Y.Z release build. -->
-        <TextBlock Grid.Row="41"
-                   Text="{Binding CurrentVersion, StringFormat=v{0}}"
-                   Foreground="{DynamicResource AppFgDim}"
-                   FontSize="10.5"
-                   Opacity="0.7"
-                   HorizontalAlignment="Right"
-                   Margin="0,0,0,2"/>
+                    <Button Content="{DynamicResource Str_Settings_DownloadInstall}"
+                            Command="{Binding DownloadAndInstallCommand}"
+                            Style="{StaticResource DarkButtonStyle}"
+                            Height="28" Padding="6,0"
+                            Margin="0,6,0,0"
+                            HorizontalAlignment="Stretch"
+                            Visibility="{Binding UpdateAvailable, Converter={StaticResource BoolToVis}}"/>
 
+                    <!-- Collapsed while empty so the group doesn't carry a
+                         blank line under the buttons. -->
+                    <TextBlock Text="{Binding UpdateStatus}"
+                               Foreground="{DynamicResource AppFgDim}"
+                               TextWrapping="Wrap"
+                               FontSize="11"
+                               Margin="2,8,2,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Style.Triggers>
+                                    <Trigger Property="Text" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <!-- ── Logs viewer ─────────────────────────────────────────────
+                 Row 4 = *, so it takes whatever height is left and never
+                 pushes the groups above off the page. -->
+            <cards:LogsViewerCard Grid.Row="4"/>
+        </Grid>
     </Grid>
 </UserControl>

@@ -374,9 +374,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private void OpenSettings() => Settings.IsOpen = true;
-
-    [RelayCommand]
     private void AddGame()
     {
         var dlg = new OpenFileDialog

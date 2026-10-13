@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Interop;
-using System.Windows.Media.Animation;
 using StandbyAndTimer.Services.Native;
 using StandbyAndTimer.ViewModels;
 
@@ -25,7 +24,6 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = viewModel;
         _vm = viewModel;
-        _vm.Settings.PropertyChanged += OnSettingsPropertyChanged;
     }
 
     // ── Dark title bar (DWM) ──────────────────────────────────────────────────
@@ -51,13 +49,6 @@ public partial class MainWindow : Window
     {
         if (_forceClose) return;
         e.Cancel = true;
-        ShowCloseOverlay();
-    }
-
-    private void ShowCloseOverlay()
-    {
-        if (_vm.Settings.IsOpen)
-            _vm.Settings.IsOpen = false;
         CloseDialog.Show();
     }
 
@@ -67,14 +58,6 @@ public partial class MainWindow : Window
     {
         _forceClose = true;
         Application.Current.Shutdown();
-    }
-
-    // ── Window lifecycle ──────────────────────────────────────────────────────
-
-    protected override void OnClosed(EventArgs e)
-    {
-        _vm.Settings.PropertyChanged -= OnSettingsPropertyChanged;
-        base.OnClosed(e);
     }
 
     // ── Off-screen "tray" mode ────────────────────────────────────────────────
@@ -149,48 +132,4 @@ public partial class MainWindow : Window
     // ── Game list drag-and-drop (forwarded from cards:GameModeCard) ──────────
 
     private void OnGameDropped(object? sender, string path) => _vm.AddGameFromPath(path);
-
-    // ── Settings panel slide animation ────────────────────────────────────────
-
-    private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName != nameof(SettingsViewModel.IsOpen)) return;
-        Dispatcher.InvokeAsync(() =>
-        {
-            if (_vm.Settings.IsOpen) AnimateSettingsOpen();
-            else                     AnimateSettingsClose();
-        });
-    }
-
-    private void AnimateSettingsOpen()
-    {
-        DimOverlay.Visibility             = Visibility.Visible;
-        SettingsPanelContainer.Visibility = Visibility.Visible;
-
-        PanelTranslate.BeginAnimation(
-            System.Windows.Media.TranslateTransform.XProperty,
-            new DoubleAnimation(270, 0, TimeSpan.FromMilliseconds(220))
-            { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
-
-        DimOverlay.BeginAnimation(OpacityProperty,
-            new DoubleAnimation(0, 0.65, TimeSpan.FromMilliseconds(200)));
-    }
-
-    private void AnimateSettingsClose()
-    {
-        var closeAnim = new DoubleAnimation(0, 270, TimeSpan.FromMilliseconds(180))
-            { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn } };
-
-        closeAnim.Completed += (_, _) =>
-        {
-            SettingsPanelContainer.Visibility = Visibility.Collapsed;
-            DimOverlay.Visibility             = Visibility.Collapsed;
-        };
-
-        PanelTranslate.BeginAnimation(
-            System.Windows.Media.TranslateTransform.XProperty, closeAnim);
-
-        DimOverlay.BeginAnimation(OpacityProperty,
-            new DoubleAnimation(0.65, 0, TimeSpan.FromMilliseconds(160)));
-    }
 }

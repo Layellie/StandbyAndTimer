@@ -14,12 +14,16 @@
     <CornerRadius x:Key="RadiusMedium">6</CornerRadius>
     <CornerRadius x:Key="RadiusLarge">10</CornerRadius>
 
+    <!-- App-wide face. Segoe UI Variable ships with Windows 11; the comma
+         list falls back to plain Segoe UI on Windows 10. -->
+    <FontFamily x:Key="AppFont">Segoe UI Variable Text, Segoe UI</FontFamily>
+
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!--  GLOBAL OVERRIDES                                                      -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <Style TargetType="TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource AppFg}"/>
-        <Setter Property="FontFamily" Value="Segoe UI"/>
+        <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
         <Setter Property="FontSize"   Value="13"/>
     </Style>
 
@@ -34,7 +38,7 @@
         <Setter Property="Background"       Value="{DynamicResource AccentPrimary}"/>
         <Setter Property="Foreground"       Value="{DynamicResource AccentOnText}"/>
         <Setter Property="BorderThickness"  Value="0"/>
-        <Setter Property="FontFamily"       Value="Segoe UI"/>
+        <Setter Property="FontFamily"       Value="{StaticResource AppFont}"/>
         <Setter Property="FontSize"         Value="12"/>
         <Setter Property="FontWeight"       Value="SemiBold"/>
         <Setter Property="Cursor"           Value="Hand"/>
@@ -140,7 +144,7 @@
         <Setter Property="SelectionBrush"           Value="{DynamicResource AccentSubtle}"/>
         <Setter Property="BorderThickness"          Value="1"/>
         <Setter Property="BorderBrush"              Value="{DynamicResource InputBorder}"/>
-        <Setter Property="FontFamily"               Value="Segoe UI"/>
+        <Setter Property="FontFamily"               Value="{StaticResource AppFont}"/>
         <Setter Property="FontSize"                 Value="13"/>
         <Setter Property="TextAlignment"            Value="Center"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -178,7 +182,7 @@
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <Style x:Key="DarkCheckBoxStyle" TargetType="CheckBox">
         <Setter Property="Foreground"       Value="{DynamicResource AppFg}"/>
-        <Setter Property="FontFamily"       Value="Segoe UI"/>
+        <Setter Property="FontFamily"       Value="{StaticResource AppFont}"/>
         <Setter Property="FontSize"         Value="13"/>
         <Setter Property="Cursor"           Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -232,7 +236,7 @@
         <Setter Property="Foreground"    Value="{DynamicResource InputFg}"/>
         <Setter Property="BorderBrush"   Value="{DynamicResource BorderColor}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="FontFamily"    Value="Segoe UI"/>
+        <Setter Property="FontFamily"    Value="{StaticResource AppFont}"/>
         <Setter Property="FontSize"      Value="13"/>
         <Setter Property="Padding"       Value="3"/>
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
@@ -344,7 +348,7 @@
         <Setter Property="Foreground"       Value="{DynamicResource InputFg}"/>
         <Setter Property="BorderBrush"      Value="{DynamicResource InputBorder}"/>
         <Setter Property="BorderThickness"  Value="1"/>
-        <Setter Property="FontFamily"       Value="Segoe UI"/>
+        <Setter Property="FontFamily"       Value="{StaticResource AppFont}"/>
         <Setter Property="FontSize"         Value="13"/>
         <Setter Property="Padding"          Value="10,0"/>
         <Setter Property="Height"           Value="30"/>
@@ -531,7 +535,7 @@
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <Style x:Key="ToggleSwitchStyle" TargetType="CheckBox">
         <Setter Property="Foreground"       Value="{DynamicResource AppFg}"/>
-        <Setter Property="FontFamily"       Value="Segoe UI"/>
+        <Setter Property="FontFamily"       Value="{StaticResource AppFont}"/>
         <Setter Property="FontSize"         Value="13"/>
         <Setter Property="FontWeight"       Value="SemiBold"/>
         <Setter Property="Cursor"           Value="Hand"/>
@@ -539,27 +543,44 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Off = outlined track + dim thumb, On = filled accent
+                         track + dark thumb (WhichGPU switch shape). The old
+                         filled-grey off state nearly vanished on SurfaceBg. -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                                Background="Transparent">
                         <Border x:Name="track"
-                                Width="38" Height="20"
+                                Width="40" Height="20"
                                 CornerRadius="10"
-                                Background="{DynamicResource InputBorder}"
+                                Background="Transparent"
+                                BorderBrush="{DynamicResource AppFgMuted}"
+                                BorderThickness="1.5"
                                 SnapsToDevicePixels="True">
                             <Ellipse x:Name="thumb"
-                                     Width="14" Height="14"
-                                     Fill="#FFFFFF"
+                                     Width="12" Height="12"
+                                     Fill="{DynamicResource AppFgDim}"
                                      HorizontalAlignment="Left"
                                      Margin="3,0,0,0"/>
                         </Border>
-                        <ContentPresenter Margin="9,0,0,0"
+                        <ContentPresenter x:Name="content"
+                                          Margin="9,0,0,0"
                                           VerticalAlignment="Center"
                                           RecognizesAccessKey="True"/>
                     </StackPanel>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="track" Property="BorderBrush" Value="{DynamicResource AppFgDim}"/>
+                        </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="track" Property="Background"          Value="{DynamicResource SuccessColor}"/>
+                            <Setter TargetName="track" Property="BorderBrush"         Value="{DynamicResource SuccessColor}"/>
+                            <Setter TargetName="thumb" Property="Fill"                Value="{DynamicResource AccentOnText}"/>
                             <Setter TargetName="thumb" Property="HorizontalAlignment" Value="Right"/>
                             <Setter TargetName="thumb" Property="Margin"              Value="0,0,3,0"/>
+                        </Trigger>
+                        <!-- Content-less switch (settings rows): drop the gap
+                             so the track sits flush right. -->
+                        <Trigger Property="Content" Value="{x:Null}">
+                            <Setter TargetName="content" Property="Margin" Value="0"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.4"/>
@@ -568,6 +589,135 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!--  SEGMENT TABS (WhichGPU-style top tab strip)                           -->
+    <!--  Headers share the width equally (UniformGrid). Selected = soft accent -->
+    <!--  fill + SemiBold AppFg text + short accent bar; accent-coloured TEXT   -->
+    <!--  is avoided because lime on white is 2.5:1 in the light theme.         -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <Style x:Key="SegmentTabControlStyle" TargetType="TabControl">
+        <Setter Property="Background"      Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding"         Value="0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabControl">
+                    <Grid KeyboardNavigation.TabNavigation="Local">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0"
+                                Background="{DynamicResource SurfaceBg}"
+                                BorderBrush="{DynamicResource BorderColor}"
+                                BorderThickness="1"
+                                CornerRadius="{StaticResource RadiusLarge}"
+                                Padding="3"
+                                Margin="0,0,0,12">
+                            <UniformGrid Rows="1" IsItemsHost="True"
+                                         KeyboardNavigation.TabIndex="1"/>
+                        </Border>
+                        <ContentPresenter Grid.Row="1"
+                                          x:Name="PART_SelectedContentHost"
+                                          ContentSource="SelectedContent"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="SegmentTabItemStyle" TargetType="TabItem">
+        <Setter Property="Foreground"       Value="{DynamicResource AppFgDim}"/>
+        <Setter Property="FontFamily"       Value="{StaticResource AppFont}"/>
+        <Setter Property="FontSize"         Value="13"/>
+        <Setter Property="Cursor"           Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <!-- Explicit TextBlock: the app-level implicit TextBlock style would
+             otherwise pin every header to AppFg and the selected/unselected
+             contrast would disappear. Local bindings outrank style setters. -->
+        <Setter Property="HeaderTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <TextBlock Text="{Binding}"
+                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=TabItem}}"
+                               FontWeight="{Binding FontWeight, RelativeSource={RelativeSource AncestorType=TabItem}}"
+                               FontSize="{Binding FontSize, RelativeSource={RelativeSource AncestorType=TabItem}}"/>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabItem">
+                    <Border x:Name="bd"
+                            Height="30"
+                            Background="Transparent"
+                            CornerRadius="{StaticResource RadiusMedium}"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <ContentPresenter ContentSource="Header"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True"/>
+                            <Border x:Name="indicator"
+                                    Width="24" Height="2"
+                                    CornerRadius="1"
+                                    Background="{DynamicResource AccentPrimary}"
+                                    VerticalAlignment="Bottom"
+                                    Margin="0,0,0,3"
+                                    Visibility="Collapsed"/>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                                <Condition Property="IsSelected"  Value="False"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="bd" Property="Background" Value="{DynamicResource HoverBg}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource AppFg}"/>
+                        </MultiTrigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="bd"        Property="Background" Value="{DynamicResource AccentSubtle}"/>
+                            <Setter TargetName="indicator" Property="Visibility" Value="Visible"/>
+                            <Setter Property="Foreground" Value="{DynamicResource AppFg}"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!--  SETTINGS PAGE (section label + grouped card of rows)                  -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <Style x:Key="PageSectionLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource SectionLabelStyle}">
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Margin"   Value="2,0,0,6"/>
+    </Style>
+
+    <Style x:Key="SettingsGroupStyle" TargetType="Border">
+        <Setter Property="Background"      Value="{DynamicResource SurfaceBg}"/>
+        <Setter Property="BorderBrush"     Value="{DynamicResource BorderColor}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius"    Value="{StaticResource RadiusLarge}"/>
+        <Setter Property="Padding"         Value="12,8"/>
+        <Setter Property="Margin"          Value="0,0,0,12"/>
+    </Style>
+
+    <Style x:Key="SettingTitleStyle" TargetType="TextBlock">
+        <Setter Property="FontSize"   Value="13"/>
+        <Setter Property="Foreground" Value="{DynamicResource AppFg}"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+
+    <Style x:Key="SettingDescStyle" TargetType="TextBlock">
+        <Setter Property="FontSize"     Value="11"/>
+        <Setter Property="Foreground"   Value="{DynamicResource AppFgDim}"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="Margin"       Value="0,1,0,0"/>
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->

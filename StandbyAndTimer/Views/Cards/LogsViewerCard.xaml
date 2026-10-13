@@ -1,7 +1,7 @@
 <UserControl x:Class="StandbyAndTimer.Views.Cards.LogsViewerCard"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             FontFamily="Segoe UI" FontSize="13">
+             FontFamily="{StaticResource AppFont}" FontSize="13">
 
     <!-- In-panel logs viewer used inside the Settings panel.
          Inherits SettingsViewModel as DataContext (RecentLogs +
