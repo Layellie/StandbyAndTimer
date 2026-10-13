@@ -85,7 +85,7 @@
     <sys:String x:Key="Str_Tray_Exit">Çıkış</sys:String>
 
     <!-- Tray balloon / tooltip -->
-    <sys:String x:Key="Str_Tray_TooltipFormat">StandbyAndTimer&#x0a;Timer: {0}  •  Temizleme: {1}</sys:String>
+    <sys:String x:Key="Str_Tray_TooltipFormat" xml:space="preserve">StandbyAndTimer&#x0a;Timer: {0}  •  Temizleme: {1}</sys:String>
     <sys:String x:Key="Str_Tray_TimerStateOn">AÇIK</sys:String>
     <sys:String x:Key="Str_Tray_TimerStateOff">KAPALI</sys:String>
     <sys:String x:Key="Str_Tray_NotifyPurgeTitle">Standby bellek temizlendi</sys:String>
@@ -114,11 +114,19 @@
 
     <!-- Hakkında penceresi -->
     <sys:String x:Key="Str_About_Title">Hakkında ve Kullanım Kılavuzu</sys:String>
-    <sys:String x:Key="Str_About_Text">StandbyAndTimer — Sistem Optimizasyon Aracı&#x0a;&#x0a;1. Sistem timer'ını 0.5 ms'ye kilitler (NtSetTimerResolution)&#x0a;2. Standby bellek listesini otomatik/manuel temizler (NtSetSystemInformation)&#x0a;3. Oyunlar için Yüksek Öncelik + CPU Affinity ayarlar&#x0a;&#x0a;─── Önerilen Purge Eşikleri ───&#x0a;•  4 GB RAM → Liste: 512 MB  | Serbest: 512 MB&#x0a;•  8 GB RAM → Liste: 1024 MB | Serbest: 1024 MB&#x0a;• 16 GB RAM → Liste: 2048 MB | Serbest: 1024 MB&#x0a;• 32 GB RAM → Liste: 4096 MB | Serbest: 2048 MB&#x0a;• 64 GB RAM → Liste: 8192 MB | Serbest: 2048 MB&#x0a;&#x0a;Geliştirici: LAYE77IE</sys:String>
+    <sys:String x:Key="Str_About_Subtitle">Sistem optimizasyon aracı</sys:String>
+    <sys:String x:Key="Str_About_Feature1">Sistem timer'ını 0.5 ms'ye kilitler; girdi gecikmesini azaltır.</sys:String>
+    <sys:String x:Key="Str_About_Feature2">Standby bellek listesini otomatik ya da elle temizler.</sys:String>
+    <sys:String x:Key="Str_About_Feature3">Game Mode: listedeki oyunlara Yüksek öncelik ve tüm CPU çekirdeklerini verir.</sys:String>
+    <sys:String x:Key="Str_About_ThresholdsTitle">ÖNERİLEN TEMİZLEME EŞİKLERİ</sys:String>
+    <sys:String x:Key="Str_About_ColRam">RAM</sys:String>
+    <sys:String x:Key="Str_About_ColList">Liste en az</sys:String>
+    <sys:String x:Key="Str_About_ColFree">Serbest altında</sys:String>
+    <sys:String x:Key="Str_About_Developer">Geliştirici: LAYE77IE</sys:String>
     <sys:String x:Key="Str_About_Close">Kapat</sys:String>
 
     <!-- Tek instance uyarısı -->
-    <sys:String x:Key="Str_AlreadyRunning">Uygulama zaten arka planda çalışıyor.&#x0a;Sistem tepsisindeki simgeye bakın.</sys:String>
+    <sys:String x:Key="Str_AlreadyRunning" xml:space="preserve">Uygulama zaten arka planda çalışıyor.&#x0a;Sistem tepsisindeki simgeye bakın.</sys:String>
 
     <!-- Kapatma onay ekranı -->
     <sys:String x:Key="Str_Close_Title">Uygulamayı Kapat</sys:String>
@@ -128,7 +136,7 @@
 
     <!-- İlk açılış sihirbazı -->
     <sys:String x:Key="Str_Wizard_Title">StandbyAndTimer'a hoş geldin</sys:String>
-    <sys:String x:Key="Str_Wizard_Body">30 saniyelik mini tur:&#x0a;&#x0a;1. Büyük Timer butonuna basıp sistem saatini 0.5 ms'ye kilitle — daha düşük input lag, daha pürüzsüz ses.&#x0a;&#x0a;2. AUTO PURGE varsayılan olarak KAPALI. Sadece oyunlarda standby cache şişiyorsa aç ve eşikleri ayarla. Çoğu kullanıcının buna ihtiyacı yok.&#x0a;&#x0a;3. Game Mode listesine bir oyun .exe'sini sürükle — çalıştığında ona High öncelik + tüm CPU affinity verilir.&#x0a;&#x0a;Her şey tepsiden çalışır — pencereyi kapatmak uygulamayı kapatmaz.</sys:String>
+    <sys:String x:Key="Str_Wizard_Body" xml:space="preserve">30 saniyelik mini tur:&#x0a;&#x0a;1. TIMER butonuna basıp sistem saatini 0.5 ms'ye ayarla — daha düşük input lag, daha pürüzsüz ses. Her açılışta kendiliğinden açılsın istersen Timer kartındaki KİLİTSİZ'e tıklayıp kilitle.&#x0a;&#x0a;2. AUTO PURGE varsayılan olarak KAPALI. Sadece oyunlarda standby cache şişiyorsa aç ve eşikleri ayarla. Çoğu kullanıcının buna ihtiyacı yok.&#x0a;&#x0a;3. Game Mode listesine bir oyun .exe'sini sürükle — çalıştığında ona High öncelik + tüm CPU affinity verilir. Tam ekran açtığın oyunlar da OTO etiketiyle kendiliğinden eklenir.&#x0a;&#x0a;Her şey tepsiden çalışır — pencereyi kapatmak uygulamayı kapatmaz.</sys:String>
     <sys:String x:Key="Str_Wizard_Finish">Anladım</sys:String>
 
     <!-- Çökme raporu -->

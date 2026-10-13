@@ -64,7 +64,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         TimerActive ? "Str_Timer_Active" : "Str_Timer_Inactive");
 
     public string AboutTitle => _localization.GetString("Str_About_Title");
-    public string AboutText  => _localization.GetString("Str_About_Text");
     public string AboutClose => _localization.GetString("Str_About_Close");
 
     public string WizardTitle  => _localization.GetString("Str_Wizard_Title");
@@ -295,7 +294,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             SetIdleStatus();
             OnPropertyChanged(nameof(TimerButtonLabel));
             OnPropertyChanged(nameof(AboutTitle));
-            OnPropertyChanged(nameof(AboutText));
             OnPropertyChanged(nameof(AboutClose));
             OnPropertyChanged(nameof(WizardTitle));
             OnPropertyChanged(nameof(WizardBody));
@@ -500,7 +498,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private void ShowAbout()
     {
         OnPropertyChanged(nameof(AboutTitle));
-        OnPropertyChanged(nameof(AboutText));
         OnPropertyChanged(nameof(AboutClose));
         IsAboutVisible = true;
     }
