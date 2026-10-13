@@ -65,6 +65,36 @@ public class TimerLockModeTests
     }
 
     [Fact]
+    public async Task Cycling_the_lock_through_in_game_leaves_a_running_timer_alone()
+    {
+        var h = new Harness(new AppSettings { TimerLocked = true, FirstRunCompleted = true });
+        await h.Main.InitializeAsync();   // locked: timer on, no game running
+
+        await h.Main.ToggleTimerLockCommand.ExecuteAsync(null);   // -> IN GAME
+        Assert.True(h.Main.TimerActive);
+
+        await h.Main.ToggleTimerLockCommand.ExecuteAsync(null);   // -> UNLOCKED
+        Assert.True(h.Main.TimerActive);
+        Assert.Equal(0, h.Timer.Deactivations);
+    }
+
+    [Fact]
+    public async Task Switching_to_in_game_while_a_game_runs_turns_the_timer_on()
+    {
+        var h = new Harness();
+        await h.Main.InitializeAsync();
+        await h.Main.ApplyGameStateAsync(true);   // a game is already running
+
+        await h.Main.ToggleTimerLockCommand.ExecuteAsync(null);   // -> LOCKED (on)
+        await h.Main.ToggleTimerResolutionCommand.ExecuteAsync(null);   // user: off
+        await h.Main.ToggleTimerLockCommand.ExecuteAsync(null);   // -> IN GAME
+        Assert.True(h.Main.TimerActive);
+
+        await h.Main.ApplyGameStateAsync(false);   // the game exits
+        Assert.False(h.Main.TimerActive);
+    }
+
+    [Fact]
     public async Task Game_state_is_ignored_outside_in_game_mode()
     {
         var h = new Harness();
