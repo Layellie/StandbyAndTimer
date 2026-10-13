@@ -33,6 +33,8 @@ public sealed class AppSettings
     // a future capture-textbox can round-trip via HotkeyBinding.Parse.
     public string      PurgeHotkey           { get; set; } = "Ctrl+Alt+P";
     public string      TimerHotkey           { get; set; } = "Ctrl+Alt+T";
+    // v2.2.0 — toggles the AUTO PURGE master switch.
+    public string      AutoPurgeHotkey       { get; set; } = "Ctrl+Alt+O";
 
     public List<GameEntry> Games             { get; set; } = [];
 }

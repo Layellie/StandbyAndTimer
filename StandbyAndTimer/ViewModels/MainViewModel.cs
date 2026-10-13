@@ -147,7 +147,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             Settings.Initialize(
                 s.AutoStartEnabled, s.Language, s.UpdateCheckEnabled, s.Theme,
                 s.NotifyOnPurge, s.NotifyOnTimerToggle, s.NotifyOnGameDetected,
-                s.PurgeHotkey, s.TimerHotkey);
+                s.PurgeHotkey, s.TimerHotkey, s.AutoPurgeHotkey);
         }
         SyncMonitorThresholds();
         SyncMonitorGames();
@@ -239,6 +239,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         NotifyOnGameDetected  = Settings.NotifyOnGameDetected,
         PurgeHotkey           = Settings.PurgeHotkeyText,
         TimerHotkey           = Settings.TimerHotkeyText,
+        AutoPurgeHotkey       = Settings.AutoPurgeHotkeyText,
         FirstRunCompleted     = _firstRunCompleted,
         Games                 = [.. Games]
     };
@@ -371,6 +372,17 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             await ActivateTimerInternalAsync(silent: false).ConfigureAwait(true);
         }
         PersistSettings();
+    }
+
+    // Global hotkey target (Settings -> Hotkeys). Flips the AUTO PURGE master
+    // switch; OnAutoPurgeEnabledChanged syncs the monitor and persists.
+    [RelayCommand]
+    private void ToggleAutoPurge()
+    {
+        AutoPurgeEnabled = !AutoPurgeEnabled;
+        StatusMessage = _localization.GetString(
+            AutoPurgeEnabled ? "Str_Status_AutoPurgeOn" : "Str_Status_AutoPurgeOff");
+        Logger.Info($"Auto purge toggled {(AutoPurgeEnabled ? "ON" : "OFF")}");
     }
 
     [RelayCommand]

@@ -41,6 +41,7 @@ internal sealed class SettingsService : ISettingsService
 
                 PurgeHotkey           = key.GetValue("PurgeHotkey")?.ToString() ?? "Ctrl+Alt+P",
                 TimerHotkey           = key.GetValue("TimerHotkey")?.ToString() ?? "Ctrl+Alt+T",
+                AutoPurgeHotkey       = key.GetValue("AutoPurgeHotkey")?.ToString() ?? "Ctrl+Alt+O",
             };
 
             string pathsRaw = key.GetValue("GamePaths")?.ToString() ?? string.Empty;
@@ -93,6 +94,7 @@ internal sealed class SettingsService : ISettingsService
             key.SetValue("IdleThresholdMinutes",   settings.IdleThresholdMinutes,  RegistryValueKind.DWord);
             key.SetValue("PurgeHotkey",            settings.PurgeHotkey            ?? "Ctrl+Alt+P");
             key.SetValue("TimerHotkey",            settings.TimerHotkey            ?? "Ctrl+Alt+T");
+            key.SetValue("AutoPurgeHotkey",        settings.AutoPurgeHotkey        ?? "Ctrl+Alt+O");
 
             key.SetValue("Language", settings.Language.ToString());
             key.SetValue("Theme",    settings.Theme.ToString());

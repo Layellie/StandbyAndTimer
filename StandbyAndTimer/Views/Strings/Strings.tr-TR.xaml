@@ -99,6 +99,8 @@
     <sys:String x:Key="Str_Status_PurgeFail">Temizleme başarısız (yönetici yetkisi gerekli)</sys:String>
     <sys:String x:Key="Str_Status_TimerActive">Timer aktif — gerçek değer: {0:F3} ms</sys:String>
     <sys:String x:Key="Str_Status_TimerOff">Timer devre dışı</sys:String>
+    <sys:String x:Key="Str_Status_AutoPurgeOn">Oto temizle açık</sys:String>
+    <sys:String x:Key="Str_Status_AutoPurgeOff">Oto temizle kapalı</sys:String>
     <sys:String x:Key="Str_Status_GameAdded">Oyun eklendi</sys:String>
     <sys:String x:Key="Str_Status_GameExists">Bu oyun zaten listede</sys:String>
     <sys:String x:Key="Str_Status_GameRemoved">Oyun kaldırıldı</sys:String>
@@ -151,6 +153,7 @@
     <sys:String x:Key="Str_Settings_HotkeysSection">KISAYOLLAR</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyPurge">Manuel temizle</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyTimer">Zamanlayıcı aç/kapa</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyAutoPurge">Oto temizle aç/kapa</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyClickToChange">Değiştirmek için tıkla, sonra yeni tuşlara bas</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyRecording">Tuşlara bas… (Esc: iptal)</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyNeedsModifier">En az bir Ctrl, Alt, Shift ya da Win tuşu gerekli.</sys:String>

@@ -175,14 +175,20 @@ public partial class App : Application
         var hotkeys = _services.GetRequiredService<IHotkeyService>();
         hotkeys.AttachTo(_mainWindow.WindowHandle);
         var vm = _viewModel;
-        Action HandlerFor(string id) => id == SettingsViewModel.HotkeyIdPurge
-            ? () => vm.ManualPurgeCommand.Execute(null)
-            : () => vm.ToggleTimerResolutionCommand.Execute(null);
+        Action HandlerFor(string id) => id switch
+        {
+            SettingsViewModel.HotkeyIdPurge     => () => vm.ManualPurgeCommand.Execute(null),
+            SettingsViewModel.HotkeyIdTimer     => () => vm.ToggleTimerResolutionCommand.Execute(null),
+            SettingsViewModel.HotkeyIdAutoPurge => () => vm.ToggleAutoPurgeCommand.Execute(null),
+            _ => throw new ArgumentOutOfRangeException(nameof(id), id, null)
+        };
 
         RegisterHotkeyFromSetting(hotkeys, SettingsViewModel.HotkeyIdPurge, savedSettings.PurgeHotkey,
             HandlerFor(SettingsViewModel.HotkeyIdPurge));
         RegisterHotkeyFromSetting(hotkeys, SettingsViewModel.HotkeyIdTimer, savedSettings.TimerHotkey,
             HandlerFor(SettingsViewModel.HotkeyIdTimer));
+        RegisterHotkeyFromSetting(hotkeys, SettingsViewModel.HotkeyIdAutoPurge, savedSettings.AutoPurgeHotkey,
+            HandlerFor(SettingsViewModel.HotkeyIdAutoPurge));
 
         // Settings → Hotkeys rebinding goes through the same registration path.
         _viewModel.Settings.RegisterHotkey   = (id, text) => RegisterHotkeyFromSetting(hotkeys, id, text, HandlerFor(id));

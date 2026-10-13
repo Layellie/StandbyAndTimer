@@ -3,72 +3,39 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              FontFamily="{StaticResource AppFont}" FontSize="13">
 
-    <!-- In-panel logs viewer used inside the Settings panel.
-         Inherits SettingsViewModel as DataContext (RecentLogs +
-         RefreshLogsCommand). Stays a thin view so the parent panel just
-         drops in <cards:LogsViewerCard /> and forgets about layout
-         details. The tail row is *, so the card grows to fill whatever
-         vertical slack the parent gives it — this is what lets the
-         Settings panel avoid an outer scrollbar regardless of how much
-         room is left after the static rows above. -->
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>  <!-- 0 Header (label + refresh) -->
-            <RowDefinition Height="6"/>     <!-- 1 -->
-            <RowDefinition Height="*"/>     <!-- 2 Tail viewer (fills slack) -->
-        </Grid.RowDefinitions>
+    <!-- Recent-logs viewer on the Settings page. Inherits SettingsViewModel
+         as DataContext (RecentLogs). The section header ("Recent logs" +
+         Refresh) lives on the page's label row so this card's top edge lines
+         up with the Hotkeys card next to it; this control is only the box,
+         which stretches to whatever height the page row gives it. -->
 
-        <Grid Grid.Row="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0"
-                       Text="{DynamicResource Str_Settings_LogsSection}"
-                       Foreground="{DynamicResource AppFgDim}"
-                       FontSize="11" FontWeight="SemiBold"
-                       VerticalAlignment="Center"/>
-            <Button Grid.Column="1"
-                    Content="{DynamicResource Str_Settings_LogsRefresh}"
-                    Command="{Binding RefreshLogsCommand}"
-                    Style="{StaticResource GhostButtonStyle}"
-                    Height="24"
-                    Padding="10,0"
-                    FontSize="10"/>
-        </Grid>
-
-        <!-- Tail box. TextWrapping=Wrap so long lines break onto the next
-             visible row instead of disappearing off the right; the on-disk
-             log keeps original line shape. Background uses AppBg (darkest
-             tone in the palette) for visible contrast against the panel,
-             Foreground=AppFg for full readability of 10.5 pt Consolas. -->
-        <!-- No MinHeight on purpose: if the upper Auto rows ever grow (long
-             UpdateStatus wrap, Download button visible) we want the log row
-             to give up its space so the Auto version footer below the *
-             row never gets pushed off the bottom of the panel. -->
-        <Border Grid.Row="2"
-                Background="{DynamicResource AppBg}"
-                BorderBrush="{DynamicResource BorderColor}"
-                BorderThickness="1"
-                CornerRadius="3">
-            <!-- EdgeMode=Aliased: on the hardware render path the clip edges
-                 of this ScrollViewer and of the TextBox's own content host
-                 drew a faint grey rectangle around the log text (dark theme).
-                 Plain text inside, so nothing here needs geometry AA. -->
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled"
-                          RenderOptions.EdgeMode="Aliased"
-                          Padding="6">
-                <TextBox Text="{Binding RecentLogs, Mode=OneWay}"
-                         IsReadOnly="True"
-                         Background="Transparent"
-                         Foreground="{DynamicResource AppFg}"
-                         BorderThickness="0"
-                         FontFamily="Consolas"
-                         FontSize="10.5"
-                         TextWrapping="Wrap"
-                         AcceptsReturn="True"/>
-            </ScrollViewer>
-        </Border>
-    </Grid>
+    <!-- Tail box. TextWrapping=Wrap so long lines break onto the next
+         visible row instead of disappearing off the right; the on-disk
+         log keeps original line shape. Background uses AppBg (darkest
+         tone in the palette) for visible contrast against the cards,
+         Foreground=AppFg for full readability of 10.5 pt Consolas.
+         Corner radius matches the settings cards. -->
+    <Border Background="{DynamicResource AppBg}"
+            BorderBrush="{DynamicResource BorderColor}"
+            BorderThickness="1"
+            CornerRadius="{StaticResource RadiusLarge}">
+        <!-- EdgeMode=Aliased: on the hardware render path the clip edges
+             of this ScrollViewer and of the TextBox's own content host
+             drew a faint grey rectangle around the log text (dark theme).
+             Plain text inside, so nothing here needs geometry AA. -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      RenderOptions.EdgeMode="Aliased"
+                      Padding="8,6">
+            <TextBox Text="{Binding RecentLogs, Mode=OneWay}"
+                     IsReadOnly="True"
+                     Background="Transparent"
+                     Foreground="{DynamicResource AppFg}"
+                     BorderThickness="0"
+                     FontFamily="Consolas"
+                     FontSize="10.5"
+                     TextWrapping="Wrap"
+                     AcceptsReturn="True"/>
+        </ScrollViewer>
+    </Border>
 </UserControl>

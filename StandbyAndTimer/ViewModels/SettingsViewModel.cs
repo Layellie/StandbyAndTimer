@@ -54,21 +54,45 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool     _notifyOnGameDetected = true;
     [ObservableProperty] private string   _purgeHotkeyText      = "Ctrl+Alt+P";
     [ObservableProperty] private string   _timerHotkeyText      = "Ctrl+Alt+T";
+    [ObservableProperty] private string   _autoPurgeHotkeyText  = "Ctrl+Alt+O";
 
-    // Hotkey rebinding. RecordingHotkeyId is the id being recorded
-    // (HotkeyIdPurge / HotkeyIdTimer) or null; HotkeyError is shown under the
-    // Hotkeys group and cleared when a new recording starts.
+    // Hotkey rebinding. RecordingHotkeyId is the id being recorded (one of
+    // HotkeyIds) or null; HotkeyError is shown under the Hotkeys group and
+    // cleared when a new recording starts.
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsRecordingPurge), nameof(IsRecordingTimer))]
+    [NotifyPropertyChangedFor(nameof(IsRecordingPurge), nameof(IsRecordingTimer), nameof(IsRecordingAutoPurge))]
     private string? _recordingHotkeyId;
 
     [ObservableProperty] private string   _hotkeyError          = string.Empty;
 
-    public const string HotkeyIdPurge = "purge";
-    public const string HotkeyIdTimer = "timer";
+    public const string HotkeyIdPurge     = "purge";
+    public const string HotkeyIdTimer     = "timer";
+    public const string HotkeyIdAutoPurge = "autopurge";
 
-    public bool IsRecordingPurge => RecordingHotkeyId == HotkeyIdPurge;
-    public bool IsRecordingTimer => RecordingHotkeyId == HotkeyIdTimer;
+    private static readonly string[] HotkeyIds = [HotkeyIdPurge, HotkeyIdTimer, HotkeyIdAutoPurge];
+
+    public bool IsRecordingPurge     => RecordingHotkeyId == HotkeyIdPurge;
+    public bool IsRecordingTimer     => RecordingHotkeyId == HotkeyIdTimer;
+    public bool IsRecordingAutoPurge => RecordingHotkeyId == HotkeyIdAutoPurge;
+
+    private string HotkeyText(string id) => id switch
+    {
+        HotkeyIdPurge     => PurgeHotkeyText,
+        HotkeyIdTimer     => TimerHotkeyText,
+        HotkeyIdAutoPurge => AutoPurgeHotkeyText,
+        _                 => throw new ArgumentOutOfRangeException(nameof(id), id, null)
+    };
+
+    private void SetHotkeyText(string id, string text)
+    {
+        switch (id)
+        {
+            case HotkeyIdPurge:     PurgeHotkeyText     = text; break;
+            case HotkeyIdTimer:     TimerHotkeyText     = text; break;
+            case HotkeyIdAutoPurge: AutoPurgeHotkeyText = text; break;
+            default: throw new ArgumentOutOfRangeException(nameof(id), id, null);
+        }
+    }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(DownloadAndInstallCommand))]
@@ -138,7 +162,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     public void Initialize(
         bool autoStartEnabled, Language language, bool updateCheckEnabled, Theme theme,
         bool notifyOnPurge, bool notifyOnTimerToggle, bool notifyOnGameDetected,
-        string purgeHotkey, string timerHotkey)
+        string purgeHotkey, string timerHotkey, string autoPurgeHotkey)
     {
         using (new InitScope(v => _isInitializing = v))
         {
@@ -151,6 +175,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             NotifyOnGameDetected = notifyOnGameDetected;
             PurgeHotkeyText      = purgeHotkey;
             TimerHotkeyText      = timerHotkey;
+            AutoPurgeHotkeyText  = autoPurgeHotkey;
         }
     }
 
@@ -172,29 +197,28 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     // ── Hotkey rebinding ──────────────────────────────────────────────────────
 
-    // Both global hotkeys are released while recording: RegisterHotKey
-    // swallows the combo before the window sees the key, so pressing the
-    // current shortcut would fire purge/timer instead of being recorded.
+    // All global hotkeys are released while recording: RegisterHotKey
+    // swallows the combo before the window sees the key, so pressing a
+    // current shortcut would fire its action instead of being recorded.
     [RelayCommand]
     private void StartHotkeyRecording(string? id)
     {
-        if (id is not (HotkeyIdPurge or HotkeyIdTimer)) return;
+        if (id is null || Array.IndexOf(HotkeyIds, id) < 0) return;
         if (RegisterHotkey is null || UnregisterHotkey is null) return;
 
         if (RecordingHotkeyId is not null) CancelHotkeyRecording();
 
         HotkeyError       = string.Empty;
         RecordingHotkeyId = id;
-        UnregisterHotkey(HotkeyIdPurge);
-        UnregisterHotkey(HotkeyIdTimer);
+        foreach (string hid in HotkeyIds) UnregisterHotkey(hid);
     }
 
-    /// <summary>Ends a recording without changes and re-registers both hotkeys.</summary>
+    /// <summary>Ends a recording without changes and re-registers all hotkeys.</summary>
     public void CancelHotkeyRecording()
     {
         if (RecordingHotkeyId is null) return;
         RecordingHotkeyId = null;
-        RegisterBoth();
+        RegisterAll();
     }
 
     /// <summary>
@@ -221,9 +245,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             return;
         }
 
-        bool   isPurge   = id == HotkeyIdPurge;
-        string otherText = isPurge ? TimerHotkeyText : PurgeHotkeyText;
-        if (HotkeyBinding.Parse(otherText) == candidate)
+        if (HotkeyIds.Any(other => other != id && HotkeyBinding.Parse(HotkeyText(other)) == candidate))
         {
             HotkeyError = _localization.GetString("Str_Settings_HotkeyDuplicate");
             return;
@@ -234,8 +256,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         {
             // Property change → OnXHotkeyTextChanged → SettingsChanged →
             // MainViewModel.PersistSettings writes it to the registry.
-            if (isPurge) PurgeHotkeyText = text;
-            else         TimerHotkeyText = text;
+            SetHotkeyText(id, text);
             HotkeyError = string.Empty;
             Logger.Info($"Hotkey '{id}' rebound to {text}");
         }
@@ -244,26 +265,23 @@ public sealed partial class SettingsViewModel : ObservableObject
             HotkeyError = _localization.GetString("Str_Settings_HotkeyTaken");
             Logger.Warn($"Hotkey '{id}': {text} refused by RegisterHotKey, keeping previous binding");
         }
-        RegisterBoth();
+        RegisterAll();
     }
 
     // Re-registers whatever the texts currently hold. Register replaces an
     // existing registration for the same id, so this is safe to call after
-    // a successful rebind or an import too. Returns false if either failed
+    // a successful rebind or an import too. Returns false if any failed
     // (true when no registrar is attached yet: nothing to re-apply).
-    private bool RegisterBoth()
+    private bool RegisterAll()
     {
         if (RegisterHotkey is null) return true;
         bool ok = true;
-        if (!RegisterHotkey(HotkeyIdPurge, PurgeHotkeyText))
+        foreach (string id in HotkeyIds)
         {
+            string text = HotkeyText(id);
+            if (RegisterHotkey(id, text)) continue;
             ok = false;
-            Logger.Warn($"Hotkey '{HotkeyIdPurge}': could not register {PurgeHotkeyText}");
-        }
-        if (!RegisterHotkey(HotkeyIdTimer, TimerHotkeyText))
-        {
-            ok = false;
-            Logger.Warn($"Hotkey '{HotkeyIdTimer}': could not register {TimerHotkeyText}");
+            Logger.Warn($"Hotkey '{id}': could not register {text}");
         }
         return ok;
     }
@@ -275,6 +293,12 @@ public sealed partial class SettingsViewModel : ObservableObject
     }
 
     partial void OnTimerHotkeyTextChanged(string value)
+    {
+        if (_isInitializing) return;
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    partial void OnAutoPurgeHotkeyTextChanged(string value)
     {
         if (_isInitializing) return;
         SettingsChanged?.Invoke(this, EventArgs.Empty);
@@ -424,7 +448,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
         // The import set the hotkey texts through Initialize (no change
         // events), so the global registrations still held the old combos.
-        HotkeyError = RegisterBoth()
+        HotkeyError = RegisterAll()
             ? string.Empty
             : _localization.GetString("Str_Settings_HotkeyTaken");
 

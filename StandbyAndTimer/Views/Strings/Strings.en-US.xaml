@@ -99,6 +99,8 @@
     <sys:String x:Key="Str_Status_PurgeFail">Purge failed (requires administrator)</sys:String>
     <sys:String x:Key="Str_Status_TimerActive">Timer active — actual value: {0:F3} ms</sys:String>
     <sys:String x:Key="Str_Status_TimerOff">Timer disabled</sys:String>
+    <sys:String x:Key="Str_Status_AutoPurgeOn">Auto purge on</sys:String>
+    <sys:String x:Key="Str_Status_AutoPurgeOff">Auto purge off</sys:String>
     <sys:String x:Key="Str_Status_GameAdded">Game added</sys:String>
     <sys:String x:Key="Str_Status_GameExists">Game is already in the list</sys:String>
     <sys:String x:Key="Str_Status_GameRemoved">Game removed</sys:String>
@@ -151,6 +153,7 @@
     <sys:String x:Key="Str_Settings_HotkeysSection">HOTKEYS</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyPurge">Manual purge</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyTimer">Toggle timer</sys:String>
+    <sys:String x:Key="Str_Settings_HotkeyAutoPurge">Toggle auto purge</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyClickToChange">Click, then press the new keys</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyRecording">Press keys… (Esc: cancel)</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyNeedsModifier">Needs at least one of Ctrl, Alt, Shift or Win.</sys:String>

@@ -69,302 +69,340 @@
         </Style>
     </UserControl.Resources>
 
-    <!-- Settings TAB page (was a 270 px slide-in panel). WhichGPU-style:
-         small section label above a grouped card of rows, title (+ optional
-         description) on the left, control on the right.
+    <!-- Settings TAB page. WhichGPU-style: small section label above a
+         grouped card of rows, title (+ optional description) on the left,
+         control on the right.
 
-         No ScrollViewer: every group has a known intrinsic height that fits
-         the fixed 760x520 window. The only variable-height region is the
-         Logs viewer (right column, Row 4 = *), which absorbs the slack and
-         scrolls internally. -->
+         ONE grid for both columns, rows shared: label / card pairs sit on
+         the same rows, so left and right cards start and end on the same
+         line (each card stretches to the taller one of its row). The last
+         row is * : Hotkeys (left) and the log viewer (right) both run to the
+         bottom of the page.
+
+         No ScrollViewer: every row has a known intrinsic height that fits
+         the fixed 760x520 window; only the log text scrolls internally. -->
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="12"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>  <!-- 0 Startup | Notifications labels -->
+            <RowDefinition Height="Auto"/>  <!-- 1 Startup | Notifications cards -->
+            <RowDefinition Height="Auto"/>  <!-- 2 Appearance | Backup labels -->
+            <RowDefinition Height="Auto"/>  <!-- 3 Appearance | Backup cards -->
+            <RowDefinition Height="Auto"/>  <!-- 4 Hotkeys | Recent logs labels -->
+            <RowDefinition Height="*"/>     <!-- 5 Hotkeys | Recent logs (fill) -->
+        </Grid.RowDefinitions>
 
-        <!-- ═══════════════════ LEFT COLUMN ═══════════════════ -->
-        <StackPanel Grid.Column="0">
+        <!-- ═══════════════════ ROW 0-1: STARTUP | NOTIFICATIONS ═══════════════════ -->
+        <TextBlock Grid.Row="0" Grid.Column="0"
+                   Text="{DynamicResource Str_Settings_StartupSection}"
+                   Style="{StaticResource PageSectionLabelStyle}"/>
+        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource SettingsGroupStyle}">
+            <StackPanel>
+                <Grid Margin="0,2,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                        <TextBlock Text="{DynamicResource Str_Settings_LaunchOnStartup}"
+                                   Style="{StaticResource SettingTitleStyle}"/>
+                        <TextBlock Text="{DynamicResource Str_Settings_LaunchOnStartupDesc}"
+                                   Style="{StaticResource SettingDescStyle}"/>
+                    </StackPanel>
+                    <CheckBox Grid.Column="1"
+                              IsChecked="{Binding AutoStartEnabled}"
+                              Style="{StaticResource ToggleSwitchStyle}"/>
+                </Grid>
 
-            <!-- ── Startup ─────────────────────────────────────────────── -->
-            <TextBlock Text="{DynamicResource Str_Settings_StartupSection}"
+                <Grid Margin="0,6,0,2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                        <TextBlock Text="{DynamicResource Str_Settings_CheckUpdateOnStartup}"
+                                   Style="{StaticResource SettingTitleStyle}"/>
+                        <TextBlock Text="{DynamicResource Str_Settings_CheckUpdateOnStartupDesc}"
+                                   Style="{StaticResource SettingDescStyle}"/>
+                    </StackPanel>
+                    <CheckBox Grid.Column="1"
+                              IsChecked="{Binding UpdateCheckEnabled}"
+                              Style="{StaticResource ToggleSwitchStyle}"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <TextBlock Grid.Row="0" Grid.Column="2"
+                   Text="{DynamicResource Str_Settings_NotificationsSection}"
+                   Style="{StaticResource PageSectionLabelStyle}"/>
+        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource SettingsGroupStyle}">
+            <!-- Rows centred in the card: it is stretched to the Startup card
+                 height, so top-aligned rows would leave a gap underneath. -->
+            <StackPanel VerticalAlignment="Center">
+                <Grid Margin="0,2,0,3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{DynamicResource Str_Settings_NotifyOnPurge}"
+                               Style="{StaticResource SettingTitleStyle}"
+                               VerticalAlignment="Center"/>
+                    <CheckBox Grid.Column="1"
+                              IsChecked="{Binding NotifyOnPurge}"
+                              Style="{StaticResource ToggleSwitchStyle}"/>
+                </Grid>
+                <Grid Margin="0,3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{DynamicResource Str_Settings_NotifyOnTimer}"
+                               Style="{StaticResource SettingTitleStyle}"
+                               VerticalAlignment="Center"/>
+                    <CheckBox Grid.Column="1"
+                              IsChecked="{Binding NotifyOnTimerToggle}"
+                              Style="{StaticResource ToggleSwitchStyle}"/>
+                </Grid>
+                <Grid Margin="0,3,0,2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{DynamicResource Str_Settings_NotifyOnGame}"
+                               Style="{StaticResource SettingTitleStyle}"
+                               VerticalAlignment="Center"/>
+                    <CheckBox Grid.Column="1"
+                              IsChecked="{Binding NotifyOnGameDetected}"
+                              Style="{StaticResource ToggleSwitchStyle}"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- ═══════════════════ ROW 2-3: APPEARANCE | BACKUP ═══════════════════ -->
+        <TextBlock Grid.Row="2" Grid.Column="0"
+                   Text="{DynamicResource Str_Settings_AppearanceSection}"
+                   Style="{StaticResource PageSectionLabelStyle}"/>
+        <Border Grid.Row="3" Grid.Column="0" Style="{StaticResource SettingsGroupStyle}">
+            <StackPanel VerticalAlignment="Center">
+                <Grid Margin="0,2,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="140"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               Text="{DynamicResource Str_Settings_Language}"
+                               Style="{StaticResource SettingTitleStyle}"
+                               VerticalAlignment="Center"/>
+                    <ComboBox Grid.Column="1"
+                              ItemsSource="{Binding LanguageOptions}"
+                              SelectedItem="{Binding SelectedLanguage}"
+                              Style="{StaticResource SettingsComboBoxStyle}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource LangConv}}"
+                                           Foreground="{DynamicResource InputFg}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+
+                <Grid Margin="0,4,0,2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="140"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               Text="{DynamicResource Str_Settings_Theme}"
+                               Style="{StaticResource SettingTitleStyle}"
+                               VerticalAlignment="Center"/>
+                    <ComboBox Grid.Column="1"
+                              ItemsSource="{Binding ThemeOptions}"
+                              SelectedItem="{Binding SelectedTheme}"
+                              Style="{StaticResource SettingsComboBoxStyle}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource ThemeConv}}"
+                                           Foreground="{DynamicResource InputFg}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- Update / import / auto-start status sits on the label row, right
+             of the label, one line, trimmed (full text in the tooltip). In
+             the card it grew the shared row and pushed the Hotkeys card past
+             the bottom of the fixed window. -->
+        <Grid Grid.Row="2" Grid.Column="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{DynamicResource Str_Settings_BackupSection}"
                        Style="{StaticResource PageSectionLabelStyle}"/>
-            <Border Style="{StaticResource SettingsGroupStyle}">
-                <StackPanel>
-                    <Grid Margin="0,2,0,6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                            <TextBlock Text="{DynamicResource Str_Settings_LaunchOnStartup}"
-                                       Style="{StaticResource SettingTitleStyle}"/>
-                            <TextBlock Text="{DynamicResource Str_Settings_LaunchOnStartupDesc}"
-                                       Style="{StaticResource SettingDescStyle}"/>
-                        </StackPanel>
-                        <CheckBox Grid.Column="1"
-                                  IsChecked="{Binding AutoStartEnabled}"
-                                  Style="{StaticResource ToggleSwitchStyle}"/>
-                    </Grid>
-
-                    <Grid Margin="0,6,0,2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                            <TextBlock Text="{DynamicResource Str_Settings_CheckUpdateOnStartup}"
-                                       Style="{StaticResource SettingTitleStyle}"/>
-                            <TextBlock Text="{DynamicResource Str_Settings_CheckUpdateOnStartupDesc}"
-                                       Style="{StaticResource SettingDescStyle}"/>
-                        </StackPanel>
-                        <CheckBox Grid.Column="1"
-                                  IsChecked="{Binding UpdateCheckEnabled}"
-                                  Style="{StaticResource ToggleSwitchStyle}"/>
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-            <!-- ── Appearance ──────────────────────────────────────────── -->
-            <TextBlock Text="{DynamicResource Str_Settings_AppearanceSection}"
-                       Style="{StaticResource PageSectionLabelStyle}"/>
-            <Border Style="{StaticResource SettingsGroupStyle}">
-                <StackPanel>
-                    <Grid Margin="0,2,0,4">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="140"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   Text="{DynamicResource Str_Settings_Language}"
-                                   Style="{StaticResource SettingTitleStyle}"
-                                   VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="1"
-                                  ItemsSource="{Binding LanguageOptions}"
-                                  SelectedItem="{Binding SelectedLanguage}"
-                                  Style="{StaticResource SettingsComboBoxStyle}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Converter={StaticResource LangConv}}"
-                                               Foreground="{DynamicResource InputFg}"/>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                    </Grid>
-
-                    <Grid Margin="0,4,0,2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="140"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   Text="{DynamicResource Str_Settings_Theme}"
-                                   Style="{StaticResource SettingTitleStyle}"
-                                   VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="1"
-                                  ItemsSource="{Binding ThemeOptions}"
-                                  SelectedItem="{Binding SelectedTheme}"
-                                  Style="{StaticResource SettingsComboBoxStyle}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Converter={StaticResource ThemeConv}}"
-                                               Foreground="{DynamicResource InputFg}"/>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-            <!-- ── Hotkeys: click a pill, press the new combo (Esc cancels).
-                 Key capture lives in the code-behind (OnPreviewKeyDown); the
-                 rules and registration in SettingsViewModel. ── -->
-            <TextBlock Text="{DynamicResource Str_Settings_HotkeysSection}"
-                       Style="{StaticResource PageSectionLabelStyle}"/>
-            <Border Style="{StaticResource SettingsGroupStyle}" Margin="0">
-                <StackPanel>
-                    <Grid Margin="0,2,0,4">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{DynamicResource Str_Settings_HotkeyPurge}"
-                                   Style="{StaticResource SettingTitleStyle}"
-                                   VerticalAlignment="Center"/>
-                        <Button Grid.Column="1"
-                                Style="{StaticResource HotkeyButtonStyle}"
-                                Content="{Binding PurgeHotkeyText}"
-                                Tag="{Binding IsRecordingPurge}"
-                                Command="{Binding StartHotkeyRecordingCommand}"
-                                CommandParameter="purge"/>
-                    </Grid>
-
-                    <Grid Margin="0,4,0,2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{DynamicResource Str_Settings_HotkeyTimer}"
-                                   Style="{StaticResource SettingTitleStyle}"
-                                   VerticalAlignment="Center"/>
-                        <Button Grid.Column="1"
-                                Style="{StaticResource HotkeyButtonStyle}"
-                                Content="{Binding TimerHotkeyText}"
-                                Tag="{Binding IsRecordingTimer}"
-                                Command="{Binding StartHotkeyRecordingCommand}"
-                                CommandParameter="timer"/>
-                    </Grid>
-
-                    <!-- Why the last combo was rejected; collapsed while empty. -->
-                    <TextBlock Text="{Binding HotkeyError}"
-                               Foreground="{DynamicResource DangerColor}"
-                               FontSize="11"
-                               TextWrapping="Wrap"
-                               Margin="0,4,0,2">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
+            <TextBlock Grid.Column="1"
+                       Text="{Binding UpdateStatus}"
+                       ToolTip="{Binding UpdateStatus}"
+                       Foreground="{DynamicResource AppFgDim}"
+                       FontSize="11"
+                       TextTrimming="CharacterEllipsis"
+                       HorizontalAlignment="Right"
+                       Margin="12,0,2,6"/>
+        </Grid>
+        <!-- Buttons: Padding 6,0 — the default 10,5 left a 16 px content
+             box inside a bordered 28 px button, clipping descenders by
+             1 px, and was 4 px short for "Güncellemeleri Kontrol Et". -->
+        <Border Grid.Row="3" Grid.Column="2" Style="{StaticResource SettingsGroupStyle}" Padding="10">
+            <StackPanel VerticalAlignment="Center">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="6"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="6"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Button Grid.Row="0" Grid.Column="0"
+                            Content="{DynamicResource Str_Settings_Export}"
+                            Command="{Binding ExportSettingsCommand}"
+                            Style="{StaticResource GhostButtonStyle}"
+                            Height="28" Padding="6,0"/>
+                    <Button Grid.Row="0" Grid.Column="2"
+                            Content="{DynamicResource Str_Settings_Import}"
+                            Command="{Binding ImportSettingsCommand}"
+                            Style="{StaticResource GhostButtonStyle}"
+                            Height="28" Padding="6,0"/>
+                    <!-- Check for updates and Download & Install share this
+                         cell: the latter replaces the former once an update
+                         is found, so the card never grows a row. -->
+                    <Button Grid.Row="2" Grid.Column="0"
+                            Content="{DynamicResource Str_Settings_CheckUpdate}"
+                            Command="{Binding CheckUpdateCommand}"
+                            Height="28" Padding="6,0">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource DarkButtonStyle}">
                                 <Style.Triggers>
-                                    <Trigger Property="Text" Value="">
+                                    <DataTrigger Binding="{Binding UpdateAvailable}" Value="True">
                                         <Setter Property="Visibility" Value="Collapsed"/>
-                                    </Trigger>
+                                    </DataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </StackPanel>
-            </Border>
-        </StackPanel>
-
-        <!-- ═══════════════════ RIGHT COLUMN ═══════════════════ -->
-        <Grid Grid.Column="2">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>  <!-- 0 Notifications label -->
-                <RowDefinition Height="Auto"/>  <!-- 1 Notifications group -->
-                <RowDefinition Height="Auto"/>  <!-- 2 Backup label -->
-                <RowDefinition Height="Auto"/>  <!-- 3 Backup group -->
-                <RowDefinition Height="*"/>     <!-- 4 Logs viewer (fills slack) -->
-            </Grid.RowDefinitions>
-
-            <!-- ── Notifications ───────────────────────────────────────── -->
-            <TextBlock Grid.Row="0"
-                       Text="{DynamicResource Str_Settings_NotificationsSection}"
-                       Style="{StaticResource PageSectionLabelStyle}"/>
-            <Border Grid.Row="1" Style="{StaticResource SettingsGroupStyle}">
-                <StackPanel>
-                    <Grid Margin="0,2,0,3">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{DynamicResource Str_Settings_NotifyOnPurge}"
-                                   Style="{StaticResource SettingTitleStyle}"
-                                   VerticalAlignment="Center"/>
-                        <CheckBox Grid.Column="1"
-                                  IsChecked="{Binding NotifyOnPurge}"
-                                  Style="{StaticResource ToggleSwitchStyle}"/>
-                    </Grid>
-                    <Grid Margin="0,3">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{DynamicResource Str_Settings_NotifyOnTimer}"
-                                   Style="{StaticResource SettingTitleStyle}"
-                                   VerticalAlignment="Center"/>
-                        <CheckBox Grid.Column="1"
-                                  IsChecked="{Binding NotifyOnTimerToggle}"
-                                  Style="{StaticResource ToggleSwitchStyle}"/>
-                    </Grid>
-                    <Grid Margin="0,3,0,2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{DynamicResource Str_Settings_NotifyOnGame}"
-                                   Style="{StaticResource SettingTitleStyle}"
-                                   VerticalAlignment="Center"/>
-                        <CheckBox Grid.Column="1"
-                                  IsChecked="{Binding NotifyOnGameDetected}"
-                                  Style="{StaticResource ToggleSwitchStyle}"/>
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-            <!-- ── Backup & Maintenance ────────────────────────────────── -->
-            <TextBlock Grid.Row="2"
-                       Text="{DynamicResource Str_Settings_BackupSection}"
-                       Style="{StaticResource PageSectionLabelStyle}"/>
-            <!-- Buttons: Padding 6,0 — the default 10,5 left a 16 px content
-                 box inside a bordered 28 px button, clipping descenders by
-                 1 px, and was 4 px short for "Güncellemeleri Kontrol Et". -->
-            <Border Grid.Row="3" Style="{StaticResource SettingsGroupStyle}" Padding="10">
-                <StackPanel>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="6"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="6"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <Button Grid.Row="0" Grid.Column="0"
-                                Content="{DynamicResource Str_Settings_Export}"
-                                Command="{Binding ExportSettingsCommand}"
-                                Style="{StaticResource GhostButtonStyle}"
-                                Height="28" Padding="6,0"/>
-                        <Button Grid.Row="0" Grid.Column="2"
-                                Content="{DynamicResource Str_Settings_Import}"
-                                Command="{Binding ImportSettingsCommand}"
-                                Style="{StaticResource GhostButtonStyle}"
-                                Height="28" Padding="6,0"/>
-                        <Button Grid.Row="2" Grid.Column="0"
-                                Content="{DynamicResource Str_Settings_CheckUpdate}"
-                                Command="{Binding CheckUpdateCommand}"
-                                Style="{StaticResource DarkButtonStyle}"
-                                Height="28" Padding="6,0"/>
-                        <Button Grid.Row="2" Grid.Column="2"
-                                Content="{DynamicResource Str_Settings_OpenLog}"
-                                Command="{Binding OpenLogFolderCommand}"
-                                Style="{StaticResource GhostButtonStyle}"
-                                Height="28" Padding="6,0"/>
-                    </Grid>
-
-                    <Button Content="{DynamicResource Str_Settings_DownloadInstall}"
+                        </Button.Style>
+                    </Button>
+                    <Button Grid.Row="2" Grid.Column="0"
+                            Content="{DynamicResource Str_Settings_DownloadInstall}"
                             Command="{Binding DownloadAndInstallCommand}"
                             Style="{StaticResource DarkButtonStyle}"
                             Height="28" Padding="6,0"
-                            Margin="0,6,0,0"
-                            HorizontalAlignment="Stretch"
                             Visibility="{Binding UpdateAvailable, Converter={StaticResource BoolToVis}}"/>
+                    <Button Grid.Row="2" Grid.Column="2"
+                            Content="{DynamicResource Str_Settings_OpenLog}"
+                            Command="{Binding OpenLogFolderCommand}"
+                            Style="{StaticResource GhostButtonStyle}"
+                            Height="28" Padding="6,0"/>
+                </Grid>
+            </StackPanel>
+        </Border>
 
-                    <!-- Collapsed while empty so the group doesn't carry a
-                         blank line under the buttons. -->
-                    <TextBlock Text="{Binding UpdateStatus}"
-                               Foreground="{DynamicResource AppFgDim}"
-                               TextWrapping="Wrap"
-                               FontSize="11"
-                               Margin="2,8,2,0">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Style.Triggers>
-                                    <Trigger Property="Text" Value="">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </StackPanel>
-            </Border>
-
-            <!-- ── Logs viewer ─────────────────────────────────────────────
-                 Row 4 = *, so it takes whatever height is left and never
-                 pushes the groups above off the page. -->
-            <cards:LogsViewerCard Grid.Row="4"/>
+        <!-- ═══════════════════ ROW 4-5: HOTKEYS | RECENT LOGS ═══════════════════ -->
+        <!-- Hotkeys: click a pill, press the new combo (Esc cancels). Key
+             capture lives in the code-behind (OnPreviewKeyDown); the rules
+             and registration in SettingsViewModel. -->
+        <!-- Why the last combo was rejected: on the label row, right of the
+             label (same reason as the Backup status — the card has no spare
+             height with three hotkey rows). -->
+        <Grid Grid.Row="4" Grid.Column="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{DynamicResource Str_Settings_HotkeysSection}"
+                       Style="{StaticResource PageSectionLabelStyle}"/>
+            <TextBlock Grid.Column="1"
+                       Text="{Binding HotkeyError}"
+                       ToolTip="{Binding HotkeyError}"
+                       Foreground="{DynamicResource DangerColor}"
+                       FontSize="11"
+                       TextTrimming="CharacterEllipsis"
+                       HorizontalAlignment="Right"
+                       Margin="12,0,2,6"/>
         </Grid>
+        <Border Grid.Row="5" Grid.Column="0" Style="{StaticResource SettingsGroupStyle}" Margin="0">
+            <StackPanel>
+                <Grid Margin="0,2,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{DynamicResource Str_Settings_HotkeyPurge}"
+                               Style="{StaticResource SettingTitleStyle}"
+                               VerticalAlignment="Center"/>
+                    <Button Grid.Column="1"
+                            Style="{StaticResource HotkeyButtonStyle}"
+                            Content="{Binding PurgeHotkeyText}"
+                            Tag="{Binding IsRecordingPurge}"
+                            Command="{Binding StartHotkeyRecordingCommand}"
+                            CommandParameter="purge"/>
+                </Grid>
+
+                <Grid Margin="0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{DynamicResource Str_Settings_HotkeyTimer}"
+                               Style="{StaticResource SettingTitleStyle}"
+                               VerticalAlignment="Center"/>
+                    <Button Grid.Column="1"
+                            Style="{StaticResource HotkeyButtonStyle}"
+                            Content="{Binding TimerHotkeyText}"
+                            Tag="{Binding IsRecordingTimer}"
+                            Command="{Binding StartHotkeyRecordingCommand}"
+                            CommandParameter="timer"/>
+                </Grid>
+
+                <Grid Margin="0,4,0,2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{DynamicResource Str_Settings_HotkeyAutoPurge}"
+                               Style="{StaticResource SettingTitleStyle}"
+                               VerticalAlignment="Center"/>
+                    <Button Grid.Column="1"
+                            Style="{StaticResource HotkeyButtonStyle}"
+                            Content="{Binding AutoPurgeHotkeyText}"
+                            Tag="{Binding IsRecordingAutoPurge}"
+                            Command="{Binding StartHotkeyRecordingCommand}"
+                            CommandParameter="autopurge"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- Recent logs: the header sits on the label row like every other
+             section (the Refresh button is pulled up 3 px so the row stays
+             label height); the viewer card fills row 5. -->
+        <Grid Grid.Row="4" Grid.Column="2">
+            <TextBlock Text="{DynamicResource Str_Settings_LogsSection}"
+                       Style="{StaticResource PageSectionLabelStyle}"/>
+            <Button Content="{DynamicResource Str_Settings_LogsRefresh}"
+                    Command="{Binding RefreshLogsCommand}"
+                    Style="{StaticResource GhostButtonStyle}"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Height="20"
+                    Padding="10,0"
+                    FontSize="10"
+                    Margin="0,-3,0,4"/>
+        </Grid>
+        <cards:LogsViewerCard Grid.Row="5" Grid.Column="2"/>
     </Grid>
 </UserControl>
