@@ -249,14 +249,23 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     // Re-registers whatever the texts currently hold. Register replaces an
     // existing registration for the same id, so this is safe to call after
-    // a successful rebind too.
-    private void RegisterBoth()
+    // a successful rebind or an import too. Returns false if either failed
+    // (true when no registrar is attached yet: nothing to re-apply).
+    private bool RegisterBoth()
     {
-        if (RegisterHotkey is null) return;
+        if (RegisterHotkey is null) return true;
+        bool ok = true;
         if (!RegisterHotkey(HotkeyIdPurge, PurgeHotkeyText))
-            Logger.Warn($"Hotkey '{HotkeyIdPurge}': could not re-register {PurgeHotkeyText}");
+        {
+            ok = false;
+            Logger.Warn($"Hotkey '{HotkeyIdPurge}': could not register {PurgeHotkeyText}");
+        }
         if (!RegisterHotkey(HotkeyIdTimer, TimerHotkeyText))
-            Logger.Warn($"Hotkey '{HotkeyIdTimer}': could not re-register {TimerHotkeyText}");
+        {
+            ok = false;
+            Logger.Warn($"Hotkey '{HotkeyIdTimer}': could not register {TimerHotkeyText}");
+        }
+        return ok;
     }
 
     partial void OnPurgeHotkeyTextChanged(string value)
@@ -395,9 +404,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             var imported = JsonSerializer.Deserialize<AppSettings>(json);
             if (imported is null) throw new InvalidDataException("Empty settings file");
 
-            _settingsService.Save(imported);
-            SettingsImported?.Invoke(this, imported);
-            UpdateStatus = _localization.GetString("Str_Settings_ImportOk");
+            ApplyImportedSettings(imported);
             Logger.Info($"Settings imported from {dlg.FileName}");
         }
         catch (Exception ex)
@@ -405,6 +412,23 @@ public sealed partial class SettingsViewModel : ObservableObject
             Logger.Error("ImportSettings", ex);
             UpdateStatus = _localization.GetString("Str_Settings_ImportFail") + ": " + ex.Message;
         }
+    }
+
+    // Everything after the file was read: persist, re-apply to the running
+    // session, re-register the hotkeys. Split from ImportSettings so it can
+    // be exercised without the file dialog.
+    internal void ApplyImportedSettings(AppSettings imported)
+    {
+        _settingsService.Save(imported);
+        SettingsImported?.Invoke(this, imported);
+
+        // The import set the hotkey texts through Initialize (no change
+        // events), so the global registrations still held the old combos.
+        HotkeyError = RegisterBoth()
+            ? string.Empty
+            : _localization.GetString("Str_Settings_HotkeyTaken");
+
+        UpdateStatus = _localization.GetString("Str_Settings_ImportOk");
     }
 
     // ── Update check ──────────────────────────────────────────────────────────
