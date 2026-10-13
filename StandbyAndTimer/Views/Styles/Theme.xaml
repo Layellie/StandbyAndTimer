@@ -207,8 +207,19 @@
                                   Stretch="Uniform"
                                   Margin="2"/>
                         </Border>
-                        <ContentPresenter VerticalAlignment="Center"
-                                          RecognizesAccessKey="True"/>
+                        <!-- Explicit TextBlock bound to the CheckBox Foreground:
+                             the app-level implicit TextBlock style otherwise
+                             pins the label to AppFg (measured: source=Style),
+                             so the disabled trigger below could not dim it.
+                             A local binding outranks a style setter. -->
+                        <ContentPresenter VerticalAlignment="Center">
+                            <ContentPresenter.ContentTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=CheckBox}}"/>
+                                </DataTemplate>
+                            </ContentPresenter.ContentTemplate>
+                        </ContentPresenter>
                     </StackPanel>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
@@ -219,8 +230,16 @@
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource AccentPrimary}"/>
                         </Trigger>
+                        <!-- Disabled = muted colours, NOT Opacity. An Opacity
+                             < 1 renders the control through an intermediate
+                             layer, which on the hardware path showed up as a
+                             lighter rectangle behind "Only when idle" on the
+                             dark theme. -->
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity" Value="0.4"/>
+                            <Setter Property="Foreground"                       Value="{DynamicResource AppFgMuted}"/>
+                            <Setter TargetName="box"   Property="BorderBrush"   Value="{DynamicResource BorderColor}"/>
+                            <Setter TargetName="check" Property="Stroke"        Value="{DynamicResource AppFgMuted}"/>
+                            <Setter Property="Cursor"                           Value="Arrow"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

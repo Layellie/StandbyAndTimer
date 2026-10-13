@@ -14,8 +14,13 @@
         Background="{DynamicResource AppBg}"
         Foreground="{DynamicResource AppFg}"
         FontFamily="{StaticResource AppFont}"
-        FontSize="13" Icon="/app_icon.ico">
+        FontSize="13" Icon="/app_icon.ico"
+        UseLayoutRounding="True">
 
+    <!-- UseLayoutRounding: snap every layout slot to whole pixels. Centered
+         content (e.g. the TextBox content host) otherwise lands on .5 px and
+         the hardware renderer drew faint lines at its clip edges inside the
+         number inputs on the dark theme. -->
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="36"
                             CornerRadius="0"
