@@ -51,8 +51,13 @@
                 BorderBrush="{DynamicResource BorderColor}"
                 BorderThickness="1"
                 CornerRadius="3">
+            <!-- EdgeMode=Aliased: on the hardware render path the clip edges
+                 of this ScrollViewer and of the TextBox's own content host
+                 drew a faint grey rectangle around the log text (dark theme).
+                 Plain text inside, so nothing here needs geometry AA. -->
             <ScrollViewer VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
+                          RenderOptions.EdgeMode="Aliased"
                           Padding="6">
                 <TextBox Text="{Binding RecentLogs, Mode=OneWay}"
                          IsReadOnly="True"

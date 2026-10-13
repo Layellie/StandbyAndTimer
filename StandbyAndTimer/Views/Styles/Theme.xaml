@@ -159,11 +159,19 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="{StaticResource RadiusSmall}"
                             SnapsToDevicePixels="True">
+                        <!-- EdgeMode=Aliased: on the hardware render path the
+                             content host's layout clip was drawn anti-aliased,
+                             leaving faint 1 px lines just above and below the
+                             text (visible on the dark theme). Measured on screen:
+                             gone with Aliased here; geometry only, glyph
+                             anti-aliasing is unaffected. Kept off the outer
+                             Border so its rounded corners stay smooth. -->
                         <ScrollViewer x:Name="PART_ContentHost"
                                       Focusable="False"
                                       HorizontalScrollBarVisibility="Hidden"
                                       VerticalScrollBarVisibility="Hidden"
                                       VerticalAlignment="Center"
+                                      RenderOptions.EdgeMode="Aliased"
                                       Margin="4,0"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -268,8 +276,12 @@
                             CornerRadius="{StaticResource RadiusMedium}"
                             Padding="{TemplateBinding Padding}"
                             SnapsToDevicePixels="True">
-                        <ScrollViewer Focusable="False">
-                            <ItemsPresenter/>
+                        <!-- Aliased clip edges (same hardware-path artifact as
+                             the number inputs: a faint outline around the item
+                             extent). Reset on the items so the rounded
+                             selection highlight stays anti-aliased. -->
+                        <ScrollViewer Focusable="False" RenderOptions.EdgeMode="Aliased">
+                            <ItemsPresenter RenderOptions.EdgeMode="Unspecified"/>
                         </ScrollViewer>
                     </Border>
                 </ControlTemplate>
