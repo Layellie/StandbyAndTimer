@@ -15,7 +15,9 @@
     <sys:String x:Key="Str_Card_TimerTitle">TIMER RESOLUTION</sys:String>
     <sys:String x:Key="Str_Card_TimerLocked">LOCKED</sys:String>
     <sys:String x:Key="Str_Card_TimerUnlocked">UNLOCKED</sys:String>
-    <sys:String x:Key="Str_Card_TimerLockTipOn">Locked: the timer turns on by itself every time the app starts. Click to unlock.</sys:String>
+    <sys:String x:Key="Str_Card_TimerInGame">IN GAME</sys:String>
+    <sys:String x:Key="Str_Card_TimerLockTipInGame">In game: the timer turns on when a listed game starts and off when the last one exits. Click to unlock.</sys:String>
+    <sys:String x:Key="Str_Card_TimerLockTipOn">Locked: the timer turns on every time the app starts. Click for IN GAME.</sys:String>
     <sys:String x:Key="Str_Card_TimerLockTipOff">Unlocked: the timer only turns on with the TIMER button. Click to lock it on at every start.</sys:String>
     <sys:String x:Key="Str_Card_StandbyTitle">STANDBY MEMORY</sys:String>
     <sys:String x:Key="Str_Card_StandbyClearable">Clearable</sys:String>
@@ -114,6 +116,9 @@
     <sys:String x:Key="Str_Status_TimerOff">Timer disabled</sys:String>
     <sys:String x:Key="Str_Status_TimerLockedOn">Timer locked — it turns on at every start</sys:String>
     <sys:String x:Key="Str_Status_TimerLockedOff">Timer unlocked — it starts off next time</sys:String>
+    <sys:String x:Key="Str_Status_TimerLockedInGame">Timer follows your games: it turns on when a listed game starts</sys:String>
+    <sys:String x:Key="Str_Status_TimerGameOn">Game started, timer on</sys:String>
+    <sys:String x:Key="Str_Status_TimerGameOff">Game exited, timer off</sys:String>
     <sys:String x:Key="Str_Status_AutoPurgeOn">Auto purge on</sys:String>
     <sys:String x:Key="Str_Status_AutoPurgeOff">Auto purge off</sys:String>
     <sys:String x:Key="Str_Status_GameAdded">Game added</sys:String>
@@ -168,6 +173,8 @@
     <!-- v2.1.0 -->
     <sys:String x:Key="Str_Memory_PurgesShort">Purges</sys:String>
     <sys:String x:Key="Str_Purge_IdleOnlyLabel">Only when idle</sys:String>
+    <sys:String x:Key="Str_Purge_OnlyInGamesLabel">Only while a game runs</sys:String>
+    <sys:String x:Key="Str_Purge_OnlyInGamesTip">Auto purge only fires while a game from the Game Mode list runs. Cannot be combined with "Only when idle".</sys:String>
     <sys:String x:Key="Str_Purge_IdleMinutesLabel">Idle threshold (min)</sys:String>
     <sys:String x:Key="Str_Settings_NotificationsSection">NOTIFICATIONS</sys:String>
     <sys:String x:Key="Str_Settings_NotifyOnPurge">Purge notifications</sys:String>

@@ -15,8 +15,10 @@
     <sys:String x:Key="Str_Card_TimerTitle">TIMER ÇÖZÜNÜRLÜĞÜ</sys:String>
     <sys:String x:Key="Str_Card_TimerLocked">KİLİTLİ</sys:String>
     <sys:String x:Key="Str_Card_TimerUnlocked">KİLİTSİZ</sys:String>
-    <sys:String x:Key="Str_Card_TimerLockTipOn">Kilitli: timer uygulama her açıldığında otomatik açılır. Kilidi açmak için tıkla.</sys:String>
-    <sys:String x:Key="Str_Card_TimerLockTipOff">Kilitsiz: timer sadece TIMER'a basınca açılır. Her açılışta otomatik açılsın diye kilitlemek için tıkla.</sys:String>
+    <sys:String x:Key="Str_Card_TimerInGame">OYUNDA</sys:String>
+    <sys:String x:Key="Str_Card_TimerLockTipInGame">Oyunda: listedeki bir oyun açılınca timer açılır, son oyun kapanınca kapanır. Tıklayınca kilit açılır.</sys:String>
+    <sys:String x:Key="Str_Card_TimerLockTipOn">Kilitli: timer uygulama her açıldığında açılır. Tıklayınca OYUNDA moduna geçer.</sys:String>
+    <sys:String x:Key="Str_Card_TimerLockTipOff">Kilitsiz: timer sadece TIMER'a basınca açılır. Tıklayınca her açılışta açılacak şekilde kilitlenir.</sys:String>
     <sys:String x:Key="Str_Card_StandbyTitle">STANDBY BELLEK</sys:String>
     <sys:String x:Key="Str_Card_StandbyClearable">Temizlenebilir</sys:String>
     <sys:String x:Key="Str_Card_PurgeTitle">STANDBY TEMİZLE</sys:String>
@@ -114,6 +116,9 @@
     <sys:String x:Key="Str_Status_TimerOff">Timer devre dışı</sys:String>
     <sys:String x:Key="Str_Status_TimerLockedOn">Timer kilitlendi — her açılışta otomatik açılacak</sys:String>
     <sys:String x:Key="Str_Status_TimerLockedOff">Timer kilidi açıldı — sonraki açılışta kapalı başlayacak</sys:String>
+    <sys:String x:Key="Str_Status_TimerLockedInGame">Timer oyunlara bağlandı: listedeki bir oyun açılınca açılacak</sys:String>
+    <sys:String x:Key="Str_Status_TimerGameOn">Oyun açıldı, timer açık</sys:String>
+    <sys:String x:Key="Str_Status_TimerGameOff">Oyun kapandı, timer kapalı</sys:String>
     <sys:String x:Key="Str_Status_AutoPurgeOn">Oto temizle açık</sys:String>
     <sys:String x:Key="Str_Status_AutoPurgeOff">Oto temizle kapalı</sys:String>
     <sys:String x:Key="Str_Status_GameAdded">Oyun eklendi</sys:String>
@@ -168,6 +173,8 @@
     <!-- v2.1.0 -->
     <sys:String x:Key="Str_Memory_PurgesShort">Temizleme</sys:String>
     <sys:String x:Key="Str_Purge_IdleOnlyLabel">Sadece boştayken</sys:String>
+    <sys:String x:Key="Str_Purge_OnlyInGamesLabel">Sadece oyun açıkken</sys:String>
+    <sys:String x:Key="Str_Purge_OnlyInGamesTip">Oto temizlik yalnızca Game Mode listesindeki bir oyun çalışırken yapılır. "Sadece boştayken" ile birlikte seçilemez.</sys:String>
     <sys:String x:Key="Str_Purge_IdleMinutesLabel">Boşta süre (dk)</sys:String>
     <sys:String x:Key="Str_Settings_NotificationsSection">BİLDİRİMLER</sys:String>
     <sys:String x:Key="Str_Settings_NotifyOnPurge">Temizleme bildirimleri</sys:String>

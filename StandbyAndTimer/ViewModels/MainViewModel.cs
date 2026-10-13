@@ -52,7 +52,15 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     // The lock on the Timer card: locked = the timer turns on by itself at
     // every app start. Independent of TimerActive (the TIMER button can
     // still switch the timer off for this session while it stays locked).
-    [ObservableProperty] private bool    _timerLocked;
+    [ObservableProperty] private TimerLockMode _timerLock;
+    // Automatic purges only while a listed game runs (excludes AutoPurgeIdleOnly).
+    [ObservableProperty] private bool    _autoPurgeOnlyInGames;
+
+    // In-game lock bookkeeping: whether a listed game ran at the last tick,
+    // and whether the timer was turned on by a game start (only then does
+    // the last game exiting turn it off again).
+    private bool _anyGameRunning;
+    private bool _timerStartedForGame;
     [ObservableProperty] private double  _actualTimerMs;
     [ObservableProperty] private string  _statusMessage  = string.Empty;
     [ObservableProperty] private GameEntry? _selectedGame;
@@ -122,7 +130,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         // Only the lock turns the timer on at start-up. This used to restore
         // the last session's state, so a timer left on once came back by
         // itself on every launch.
-        if (settings.TimerLocked)
+        if (TimerLock == TimerLockMode.Locked)
             await ActivateTimerInternalAsync(silent: true).ConfigureAwait(true);
 
         // Don't overwrite "Timer active — 0.50 ms" with "Ready".
@@ -148,13 +156,16 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             FreeLimitMb          = s.FreeLimitMb;
             AutoPurgeEnabled     = s.AutoPurgeEnabled;
             AutoPurgeIdleOnly    = s.AutoPurgeIdleOnly;
+            AutoPurgeOnlyInGames = s.AutoPurgeOnlyInGames && !s.AutoPurgeIdleOnly;
             LightPurge           = s.LightPurge;
             IdleThresholdMinutes = s.IdleThresholdMinutes > 0 ? s.IdleThresholdMinutes : 5;
             GameModeEnabled      = s.GameModeEnabled;
             // TimerActive is NOT taken from settings: it mirrors the timer
             // service. Setting it here showed the timer as active at start-up
             // before anything ran, and after an import without activating it.
-            TimerLocked          = s.TimerLocked;
+            // 2.2.x saved only the two-state TimerLocked flag.
+            TimerLock            = s.TimerLock != TimerLockMode.Unlocked ? s.TimerLock
+                                 : s.TimerLocked ? TimerLockMode.Locked : TimerLockMode.Unlocked;
             _firstRunCompleted   = s.FirstRunCompleted;
 
             Games.Clear();
@@ -183,6 +194,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _memoryService.FreeLimitMb       = FreeLimitMb;
         _memoryService.AutoPurgeEnabled  = AutoPurgeEnabled;
         _memoryService.AutoPurgeIdleOnly = AutoPurgeIdleOnly;
+        _memoryService.AutoPurgeOnlyInGames = AutoPurgeOnlyInGames;
         _memoryService.IdleThresholdMs   = Math.Max(0, IdleThresholdMinutes) * 60_000;
         _memoryService.GameModeEnabled   = GameModeEnabled;
     }
@@ -255,12 +267,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         FreeLimitMb           = FreeLimitMb,
         AutoPurgeEnabled      = AutoPurgeEnabled,
         AutoPurgeIdleOnly     = AutoPurgeIdleOnly,
+        AutoPurgeOnlyInGames  = AutoPurgeOnlyInGames,
         LightPurge            = LightPurge,
         IdleThresholdMinutes  = IdleThresholdMinutes,
         GameModeEnabled       = GameModeEnabled,
         AutoStartEnabled      = Settings.AutoStartEnabled,
         TimerResolutionActive = TimerActive,
-        TimerLocked           = TimerLocked,
+        TimerLock             = TimerLock,
+        TimerLocked           = TimerLock == TimerLockMode.Locked,   // for 2.2.x
         Language              = Settings.SelectedLanguage,
         Theme                 = Settings.SelectedTheme,
         UpdateCheckEnabled    = Settings.UpdateCheckEnabled,
@@ -288,7 +302,36 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             TotalRamMb   = snapshot.TotalMb;
             FreeRamMb    = snapshot.FreeMb;
             StandbyRamMb = snapshot.StandbyMb;
+            _ = ApplyGameStateAsync(snapshot.AnyGameRunning);
         });
+
+    /// <summary>
+    /// In-game lock: a listed game starting turns the timer on, the last one
+    /// exiting turns it off again, but only if a game start had turned it
+    /// on. Acts on transitions only, so a TIMER press stays in charge until
+    /// the next game starts. No-op in the other lock modes.
+    /// </summary>
+    internal async Task ApplyGameStateAsync(bool anyGameRunning)
+    {
+        bool started = anyGameRunning && !_anyGameRunning;
+        bool stopped = !anyGameRunning && _anyGameRunning;
+        _anyGameRunning = anyGameRunning;
+        if (TimerLock != TimerLockMode.InGame) return;
+
+        if (started && !TimerActive)
+        {
+            await ActivateTimerInternalAsync(silent: true).ConfigureAwait(true);
+            _timerStartedForGame = true;
+            StatusMessage = _localization.GetString("Str_Status_TimerGameOn");
+            Logger.Info("In-game lock: game started, timer ON");
+        }
+        else if (stopped && TimerActive && _timerStartedForGame)
+        {
+            DeactivateTimer(notify: false);
+            StatusMessage = _localization.GetString("Str_Status_TimerGameOff");
+            Logger.Info("In-game lock: last game exited, timer OFF");
+        }
+    }
 
     private void OnPurgeSucceeded(object? sender, EventArgs e) =>
         Application.Current.Dispatcher.InvokeAsync(() =>
@@ -372,6 +415,17 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnAutoPurgeIdleOnlyChanged(bool value)
     {
+        // "Only when idle" and "only while a game runs" exclude each other:
+        // nobody is idle in the middle of a game, so both together would
+        // never purge.
+        if (value) AutoPurgeOnlyInGames = false;
+        SyncMonitorThresholds();
+        PersistSettings();
+    }
+
+    partial void OnAutoPurgeOnlyInGamesChanged(bool value)
+    {
+        if (value) AutoPurgeIdleOnly = false;
         SyncMonitorThresholds();
         PersistSettings();
     }
@@ -436,12 +490,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task ToggleTimerResolutionAsync()
     {
+        _timerStartedForGame = false;   // the user is in charge now
         if (TimerActive)
         {
-            _timerService.Deactivate();
-            TimerActive   = false;
+            DeactivateTimer(notify: true);
             StatusMessage = _localization.GetString("Str_Status_TimerOff");
-            TimerToggledNotification?.Invoke(this, new TimerToggledArgs(false, 0));
             Logger.Info("User toggled timer OFF");
         }
         else
@@ -451,20 +504,56 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         PersistSettings();
     }
 
-    // Timer card lock. Locking also switches the timer on now (locked means
-    // "always on"); unlocking leaves the running session alone and only
-    // affects the next start. App auto-start is a separate setting.
+    // Timer card lock, cycling Unlocked -> Locked -> InGame -> Unlocked.
+    // Locked switches the timer on now ("always on"). InGame hands it to
+    // the games: on if one runs right now, off otherwise. Unlocked leaves
+    // the running session alone and only affects the next start. App
+    // auto-start is a separate setting.
     [RelayCommand]
     private async Task ToggleTimerLockAsync()
     {
-        TimerLocked = !TimerLocked;
-        if (TimerLocked && !TimerActive)
-            await ActivateTimerInternalAsync(silent: false).ConfigureAwait(true);
+        TimerLock = TimerLock switch
+        {
+            TimerLockMode.Unlocked => TimerLockMode.Locked,
+            TimerLockMode.Locked   => TimerLockMode.InGame,
+            _                      => TimerLockMode.Unlocked,
+        };
+        _timerStartedForGame = false;
 
-        StatusMessage = _localization.GetString(
-            TimerLocked ? "Str_Status_TimerLockedOn" : "Str_Status_TimerLockedOff");
-        Logger.Info($"Timer lock {(TimerLocked ? "ON" : "OFF")} (timer active={TimerActive})");
+        switch (TimerLock)
+        {
+            case TimerLockMode.Locked when !TimerActive:
+                await ActivateTimerInternalAsync(silent: false).ConfigureAwait(true);
+                break;
+            case TimerLockMode.InGame when _anyGameRunning && !TimerActive:
+                await ActivateTimerInternalAsync(silent: true).ConfigureAwait(true);
+                _timerStartedForGame = true;
+                break;
+            case TimerLockMode.InGame when !_anyGameRunning && TimerActive:
+                DeactivateTimer(notify: false);
+                break;
+        }
+
+        StatusMessage = _localization.GetString(TimerLock switch
+        {
+            TimerLockMode.Locked => "Str_Status_TimerLockedOn",
+            TimerLockMode.InGame => "Str_Status_TimerLockedInGame",
+            _                    => "Str_Status_TimerLockedOff",
+        });
+        Logger.Info($"Timer lock {TimerLock} (timer active={TimerActive})");
         PersistSettings();
+    }
+
+    // notify: tray balloon. Only a TIMER press notifies; the in-game lock
+    // switches quietly (its activation is silent too) and says so in the
+    // status line instead.
+    private void DeactivateTimer(bool notify)
+    {
+        _timerService.Deactivate();
+        TimerActive          = false;
+        _timerStartedForGame = false;
+        if (notify)
+            TimerToggledNotification?.Invoke(this, new TimerToggledArgs(false, 0));
     }
 
     // Idle status line: the live timer reading while the timer runs, else "Ready".

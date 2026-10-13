@@ -44,6 +44,16 @@
                              IsEnabled="{Binding AutoPurgeIdleOnly}"/>
                 </Grid>
 
+                <!-- Only while a listed game runs. Excludes "only when idle"
+                     (the view model clears the other one), since nobody is
+                     idle mid-game. Same AUTO PURGE gate as the row above. -->
+                <CheckBox Content="{DynamicResource Str_Purge_OnlyInGamesLabel}"
+                          IsChecked="{Binding AutoPurgeOnlyInGames}"
+                          IsEnabled="{Binding AutoPurgeEnabled}"
+                          ToolTip="{DynamicResource Str_Purge_OnlyInGamesTip}"
+                          Style="{StaticResource DarkCheckBoxStyle}"
+                          Margin="0,0,0,10"/>
+
                 <!-- AUTO PURGE master toggle — when off, both thresholds are
                      ignored and no automatic purge ever fires. -->
                 <Grid Margin="0,0,0,8">
