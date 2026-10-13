@@ -11,9 +11,12 @@ public sealed class AppSettings
     // longer decides start-up (that restored the timer silently on every
     // launch after it had been left on once). TimerLocked does.
     public bool        TimerResolutionActive { get; set; }
-    // v2.2.0 — the lock on the Timer card. Locked = the timer turns on by
-    // itself every time the app starts; unlocked = only the TIMER button.
+    // v2.2.0 two-state lock, kept so settings saved / exported by 2.2.x load
+    // as Locked. New code reads TimerLock.
     public bool        TimerLocked           { get; set; }
+    // v2.3.0 — the lock on the Timer card: Unlocked / Locked (every start) /
+    // InGame (follows the listed games).
+    public TimerLockMode TimerLock           { get; set; }
     public Language    Language              { get; set; } = Language.English;
     public Theme       Theme                 { get; set; } = Theme.Dark;
     public bool        UpdateCheckEnabled    { get; set; } = true;
@@ -32,6 +35,10 @@ public sealed class AppSettings
     // only fires a threshold-triggered purge once the user has been idle for
     // at least IdleThresholdMinutes, so gaming / typing isn't interrupted.
     public bool        AutoPurgeIdleOnly     { get; set; }
+    // v2.3.0 — purge only the low-priority part of the standby list.
+    public bool        LightPurge            { get; set; }
+    // v2.3.0 — automatic purges only while a listed game runs.
+    public bool        AutoPurgeOnlyInGames  { get; set; }
     public int         IdleThresholdMinutes  { get; set; } = 5;
 
     // v2.1.0 — global hotkeys for manual purge / timer toggle. Stored as

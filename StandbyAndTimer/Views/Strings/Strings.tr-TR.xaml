@@ -15,8 +15,10 @@
     <sys:String x:Key="Str_Card_TimerTitle">TIMER ÇÖZÜNÜRLÜĞÜ</sys:String>
     <sys:String x:Key="Str_Card_TimerLocked">KİLİTLİ</sys:String>
     <sys:String x:Key="Str_Card_TimerUnlocked">KİLİTSİZ</sys:String>
-    <sys:String x:Key="Str_Card_TimerLockTipOn">Kilitli: timer uygulama her açıldığında otomatik açılır. Kilidi açmak için tıkla.</sys:String>
-    <sys:String x:Key="Str_Card_TimerLockTipOff">Kilitsiz: timer sadece TIMER'a basınca açılır. Her açılışta otomatik açılsın diye kilitlemek için tıkla.</sys:String>
+    <sys:String x:Key="Str_Card_TimerInGame">OYUNDA</sys:String>
+    <sys:String x:Key="Str_Card_TimerLockTipInGame">Oyunda: listedeki bir oyun açılınca timer açılır, son oyun kapanınca kapanır. Tıklayınca kilit açılır.</sys:String>
+    <sys:String x:Key="Str_Card_TimerLockTipOn">Kilitli: timer uygulama her açıldığında açılır. Tıklayınca OYUNDA moduna geçer.</sys:String>
+    <sys:String x:Key="Str_Card_TimerLockTipOff">Kilitsiz: timer sadece TIMER'a basınca açılır. Tıklayınca her açılışta açılacak şekilde kilitlenir.</sys:String>
     <sys:String x:Key="Str_Card_StandbyTitle">STANDBY BELLEK</sys:String>
     <sys:String x:Key="Str_Card_StandbyClearable">Temizlenebilir</sys:String>
     <sys:String x:Key="Str_Card_PurgeTitle">STANDBY TEMİZLE</sys:String>
@@ -30,6 +32,9 @@
     <sys:String x:Key="Str_Purge_StandbyLimitLabel">Liste boyutu en az (MB):</sys:String>
     <sys:String x:Key="Str_Purge_FreeLimitLabel">Serbest bellek altında (MB):</sys:String>
     <sys:String x:Key="Str_Purge_Button">Standby Temizle</sys:String>
+    <sys:String x:Key="Str_Purge_LightLabel">Hafif temizlik</sys:String>
+    <sys:String x:Key="Str_Purge_LightDesc">Sadece düşük öncelikli önbelleği siler; sık kullanılan dosyalar bellekte kalır.</sys:String>
+    <sys:String x:Key="Str_Purge_LightTip">Butonla, otomatik ya da kısayolla yapılan her temizlikte geçerlidir.</sys:String>
 
     <!-- Oyun modu -->
     <sys:String x:Key="Str_Game_Mode">OYUN MODU</sys:String>
@@ -40,6 +45,11 @@
     <sys:String x:Key="Str_Game_DropHint">.exe dosyalarını buraya sürükleyin</sys:String>
     <sys:String x:Key="Str_Game_AutoTag">OTO</sys:String>
     <sys:String x:Key="Str_Game_AutoTagTip">Tam ekranda algılanıp otomatik eklendi. Silersen bir daha eklenmez.</sys:String>
+    <sys:String x:Key="Str_Game_CustomTagTip">Bu oyun için öncelik verme ya da oto temizlik kapatıldı.</sys:String>
+    <sys:String x:Key="Str_Game_BoostLabel">Yüksek öncelik ver</sys:String>
+    <sys:String x:Key="Str_Game_BoostTip">Kapalıysa uygulama bu oyuna hiç dokunmaz (öncelik, çekirdek, EcoQoS). Process Lasso gibi bir araç kullanıyorsan kapat. Değişiklik oyunun bir sonraki açılışında geçerli olur.</sys:String>
+    <sys:String x:Key="Str_Game_AutoPurgeLabel">Açıkken oto temizle</sys:String>
+    <sys:String x:Key="Str_Game_AutoPurgeTip">Kapalıysa bu oyun çalışırken otomatik temizlik durur. Butonla ya da kısayolla temizlemek yine çalışır.</sys:String>
 
     <!-- Alt kontroller -->
     <sys:String x:Key="Str_Timer_Inactive">TIMER</sys:String>
@@ -106,6 +116,9 @@
     <sys:String x:Key="Str_Status_TimerOff">Timer devre dışı</sys:String>
     <sys:String x:Key="Str_Status_TimerLockedOn">Timer kilitlendi — her açılışta otomatik açılacak</sys:String>
     <sys:String x:Key="Str_Status_TimerLockedOff">Timer kilidi açıldı — sonraki açılışta kapalı başlayacak</sys:String>
+    <sys:String x:Key="Str_Status_TimerLockedInGame">Timer oyunlara bağlandı: listedeki bir oyun açılınca açılacak</sys:String>
+    <sys:String x:Key="Str_Status_TimerGameOn">Oyun açıldı, timer açık</sys:String>
+    <sys:String x:Key="Str_Status_TimerGameOff">Oyun kapandı, timer kapalı</sys:String>
     <sys:String x:Key="Str_Status_AutoPurgeOn">Oto temizle açık</sys:String>
     <sys:String x:Key="Str_Status_AutoPurgeOff">Oto temizle kapalı</sys:String>
     <sys:String x:Key="Str_Status_GameAdded">Oyun eklendi</sys:String>
@@ -160,6 +173,8 @@
     <!-- v2.1.0 -->
     <sys:String x:Key="Str_Memory_PurgesShort">Temizleme</sys:String>
     <sys:String x:Key="Str_Purge_IdleOnlyLabel">Sadece boştayken</sys:String>
+    <sys:String x:Key="Str_Purge_OnlyInGamesLabel">Sadece oyun açıkken</sys:String>
+    <sys:String x:Key="Str_Purge_OnlyInGamesTip">Oto temizlik yalnızca Game Mode listesindeki bir oyun çalışırken yapılır. "Sadece boştayken" ile birlikte seçilemez.</sys:String>
     <sys:String x:Key="Str_Purge_IdleMinutesLabel">Boşta süre (dk)</sys:String>
     <sys:String x:Key="Str_Settings_NotificationsSection">BİLDİRİMLER</sys:String>
     <sys:String x:Key="Str_Settings_NotifyOnPurge">Temizleme bildirimleri</sys:String>

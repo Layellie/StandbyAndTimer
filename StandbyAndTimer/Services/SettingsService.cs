@@ -28,6 +28,8 @@ internal sealed class SettingsService : ISettingsService
                 AutoStartEnabled      = GetBool(key,     "AutoStartEnabled"),
                 TimerResolutionActive = GetBool(key,     "TimerResolutionActive"),
                 TimerLocked           = GetBool(key,     "TimerLocked"),
+                TimerLock             = GetEnum(key, "TimerLockMode", TimerLockMode.Unlocked),
+                AutoPurgeOnlyInGames  = GetBool(key,     "AutoPurgeOnlyInGames"),
                 Language              = GetEnum(key, "Language", Language.English),
                 Theme                 = GetEnum(key, "Theme",    Theme.Dark),
                 UpdateCheckEnabled    = GetBool(key,     "UpdateCheckEnabled", defaultValue: true),
@@ -38,6 +40,7 @@ internal sealed class SettingsService : ISettingsService
                 NotifyOnGameDetected  = GetBool(key,     "NotifyOnGameDetected", defaultValue: true),
 
                 AutoPurgeIdleOnly     = GetBool(key,     "AutoPurgeIdleOnly"),
+                LightPurge            = GetBool(key,     "LightPurge"),
                 IdleThresholdMinutes  = GetInt (key,     "IdleThresholdMinutes", 5),
 
                 PurgeHotkey           = key.GetValue("PurgeHotkey")?.ToString() ?? "Ctrl+Alt+P",
@@ -49,13 +52,19 @@ internal sealed class SettingsService : ISettingsService
             // detection added (drives the "AUTO" tag); kept as a separate
             // value so GamePaths stays readable by older versions.
             var autoPaths = new HashSet<string>(SplitPaths(key.GetValue("AutoGamePaths")), StringComparer.OrdinalIgnoreCase);
+            // Per-game switches are stored as exception lists (default on),
+            // so games saved by older versions keep the old behaviour.
+            var noBoost   = new HashSet<string>(SplitPaths(key.GetValue("NoBoostGamePaths")), StringComparer.OrdinalIgnoreCase);
+            var noPurge   = new HashSet<string>(SplitPaths(key.GetValue("NoAutoPurgeGamePaths")), StringComparer.OrdinalIgnoreCase);
             settings.Games = SplitPaths(key.GetValue("GamePaths"))
                 .Where(File.Exists)
                 .Select(p => new GameEntry
                 {
                     DisplayName    = Path.GetFileNameWithoutExtension(p),
                     ExecutablePath = p,
-                    AutoAdded      = autoPaths.Contains(p)
+                    AutoAdded      = autoPaths.Contains(p),
+                    BoostPriority  = !noBoost.Contains(p),
+                    AllowAutoPurge = !noPurge.Contains(p)
                 })
                 .ToList();
             settings.IgnoredGamePaths = SplitPaths(key.GetValue("IgnoredGamePaths")).ToList();
@@ -87,6 +96,8 @@ internal sealed class SettingsService : ISettingsService
             key.SetValue("AutoStartEnabled",       settings.AutoStartEnabled       ? "1" : "0");
             key.SetValue("TimerResolutionActive",  settings.TimerResolutionActive  ? "1" : "0");
             key.SetValue("TimerLocked",            settings.TimerLocked            ? "1" : "0");
+            key.SetValue("TimerLockMode",          settings.TimerLock.ToString());
+            key.SetValue("AutoPurgeOnlyInGames",   settings.AutoPurgeOnlyInGames   ? "1" : "0");
             key.SetValue("UpdateCheckEnabled",     settings.UpdateCheckEnabled     ? "1" : "0");
             key.SetValue("FirstRunCompleted",      settings.FirstRunCompleted      ? "1" : "0");
 
@@ -94,6 +105,7 @@ internal sealed class SettingsService : ISettingsService
             key.SetValue("NotifyOnTimerToggle",    settings.NotifyOnTimerToggle    ? "1" : "0");
             key.SetValue("NotifyOnGameDetected",   settings.NotifyOnGameDetected   ? "1" : "0");
             key.SetValue("AutoPurgeIdleOnly",      settings.AutoPurgeIdleOnly      ? "1" : "0");
+            key.SetValue("LightPurge",             settings.LightPurge             ? "1" : "0");
             key.SetValue("IdleThresholdMinutes",   settings.IdleThresholdMinutes,  RegistryValueKind.DWord);
             key.SetValue("PurgeHotkey",            settings.PurgeHotkey            ?? "Ctrl+Alt+P");
             key.SetValue("TimerHotkey",            settings.TimerHotkey            ?? "Ctrl+Alt+T");
@@ -105,6 +117,8 @@ internal sealed class SettingsService : ISettingsService
             SetPaths(key, "GamePaths",        settings.Games.Select(g => g.ExecutablePath));
             SetPaths(key, "AutoGamePaths",    settings.Games.Where(g => g.AutoAdded).Select(g => g.ExecutablePath));
             SetPaths(key, "IgnoredGamePaths", settings.IgnoredGamePaths ?? []);
+            SetPaths(key, "NoBoostGamePaths",     settings.Games.Where(g => !g.BoostPriority).Select(g => g.ExecutablePath));
+            SetPaths(key, "NoAutoPurgeGamePaths", settings.Games.Where(g => !g.AllowAutoPurge).Select(g => g.ExecutablePath));
         }
         catch (Exception ex)
         {

@@ -15,7 +15,9 @@
     <sys:String x:Key="Str_Card_TimerTitle">TIMER RESOLUTION</sys:String>
     <sys:String x:Key="Str_Card_TimerLocked">LOCKED</sys:String>
     <sys:String x:Key="Str_Card_TimerUnlocked">UNLOCKED</sys:String>
-    <sys:String x:Key="Str_Card_TimerLockTipOn">Locked: the timer turns on by itself every time the app starts. Click to unlock.</sys:String>
+    <sys:String x:Key="Str_Card_TimerInGame">IN GAME</sys:String>
+    <sys:String x:Key="Str_Card_TimerLockTipInGame">In game: the timer turns on when a listed game starts and off when the last one exits. Click to unlock.</sys:String>
+    <sys:String x:Key="Str_Card_TimerLockTipOn">Locked: the timer turns on every time the app starts. Click for IN GAME.</sys:String>
     <sys:String x:Key="Str_Card_TimerLockTipOff">Unlocked: the timer only turns on with the TIMER button. Click to lock it on at every start.</sys:String>
     <sys:String x:Key="Str_Card_StandbyTitle">STANDBY MEMORY</sys:String>
     <sys:String x:Key="Str_Card_StandbyClearable">Clearable</sys:String>
@@ -30,6 +32,9 @@
     <sys:String x:Key="Str_Purge_StandbyLimitLabel">List size at least (MB):</sys:String>
     <sys:String x:Key="Str_Purge_FreeLimitLabel">Free memory lower than (MB):</sys:String>
     <sys:String x:Key="Str_Purge_Button">Purge Standby</sys:String>
+    <sys:String x:Key="Str_Purge_LightLabel">Light purge</sys:String>
+    <sys:String x:Key="Str_Purge_LightDesc">Clears only the low-priority cache; often used files stay in memory.</sys:String>
+    <sys:String x:Key="Str_Purge_LightTip">Applies to every purge: the button, auto purge and the hotkey.</sys:String>
 
     <!-- Game mode -->
     <sys:String x:Key="Str_Game_Mode">GAME MODE</sys:String>
@@ -40,6 +45,11 @@
     <sys:String x:Key="Str_Game_DropHint">Drag &amp; drop .exe files here</sys:String>
     <sys:String x:Key="Str_Game_AutoTag">AUTO</sys:String>
     <sys:String x:Key="Str_Game_AutoTagTip">Detected fullscreen and added automatically. Remove it and it will not be added again.</sys:String>
+    <sys:String x:Key="Str_Game_CustomTagTip">Priority boost or auto purge is turned off for this game.</sys:String>
+    <sys:String x:Key="Str_Game_BoostLabel">Give high priority</sys:String>
+    <sys:String x:Key="Str_Game_BoostTip">When off, the app never touches this game (priority, cores, EcoQoS). Turn it off if a tool like Process Lasso manages it. Takes effect the next time the game starts.</sys:String>
+    <sys:String x:Key="Str_Game_AutoPurgeLabel">Auto purge while it runs</sys:String>
+    <sys:String x:Key="Str_Game_AutoPurgeTip">When off, automatic purges pause while this game runs. The purge button and the hotkey still work.</sys:String>
 
     <!-- Bottom controls -->
     <sys:String x:Key="Str_Timer_Inactive">TIMER</sys:String>
@@ -106,6 +116,9 @@
     <sys:String x:Key="Str_Status_TimerOff">Timer disabled</sys:String>
     <sys:String x:Key="Str_Status_TimerLockedOn">Timer locked — it turns on at every start</sys:String>
     <sys:String x:Key="Str_Status_TimerLockedOff">Timer unlocked — it starts off next time</sys:String>
+    <sys:String x:Key="Str_Status_TimerLockedInGame">Timer follows your games: it turns on when a listed game starts</sys:String>
+    <sys:String x:Key="Str_Status_TimerGameOn">Game started, timer on</sys:String>
+    <sys:String x:Key="Str_Status_TimerGameOff">Game exited, timer off</sys:String>
     <sys:String x:Key="Str_Status_AutoPurgeOn">Auto purge on</sys:String>
     <sys:String x:Key="Str_Status_AutoPurgeOff">Auto purge off</sys:String>
     <sys:String x:Key="Str_Status_GameAdded">Game added</sys:String>
@@ -160,6 +173,8 @@
     <!-- v2.1.0 -->
     <sys:String x:Key="Str_Memory_PurgesShort">Purges</sys:String>
     <sys:String x:Key="Str_Purge_IdleOnlyLabel">Only when idle</sys:String>
+    <sys:String x:Key="Str_Purge_OnlyInGamesLabel">Only while a game runs</sys:String>
+    <sys:String x:Key="Str_Purge_OnlyInGamesTip">Auto purge only fires while a game from the Game Mode list runs. Cannot be combined with "Only when idle".</sys:String>
     <sys:String x:Key="Str_Purge_IdleMinutesLabel">Idle threshold (min)</sys:String>
     <sys:String x:Key="Str_Settings_NotificationsSection">NOTIFICATIONS</sys:String>
     <sys:String x:Key="Str_Settings_NotifyOnPurge">Purge notifications</sys:String>

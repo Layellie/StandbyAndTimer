@@ -56,7 +56,7 @@ WPF on .NET 10, MVVM. Every Windows API call lives in `Services/Native/NativeMet
 ```powershell
 dotnet build StandbyAndTimer/StandbyAndTimer.csproj -c Release
 dotnet run --project StandbyAndTimer/StandbyAndTimer.csproj   # run as administrator
-.\build-installer.ps1 -Version 2.2.1                          # needs Inno Setup 6
+.\build-installer.ps1 -Version 2.3.0                          # needs Inno Setup 6
 ```
 
 ## License
@@ -107,7 +107,7 @@ Her sürümün notları [Releases sayfasında](https://github.com/Layellie/Stand
 ```powershell
 dotnet build StandbyAndTimer/StandbyAndTimer.csproj -c Release
 dotnet run --project StandbyAndTimer/StandbyAndTimer.csproj   # yönetici olarak çalıştırın
-.\build-installer.ps1 -Version 2.2.1                          # Inno Setup 6 gerekir
+.\build-installer.ps1 -Version 2.3.0                          # Inno Setup 6 gerekir
 ```
 
 ## Lisans

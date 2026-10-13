@@ -76,6 +76,7 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <Image Source="{Binding ExecutablePath, Converter={StaticResource GameIconConv}}"
                                    Width="16" Height="16"
@@ -95,19 +96,64 @@
                                            FontSize="9" FontWeight="SemiBold"
                                            Foreground="{DynamicResource AppFgDim}"/>
                             </Border>
+                            <!-- ⚙: a per-game switch is off (priority left
+                                 alone, or auto purge paused). A glyph, not a
+                                 text badge: next to AUTO a second badge left
+                                 the game name ~60 px. -->
+                            <TextBlock Grid.Column="3"
+                                       Text="⚙"
+                                       FontSize="12"
+                                       Margin="6,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource AppFgDim}"
+                                       ToolTip="{DynamicResource Str_Game_CustomTagTip}"
+                                       Visibility="{Binding HasCustomRules, Converter={StaticResource BoolToVis}}"/>
                         </Grid>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
 
-            <!-- Own row: next to two buttons the ~238 px column left the
-                 hint about 70 px and it got clipped. -->
+            <!-- Row 3 shows the drop hint while nothing is selected, and the
+                 selected game's own switches once a row is picked (same
+                 space, so the list does not shrink). -->
             <TextBlock Grid.Row="3"
                        Text="{DynamicResource Str_Game_DropHint}"
                        FontSize="11"
                        TextWrapping="Wrap"
                        Foreground="{DynamicResource AppFgDim}"
-                       Margin="0,0,0,8"/>
+                       Margin="0,0,0,8">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedGame}" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <StackPanel Grid.Row="3" Margin="0,0,0,8">
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedGame}" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
+                <CheckBox Content="{DynamicResource Str_Game_BoostLabel}"
+                          IsChecked="{Binding SelectedGameBoost}"
+                          ToolTip="{DynamicResource Str_Game_BoostTip}"
+                          Style="{StaticResource DarkCheckBoxStyle}"
+                          Margin="0,0,0,6"/>
+                <CheckBox Content="{DynamicResource Str_Game_AutoPurgeLabel}"
+                          IsChecked="{Binding SelectedGameAutoPurge}"
+                          ToolTip="{DynamicResource Str_Game_AutoPurgeTip}"
+                          Style="{StaticResource DarkCheckBoxStyle}"/>
+            </StackPanel>
 
             <Grid Grid.Row="4">
                 <Grid.ColumnDefinitions>

@@ -44,6 +44,16 @@
                              IsEnabled="{Binding AutoPurgeIdleOnly}"/>
                 </Grid>
 
+                <!-- Only while a listed game runs. Excludes "only when idle"
+                     (the view model clears the other one), since nobody is
+                     idle mid-game. Same AUTO PURGE gate as the row above. -->
+                <CheckBox Content="{DynamicResource Str_Purge_OnlyInGamesLabel}"
+                          IsChecked="{Binding AutoPurgeOnlyInGames}"
+                          IsEnabled="{Binding AutoPurgeEnabled}"
+                          ToolTip="{DynamicResource Str_Purge_OnlyInGamesTip}"
+                          Style="{StaticResource DarkCheckBoxStyle}"
+                          Margin="0,0,0,10"/>
+
                 <!-- AUTO PURGE master toggle — when off, both thresholds are
                      ignored and no automatic purge ever fires. -->
                 <Grid Margin="0,0,0,8">
@@ -108,6 +118,24 @@
                              Style="{StaticResource InputTextBoxStyle}"
                              Height="26" FontSize="12"/>
                 </Grid>
+
+                <!-- Light purge: applies to every purge (button, auto,
+                     hotkey, tray), so it sits outside the AUTO PURGE group. -->
+                <Border BorderBrush="{DynamicResource SeparatorBrush}"
+                        BorderThickness="0,1,0,0"
+                        Padding="0,10,0,0">
+                    <StackPanel>
+                        <CheckBox Content="{DynamicResource Str_Purge_LightLabel}"
+                                  IsChecked="{Binding LightPurge}"
+                                  ToolTip="{DynamicResource Str_Purge_LightTip}"
+                                  Style="{StaticResource DarkCheckBoxStyle}"/>
+                        <TextBlock Text="{DynamicResource Str_Purge_LightDesc}"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource AppFgDim}"
+                                   Margin="23,2,0,0"/>
+                    </StackPanel>
+                </Border>
             </StackPanel>
 
             <Button Grid.Row="1"

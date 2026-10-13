@@ -24,7 +24,7 @@
          this default, dev builds defaulted to AssemblyVersion 1.0.0.0 and
          the in-app update checker reported a phantom "new version" against
          the current release. -->
-    <Version>2.2.1</Version>
+    <Version>2.3.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -44,6 +44,12 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
+  </ItemGroup>
+
+  <!-- Unit tests reach internal view-model and service members.
+       Nothing else uses this. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="StandbyAndTimer.Tests" />
   </ItemGroup>
 
   <ItemGroup>
