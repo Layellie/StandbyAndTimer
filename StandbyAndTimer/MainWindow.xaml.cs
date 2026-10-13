@@ -31,7 +31,21 @@ public partial class MainWindow : Window
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
-        ApplyDarkTitleBar(new WindowInteropHelper(this).Handle);
+        var hwnd = new WindowInteropHelper(this).Handle;
+        ApplyDarkTitleBar(hwnd);
+        ApplyRoundedCorners(hwnd);
+    }
+
+    // WindowStyle=None windows get square corners by default. Ask DWM for
+    // the standard Windows 11 rounding. Cosmetic only: Windows 10 does not
+    // know attribute 33 and just returns an error code, leaving the corners
+    // square.
+    private static void ApplyRoundedCorners(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero) return;
+        int pref = NativeMethods.DWMWCP_ROUND;
+        _ = NativeMethods.DwmSetWindowAttribute(
+            hwnd, NativeMethods.DWMWA_WINDOW_CORNER_PREFERENCE, ref pref, sizeof(int));
     }
 
     internal static void ApplyDarkTitleBar(IntPtr hwnd)

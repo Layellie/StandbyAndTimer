@@ -187,6 +187,12 @@ internal static class NativeMethods
         ref int attrValue,
         int    attrSize);
 
+    /// <summary>DWMWA_WINDOW_CORNER_PREFERENCE (Windows 11+); value is a DWM_WINDOW_CORNER_PREFERENCE.</summary>
+    internal const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
+
+    /// <summary>DWMWCP_ROUND — the standard Windows 11 rounded window corners.</summary>
+    internal const int DWMWCP_ROUND = 2;
+
     // ── advapi32.dll ─────────────────────────────────────────────────────────
 
     [DllImport("advapi32.dll", ExactSpelling = true, SetLastError = true)]
