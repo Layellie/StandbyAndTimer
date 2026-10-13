@@ -8,11 +8,10 @@ namespace StandbyAndTimer.Services.Tray;
 // If you change one palette, change the other.
 internal static class TrayDarkPalette
 {
-    internal static readonly Color SurfaceBg     = Color.FromArgb(0x13, 0x13, 0x1A);
-    internal static readonly Color AppFg         = Color.FromArgb(0xE2, 0xE2, 0xF0);
-    internal static readonly Color AccentPrimary = Color.FromArgb(0x7C, 0x6A, 0xF7);
-    internal static readonly Color SelectionBg   = Color.FromArgb(0x3D, 0x36, 0x70);
-    internal static readonly Color AccentPressed = Color.FromArgb(0x64, 0x55, 0xE0);
-    internal static readonly Color BorderColor   = Color.FromArgb(0x2A, 0x2A, 0x3D);
-    internal static readonly Color DisabledFg    = Color.FromArgb(0x70, 0x70, 0xA0);
+    internal static readonly Color SurfaceBg   = Color.FromArgb(0x1C, 0x1F, 0x24); // SurfaceBg
+    internal static readonly Color AppFg       = Color.FromArgb(0xF3, 0xF5, 0xF8); // AppFg
+    internal static readonly Color HoverBg     = Color.FromArgb(0x26, 0x2A, 0x31); // HoverBg
+    internal static readonly Color PressedBg   = Color.FromArgb(0x1F, 0x2E, 0x0A); // AccentSubtle
+    internal static readonly Color BorderColor = Color.FromArgb(0x2A, 0x2E, 0x35); // BorderColor
+    internal static readonly Color DisabledFg  = Color.FromArgb(0x8E, 0x95, 0x9F); // 5.5:1 on SurfaceBg
 }

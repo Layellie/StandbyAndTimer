@@ -20,6 +20,21 @@ internal sealed class TrayDarkMenuRenderer : WinForms.ToolStripProfessionalRende
         base.OnRenderItemText(e);
     }
 
+    // Hover / press fill painted here instead of by the base renderer. The
+    // app never enables WinForms visual styles (no comctl32 v6 manifest
+    // entry, no EnableVisualStyles), and in that mode the professional
+    // renderer ignores the color table for selected items: it fills and
+    // outlines them with SystemColors.Highlight, i.e. the user's Windows
+    // accent (gold/blue/…) instead of our palette.
+    protected override void OnRenderMenuItemBackground(WinForms.ToolStripItemRenderEventArgs e)
+    {
+        if (!e.Item.Enabled || !(e.Item.Selected || e.Item.Pressed)) return;
+
+        var bounds = new Rectangle(2, 0, e.Item.Width - 4, e.Item.Height);
+        using var brush = new SolidBrush(e.Item.Pressed ? TrayDarkPalette.PressedBg : TrayDarkPalette.HoverBg);
+        e.Graphics.FillRectangle(brush, bounds);
+    }
+
     private sealed class TrayDarkColorTable : WinForms.ProfessionalColorTable
     {
         public override Color ToolStripDropDownBackground       => TrayDarkPalette.SurfaceBg;
@@ -27,12 +42,13 @@ internal sealed class TrayDarkMenuRenderer : WinForms.ToolStripProfessionalRende
         public override Color ImageMarginGradientMiddle         => TrayDarkPalette.SurfaceBg;
         public override Color ImageMarginGradientEnd            => TrayDarkPalette.SurfaceBg;
         public override Color MenuBorder                        => TrayDarkPalette.BorderColor;
-        public override Color MenuItemBorder                    => TrayDarkPalette.AccentPrimary;
-        public override Color MenuItemSelected                  => TrayDarkPalette.SelectionBg;
-        public override Color MenuItemSelectedGradientBegin     => TrayDarkPalette.SelectionBg;
-        public override Color MenuItemSelectedGradientEnd       => TrayDarkPalette.SelectionBg;
-        public override Color MenuItemPressedGradientBegin      => TrayDarkPalette.AccentPressed;
-        public override Color MenuItemPressedGradientEnd        => TrayDarkPalette.AccentPressed;
+        // Hover = flat tint, no outline (matches the WPF HoverBg rows).
+        public override Color MenuItemBorder                    => TrayDarkPalette.HoverBg;
+        public override Color MenuItemSelected                  => TrayDarkPalette.HoverBg;
+        public override Color MenuItemSelectedGradientBegin     => TrayDarkPalette.HoverBg;
+        public override Color MenuItemSelectedGradientEnd       => TrayDarkPalette.HoverBg;
+        public override Color MenuItemPressedGradientBegin      => TrayDarkPalette.PressedBg;
+        public override Color MenuItemPressedGradientEnd        => TrayDarkPalette.PressedBg;
         public override Color SeparatorDark                     => TrayDarkPalette.BorderColor;
         public override Color SeparatorLight                    => TrayDarkPalette.BorderColor;
     }
