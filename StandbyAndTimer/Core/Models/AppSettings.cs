@@ -37,4 +37,8 @@ public sealed class AppSettings
     public string      AutoPurgeHotkey       { get; set; } = "Ctrl+Alt+O";
 
     public List<GameEntry> Games             { get; set; } = [];
+
+    // v2.2.0 — exes the user removed after fullscreen detection auto-added
+    // them. Detection never re-adds these; adding one by hand clears it.
+    public List<string> IgnoredGamePaths     { get; set; } = [];
 }

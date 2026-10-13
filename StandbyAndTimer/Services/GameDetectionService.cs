@@ -5,10 +5,11 @@ using StandbyAndTimer.Services.Native;
 namespace StandbyAndTimer.Services;
 
 // Polls the foreground window every few seconds. If it fully covers its
-// monitor (classic exclusive-fullscreen or borderless-fullscreen) and its
-// owning process isn't already in the user's Game Mode list, raise
-// GameDetected once. The ViewModel hands the exe path to the tray which
-// shows a balloon — clicking it adds the game.
+// monitor (classic exclusive-fullscreen or borderless-fullscreen) on two
+// consecutive polls and its owning process isn't already known (listed or
+// dismissed by the user) or a known non-game, raise GameDetected once. The
+// ViewModel adds it to the Game Mode list (tagged AUTO) and the tray shows
+// a balloon.
 //
 // Why not WMI / ETW / D3DKMT? They're heavier, require extra permissions
 // in some cases, and the false-positive surface is bigger. A simple
@@ -19,14 +20,31 @@ internal sealed class GameDetectionService : IGameDetectionService
 {
     private const int  PollIntervalMs = 3_000;
 
-    // System processes whose windows commonly go fullscreen but should
-    // never be promoted to "game" — e.g. lockscreen, sign-in UI, the shell.
+    // Processes whose windows commonly go fullscreen but should never be
+    // promoted to "game" now that detection adds to the list on its own:
+    // the shell / sign-in UI, plus apps measured or expected to cover the
+    // monitor (Discord and the Snipping Tool overlay were the only two
+    // "detections" in a real day's log; browsers / players in F11 mode).
     private static readonly HashSet<string> IgnoredProcessNames = new(StringComparer.OrdinalIgnoreCase)
     {
+        // Windows shell and system UI
         "explorer", "dwm", "logonui", "lockapp", "shellexperiencehost",
         "searchhost", "applicationframehost", "winlogon", "csrss",
+        "snippingtool", "screenclippinghost", "mstsc", "msrdc",
         "standbyandtimer",
+        // Chat, calls, streaming
+        "discord", "ms-teams", "teams", "zoom", "obs64", "obs32",
+        // Browsers (F11 / video fullscreen)
+        "chrome", "msedge", "firefox", "brave", "opera", "opera_gx", "vivaldi",
+        // Video players and presentations
+        "vlc", "mpc-hc", "mpc-hc64", "mpc-be", "mpc-be64", "potplayer", "potplayermini",
+        "potplayermini64", "wmplayer", "microsoft.media.player", "video.ui", "powerpnt",
     };
+
+    // A fullscreen window must still be fullscreen (same exe) on the NEXT
+    // poll before it is reported — momentary overlays such as the Snipping
+    // Tool capture screen never survive two polls (~6 s).
+    private string? _pendingPath;
 
     private readonly HashSet<string> _alreadyNotified = new(StringComparer.OrdinalIgnoreCase);
     private CancellationTokenSource? _cts;
@@ -71,8 +89,11 @@ internal sealed class GameDetectionService : IGameDetectionService
     private void Tick()
     {
         IntPtr hwnd = NativeMethods.GetForegroundWindow();
-        if (hwnd == IntPtr.Zero) return;
-        if (!IsFullscreen(hwnd)) return;
+        if (hwnd == IntPtr.Zero || !IsFullscreen(hwnd))
+        {
+            OnNotFullscreen();
+            return;
+        }
 
         _ = NativeMethods.GetWindowThreadProcessId(hwnd, out uint pid);
         if (pid == 0) return;
@@ -94,14 +115,42 @@ internal sealed class GameDetectionService : IGameDetectionService
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(exePath))               return;
-        if (IgnoredProcessNames.Contains(procName))           return;
-        if (KnownGamePaths.Contains(exePath))                 return;
-        if (!_alreadyNotified.Add(exePath))                   return;
+        if (!ShouldReport(exePath, procName)) return;
 
-        GameDetected?.Invoke(this, exePath);
+        GameDetected?.Invoke(this, exePath!);
         Logger.Info($"GameDetection: fullscreen process detected — {procName} ({exePath})");
     }
+
+    /// <summary>
+    /// Decision for one poll that found <paramref name="exePath"/> fullscreen
+    /// in the foreground. Win32-free so it can be exercised directly. True =
+    /// report it now (second consecutive sighting, not known / ignored /
+    /// already reported this session).
+    /// </summary>
+    internal bool ShouldReport(string? exePath, string procName)
+    {
+        if (string.IsNullOrWhiteSpace(exePath)
+            || IgnoredProcessNames.Contains(procName)
+            || KnownGamePaths.Contains(exePath)
+            || _alreadyNotified.Contains(exePath))
+        {
+            _pendingPath = null;
+            return false;
+        }
+
+        if (!string.Equals(_pendingPath, exePath, StringComparison.OrdinalIgnoreCase))
+        {
+            _pendingPath = exePath;   // first sighting: wait for the next poll
+            return false;
+        }
+
+        _pendingPath = null;
+        _alreadyNotified.Add(exePath);
+        return true;
+    }
+
+    /// <summary>A poll where nothing is fullscreen: the pending candidate resets.</summary>
+    internal void OnNotFullscreen() => _pendingPath = null;
 
     private static bool IsFullscreen(IntPtr hwnd)
     {

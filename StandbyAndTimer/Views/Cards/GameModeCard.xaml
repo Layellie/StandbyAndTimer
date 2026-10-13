@@ -5,6 +5,7 @@
              FontFamily="{StaticResource AppFont}" FontSize="13">
     <UserControl.Resources>
         <conv:GameIconConverter x:Key="GameIconConv"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
 
     <!-- Game Mode toggle + executable list with drag-drop and add/remove
@@ -68,12 +69,33 @@
                      ToolTip="{DynamicResource Str_Game_DropHint}">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
+                        <!-- Name trims; the AUTO tag (fullscreen detection
+                             added it) stays pinned to the right edge. -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
                             <Image Source="{Binding ExecutablePath, Converter={StaticResource GameIconConv}}"
                                    Width="16" Height="16"
                                    Margin="0,0,8,0"/>
-                            <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
-                        </StackPanel>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding DisplayName}"
+                                       ToolTip="{Binding ExecutablePath}"
+                                       TextTrimming="CharacterEllipsis"
+                                       VerticalAlignment="Center"/>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource MutedBadgeStyle}"
+                                    Padding="5,0"
+                                    Margin="6,0,0,0"
+                                    ToolTip="{DynamicResource Str_Game_AutoTagTip}"
+                                    Visibility="{Binding AutoAdded, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="{DynamicResource Str_Game_AutoTag}"
+                                           FontSize="9" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AppFgDim}"/>
+                            </Border>
+                        </Grid>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>

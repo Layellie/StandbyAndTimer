@@ -30,6 +30,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private bool _isInitializing;
     private bool _disposed;
 
+    // Exes the user removed after detection auto-added them. Detection skips
+    // these (via KnownGamePaths); adding one by hand takes it back off.
+    private readonly HashSet<string> _ignoredGamePaths = new(StringComparer.OrdinalIgnoreCase);
+
     // ── Observable properties ─────────────────────────────────────────────────
 
     [ObservableProperty] private long    _totalRamMb;
@@ -144,6 +148,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             foreach (var g in s.Games)
                 Games.Add(g);
 
+            _ignoredGamePaths.Clear();
+            foreach (var p in s.IgnoredGamePaths ?? [])
+                _ignoredGamePaths.Add(p);
+
             Settings.Initialize(
                 s.AutoStartEnabled, s.Language, s.UpdateCheckEnabled, s.Theme,
                 s.NotifyOnPurge, s.NotifyOnTimerToggle, s.NotifyOnGameDetected,
@@ -173,9 +181,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         var paths = Games.Select(g => g.ExecutablePath).ToList();
         _memoryService.GamePaths = paths;
         // Also keep the detection service in sync — without this, a game the
-        // user just added would still trigger a "fullscreen detected" balloon
-        // on the next poll tick.
-        _gameDetection.KnownGamePaths = new HashSet<string>(paths, StringComparer.OrdinalIgnoreCase);
+        // user just added would be re-detected on the next poll, and a game
+        // the user removed after auto-add would come straight back.
+        var known = new HashSet<string>(paths, StringComparer.OrdinalIgnoreCase);
+        known.UnionWith(_ignoredGamePaths);
+        _gameDetection.KnownGamePaths = known;
     }
 
     private void PersistSettings()
@@ -241,7 +251,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         TimerHotkey           = Settings.TimerHotkeyText,
         AutoPurgeHotkey       = Settings.AutoPurgeHotkeyText,
         FirstRunCompleted     = _firstRunCompleted,
-        Games                 = [.. Games]
+        Games                 = [.. Games],
+        IgnoredGamePaths      = [.. _ignoredGamePaths]
     };
 
     // Local mirror of the persisted FirstRunCompleted flag so BuildCurrentSettings
@@ -279,15 +290,28 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(WizardFinish));
         });
 
+    // Detection already filtered out known non-games and momentary overlays
+    // (two consecutive fullscreen polls); what reaches here is added to the
+    // list, tagged AUTO, and persisted. Removing it later dismisses it for good.
     private void OnGameDetected(object? sender, string exePath) =>
-        Application.Current.Dispatcher.InvokeAsync(() =>
-        {
-            // Surface the candidate to App.xaml.cs which owns the tray icon
-            // and can show a balloon. We don't auto-add — that would be
-            // surprising behavior and could mis-promote a fullscreen video
-            // player. The user decides.
-            GameAutoDetected?.Invoke(this, exePath);
-        });
+        Application.Current.Dispatcher.InvokeAsync(() => AutoAddDetectedGame(exePath));
+
+    internal void AutoAddDetectedGame(string exePath)
+    {
+        if (string.IsNullOrWhiteSpace(exePath) || _ignoredGamePaths.Contains(exePath)) return;
+        if (Games.Any(g => g.ExecutablePath.Equals(exePath, StringComparison.OrdinalIgnoreCase))) return;
+
+        string name = Path.GetFileNameWithoutExtension(exePath);
+        Games.Add(new GameEntry { DisplayName = name, ExecutablePath = exePath, AutoAdded = true });
+        SyncMonitorGames();
+        PersistSettings();
+        StatusMessage = string.Format(CultureInfo.CurrentCulture,
+            _localization.GetString("Str_Status_GameAutoAdded"), name);
+        Logger.Info($"Game auto-added: {exePath}");
+
+        // App.xaml.cs owns the tray icon and shows the "added" balloon.
+        GameAutoDetected?.Invoke(this, exePath);
+    }
 
     public event EventHandler<string>? GameAutoDetected;
 
@@ -413,6 +437,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             DisplayName    = Path.GetFileNameWithoutExtension(path),
             ExecutablePath = path
         });
+        // An explicit add overrides an earlier dismissal of the same exe.
+        _ignoredGamePaths.Remove(path);
         SyncMonitorGames();
         PersistSettings();
         StatusMessage = _localization.GetString("Str_Status_GameAdded");
@@ -423,6 +449,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private void RemoveGame()
     {
         if (SelectedGame is null) return;
+        // Removing an auto-added game means "this is not a game": remember it
+        // so detection never adds it again. User-added games just go.
+        if (SelectedGame.AutoAdded)
+            _ignoredGamePaths.Add(SelectedGame.ExecutablePath);
         Games.Remove(SelectedGame);
         SelectedGame  = null;
         SyncMonitorGames();

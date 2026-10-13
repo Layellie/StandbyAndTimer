@@ -35,6 +35,8 @@
     <sys:String x:Key="Str_Game_FileDialogTitle">Select Game Executable</sys:String>
     <sys:String x:Key="Str_Game_FileDialogFilter">Executable Files (*.exe)|*.exe</sys:String>
     <sys:String x:Key="Str_Game_DropHint">Drag &amp; drop .exe files here</sys:String>
+    <sys:String x:Key="Str_Game_AutoTag">AUTO</sys:String>
+    <sys:String x:Key="Str_Game_AutoTagTip">Detected fullscreen and added automatically. Remove it and it will not be added again.</sys:String>
 
     <!-- Bottom controls -->
     <sys:String x:Key="Str_Timer_Inactive">TIMER</sys:String>
@@ -138,8 +140,8 @@
     <sys:String x:Key="Str_Settings_LogsEmpty">No log entries yet.</sys:String>
 
     <!-- Game auto-detect -->
-    <sys:String x:Key="Str_Detect_NotifyTitle">Fullscreen app detected</sys:String>
-    <sys:String x:Key="Str_Detect_NotifyBody">Add "{0}" to the Game Mode list?</sys:String>
+    <sys:String x:Key="Str_Detect_NotifyTitle">Game added to Game Mode</sys:String>
+    <sys:String x:Key="Str_Detect_NotifyBody">"{0}" was detected fullscreen and added to the Game Mode list. Not a game? Remove it from the list.</sys:String>
     <sys:String x:Key="Str_Status_GameAutoAdded">Auto-added game: {0}</sys:String>
 
     <!-- v2.1.0 -->
