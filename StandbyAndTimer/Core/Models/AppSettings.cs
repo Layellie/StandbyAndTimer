@@ -32,6 +32,8 @@ public sealed class AppSettings
     // only fires a threshold-triggered purge once the user has been idle for
     // at least IdleThresholdMinutes, so gaming / typing isn't interrupted.
     public bool        AutoPurgeIdleOnly     { get; set; }
+    // v2.3.0 — purge only the low-priority part of the standby list.
+    public bool        LightPurge            { get; set; }
     public int         IdleThresholdMinutes  { get; set; } = 5;
 
     // v2.1.0 — global hotkeys for manual purge / timer toggle. Stored as

@@ -6,6 +6,13 @@ public interface IStandbyPurgeService
     event EventHandler? PurgeSucceeded;
 
     /// <summary>
+    /// False = purge the whole standby list; true = purge only its low-priority
+    /// part, so frequently used files stay cached. Set by MainViewModel and
+    /// applied to every purge (button, auto purge, hotkey, tray).
+    /// </summary>
+    bool LightMode { get; set; }
+
+    /// <summary>
     /// Purges the Windows Standby List via NtSetSystemInformation(80).
     /// Requires SeProfileSingleProcessPrivilege (granted by requireAdministrator manifest).
     /// Returns true if the kernel call succeeded.

@@ -30,6 +30,9 @@
     <sys:String x:Key="Str_Purge_StandbyLimitLabel">List size at least (MB):</sys:String>
     <sys:String x:Key="Str_Purge_FreeLimitLabel">Free memory lower than (MB):</sys:String>
     <sys:String x:Key="Str_Purge_Button">Purge Standby</sys:String>
+    <sys:String x:Key="Str_Purge_LightLabel">Light purge</sys:String>
+    <sys:String x:Key="Str_Purge_LightDesc">Clears only the low-priority cache; often used files stay in memory.</sys:String>
+    <sys:String x:Key="Str_Purge_LightTip">Applies to every purge: the button, auto purge and the hotkey.</sys:String>
 
     <!-- Game mode -->
     <sys:String x:Key="Str_Game_Mode">GAME MODE</sys:String>

@@ -44,6 +44,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private int     _freeLimitMb;
     [ObservableProperty] private bool    _autoPurgeEnabled;
     [ObservableProperty] private bool    _autoPurgeIdleOnly;
+    // Light purge: only the low-priority standby pages (see IStandbyPurgeService.LightMode).
+    [ObservableProperty] private bool    _lightPurge;
     [ObservableProperty] private int     _idleThresholdMinutes = 5;
     [ObservableProperty] private bool    _gameModeEnabled;
     [ObservableProperty] private bool    _timerActive;
@@ -146,6 +148,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             FreeLimitMb          = s.FreeLimitMb;
             AutoPurgeEnabled     = s.AutoPurgeEnabled;
             AutoPurgeIdleOnly    = s.AutoPurgeIdleOnly;
+            LightPurge           = s.LightPurge;
             IdleThresholdMinutes = s.IdleThresholdMinutes > 0 ? s.IdleThresholdMinutes : 5;
             GameModeEnabled      = s.GameModeEnabled;
             // TimerActive is NOT taken from settings: it mirrors the timer
@@ -247,6 +250,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         FreeLimitMb           = FreeLimitMb,
         AutoPurgeEnabled      = AutoPurgeEnabled,
         AutoPurgeIdleOnly     = AutoPurgeIdleOnly,
+        LightPurge            = LightPurge,
         IdleThresholdMinutes  = IdleThresholdMinutes,
         GameModeEnabled       = GameModeEnabled,
         AutoStartEnabled      = Settings.AutoStartEnabled,
@@ -352,6 +356,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     partial void OnAutoPurgeEnabledChanged(bool value)
     {
         SyncMonitorThresholds();
+        PersistSettings();
+    }
+
+    partial void OnLightPurgeChanged(bool value)
+    {
+        _purgeService.LightMode = value;
         PersistSettings();
     }
 

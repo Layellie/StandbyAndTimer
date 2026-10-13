@@ -108,6 +108,24 @@
                              Style="{StaticResource InputTextBoxStyle}"
                              Height="26" FontSize="12"/>
                 </Grid>
+
+                <!-- Light purge: applies to every purge (button, auto,
+                     hotkey, tray), so it sits outside the AUTO PURGE group. -->
+                <Border BorderBrush="{DynamicResource SeparatorBrush}"
+                        BorderThickness="0,1,0,0"
+                        Padding="0,10,0,0">
+                    <StackPanel>
+                        <CheckBox Content="{DynamicResource Str_Purge_LightLabel}"
+                                  IsChecked="{Binding LightPurge}"
+                                  ToolTip="{DynamicResource Str_Purge_LightTip}"
+                                  Style="{StaticResource DarkCheckBoxStyle}"/>
+                        <TextBlock Text="{DynamicResource Str_Purge_LightDesc}"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource AppFgDim}"
+                                   Margin="23,2,0,0"/>
+                    </StackPanel>
+                </Border>
             </StackPanel>
 
             <Button Grid.Row="1"

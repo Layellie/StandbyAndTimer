@@ -38,6 +38,7 @@ internal sealed class SettingsService : ISettingsService
                 NotifyOnGameDetected  = GetBool(key,     "NotifyOnGameDetected", defaultValue: true),
 
                 AutoPurgeIdleOnly     = GetBool(key,     "AutoPurgeIdleOnly"),
+                LightPurge            = GetBool(key,     "LightPurge"),
                 IdleThresholdMinutes  = GetInt (key,     "IdleThresholdMinutes", 5),
 
                 PurgeHotkey           = key.GetValue("PurgeHotkey")?.ToString() ?? "Ctrl+Alt+P",
@@ -94,6 +95,7 @@ internal sealed class SettingsService : ISettingsService
             key.SetValue("NotifyOnTimerToggle",    settings.NotifyOnTimerToggle    ? "1" : "0");
             key.SetValue("NotifyOnGameDetected",   settings.NotifyOnGameDetected   ? "1" : "0");
             key.SetValue("AutoPurgeIdleOnly",      settings.AutoPurgeIdleOnly      ? "1" : "0");
+            key.SetValue("LightPurge",             settings.LightPurge             ? "1" : "0");
             key.SetValue("IdleThresholdMinutes",   settings.IdleThresholdMinutes,  RegistryValueKind.DWord);
             key.SetValue("PurgeHotkey",            settings.PurgeHotkey            ?? "Ctrl+Alt+P");
             key.SetValue("TimerHotkey",            settings.TimerHotkey            ?? "Ctrl+Alt+T");
