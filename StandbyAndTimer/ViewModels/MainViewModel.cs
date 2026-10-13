@@ -506,7 +506,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     // Timer card lock, cycling Unlocked -> Locked -> InGame -> Unlocked.
     // Locked switches the timer on now ("always on"). InGame hands it to
-    // the games: on if one runs right now, off otherwise. Unlocked leaves
+    // the games: on now if one runs, and from then on it follows games
+    // starting and exiting; a timer already on stays on. Unlocked leaves
     // the running session alone and only affects the next start. App
     // auto-start is a separate setting.
     [RelayCommand]
@@ -529,9 +530,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 await ActivateTimerInternalAsync(silent: true).ConfigureAwait(true);
                 _timerStartedForGame = true;
                 break;
-            case TimerLockMode.InGame when !_anyGameRunning && TimerActive:
-                DeactivateTimer(notify: false);
-                break;
+            // InGame with no game running leaves a running timer alone:
+            // the cycle passes through InGame on the way from Locked to
+            // Unlocked, and unlocking must not switch the timer off.
         }
 
         StatusMessage = _localization.GetString(TimerLock switch
