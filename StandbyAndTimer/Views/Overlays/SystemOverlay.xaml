@@ -1,0 +1,94 @@
+<UserControl x:Class="StandbyAndTimer.Views.Overlays.SystemOverlay"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FontFamily="{StaticResource AppFont}" FontSize="13">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <Style x:Key="SysTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize"     Value="12"/>
+            <Setter Property="LineHeight"   Value="17"/>
+            <Setter Property="Foreground"   Value="{DynamicResource AppFgDim}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin"       Value="0,6,0,0"/>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- System settings, opened from the title bar's Administrator badge:
+         settings that change Windows itself. Each one is a card like the
+         one below; add new ones under it. The dim overlay closes the panel,
+         clicks inside do not (DialogMouseDown, as in AboutOverlay). -->
+    <Border Background="{DynamicResource ModalOverlayBrush}"
+            Visibility="{Binding SystemSettings.IsOpen, Converter={StaticResource BoolToVis}}">
+        <Border.InputBindings>
+            <MouseBinding MouseAction="LeftClick" Command="{Binding SystemSettings.CloseCommand}"/>
+        </Border.InputBindings>
+        <Border HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{DynamicResource Surface2Bg}"
+                BorderBrush="{DynamicResource BorderColor}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource RadiusLarge}"
+                Padding="22,18"
+                Width="480"
+                MouseLeftButtonDown="DialogMouseDown">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse Width="9" Height="9"
+                             Fill="{DynamicResource AccentPrimary}"
+                             VerticalAlignment="Center"
+                             Margin="0,0,8,0"/>
+                    <TextBlock Text="{DynamicResource Str_System_Title}"
+                               FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppFg}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+                <TextBlock Text="{DynamicResource Str_System_Subtitle}"
+                           FontSize="12"
+                           Foreground="{DynamicResource AppFgDim}"
+                           Margin="17,0,0,14"/>
+
+                <!-- Apply the timer to all games (GlobalTimerResolutionRequests) -->
+                <Border Style="{StaticResource SettingsGroupStyle}" Margin="0">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{DynamicResource Str_System_GlobalTimer}"
+                                       Style="{StaticResource SettingTitleStyle}"
+                                       VerticalAlignment="Center"/>
+                            <CheckBox Grid.Column="1"
+                                      IsChecked="{Binding SystemSettings.GlobalTimerEnabled}"
+                                      IsEnabled="{Binding SystemSettings.GlobalTimerSupported}"
+                                      Style="{StaticResource ToggleSwitchStyle}"/>
+                        </Grid>
+                        <TextBlock Text="{DynamicResource Str_System_GlobalTimerDesc1}" Style="{StaticResource SysTextStyle}" Margin="0,8,0,0"/>
+                        <TextBlock Text="{DynamicResource Str_System_GlobalTimerDesc2}" Style="{StaticResource SysTextStyle}"/>
+                        <TextBlock Text="{DynamicResource Str_System_GlobalTimerDesc3}" Style="{StaticResource SysTextStyle}"/>
+
+                        <TextBlock Text="{DynamicResource Str_System_RestartPending}"
+                                   Style="{StaticResource SysTextStyle}" Margin="0,10,0,0"
+                                   FontWeight="SemiBold" Foreground="{DynamicResource AccentText}"
+                                   Visibility="{Binding SystemSettings.RestartPending, Converter={StaticResource BoolToVis}}"/>
+                        <TextBlock Text="{DynamicResource Str_System_Unsupported}"
+                                   Style="{StaticResource SysTextStyle}" Margin="0,10,0,0"
+                                   FontWeight="SemiBold"
+                                   Visibility="{Binding SystemSettings.GlobalTimerUnsupported, Converter={StaticResource BoolToVis}}"/>
+                        <TextBlock Text="{DynamicResource Str_System_WriteFailed}"
+                                   Style="{StaticResource SysTextStyle}" Margin="0,10,0,0"
+                                   FontWeight="SemiBold" Foreground="{DynamicResource DangerColor}"
+                                   Visibility="{Binding SystemSettings.WriteFailed, Converter={StaticResource BoolToVis}}"/>
+                    </StackPanel>
+                </Border>
+
+                <Button Content="{DynamicResource Str_System_Close}"
+                        Command="{Binding SystemSettings.CloseCommand}"
+                        Style="{StaticResource DarkButtonStyle}"
+                        HorizontalAlignment="Right"
+                        MinWidth="80" Height="30"
+                        Margin="0,14,0,0"/>
+            </StackPanel>
+        </Border>
+    </Border>
+</UserControl>

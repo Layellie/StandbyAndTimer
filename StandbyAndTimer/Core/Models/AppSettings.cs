@@ -47,6 +47,16 @@ public sealed class AppSettings
     public bool        TimerIdleOffEnabled   { get; set; }
     public int         TimerIdleOffMinutes   { get; set; } = 10;
 
+    // System settings (Administrator badge): GlobalTimerResolutionRequests.
+    // The registry value itself is the state; these track the one-time
+    // start-up question, whether the app set it (uninstall reverts only
+    // then), and when it changed / what Windows started with, for the
+    // "restart pending" hint. Machine-specific: not taken from an import.
+    public bool        GlobalTimerPromptAnswered { get; set; }
+    public bool        GlobalTimerSetByApp       { get; set; }
+    public DateTime?   GlobalTimerChangedUtc     { get; set; }
+    public bool        GlobalTimerBootValue      { get; set; }
+
     // v2.1.0 — global hotkeys for manual purge / timer toggle. Stored as
     // "Ctrl+Alt+P"-style strings so the registry value is human-readable and
     // a future capture-textbox can round-trip via HotkeyBinding.Parse.

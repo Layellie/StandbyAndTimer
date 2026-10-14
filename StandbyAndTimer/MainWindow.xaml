@@ -109,6 +109,8 @@
             <!-- ═══════════════════ MODAL OVERLAYS ═══════════════════ -->
             <overlays:AboutOverlay  Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="18"/>
             <overlays:WizardOverlay Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="19"/>
+            <overlays:SystemOverlay Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="18"/>
+            <overlays:GlobalTimerPromptOverlay Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="19"/>
             <overlays:CloseConfirmationOverlay x:Name="CloseDialog"
                                                Grid.Row="0" Grid.RowSpan="3"
                                                Panel.ZIndex="20"

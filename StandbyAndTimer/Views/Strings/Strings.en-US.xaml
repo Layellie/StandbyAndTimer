@@ -12,6 +12,23 @@
 
     <!-- Card titles &amp; micro-labels (modern design) -->
     <sys:String x:Key="Str_TitleBar_Admin">Administrator</sys:String>
+
+    <!-- System settings (Administrator badge) and the one-time start-up question -->
+    <sys:String x:Key="Str_TitleBar_AdminTip">System settings</sys:String>
+    <sys:String x:Key="Str_System_Title">System settings</sys:String>
+    <sys:String x:Key="Str_System_Subtitle">Windows settings the app changes with administrator rights</sys:String>
+    <sys:String x:Key="Str_System_GlobalTimer">Apply the timer to all games</sys:String>
+    <sys:String x:Key="Str_System_GlobalTimerDesc1">On Windows 11, games that do not ask for a timer themselves (some story and single-player games) do not get 0.5 ms; Windows gives them the 15.6 ms default. Games that do ask (most shooters) already get 0.5 ms.</sys:String>
+    <sys:String x:Key="Str_System_GlobalTimerDesc2">This brings back Windows' old behaviour: while the timer is on, 0.5 ms applies to every program. Power use can go up a little.</sys:String>
+    <sys:String x:Key="Str_System_GlobalTimerDesc3">Switching this on or off needs one restart. After that, turning the TIMER on or off works right away, with no restart.</sys:String>
+    <sys:String x:Key="Str_System_RestartPending">Takes effect after a restart.</sys:String>
+    <sys:String x:Key="Str_System_Unsupported">This setting exists on Windows 11 only.</sys:String>
+    <sys:String x:Key="Str_System_WriteFailed">Could not write the setting; details in the log.</sys:String>
+    <sys:String x:Key="Str_System_Close">Close</sys:String>
+    <sys:String x:Key="Str_GlobalPrompt_Title">Apply the timer to all games?</sys:String>
+    <sys:String x:Key="Str_GlobalPrompt_Later">You can change it any time from the Administrator badge at the top right.</sys:String>
+    <sys:String x:Key="Str_GlobalPrompt_Yes">Turn on</sys:String>
+    <sys:String x:Key="Str_GlobalPrompt_No">Not now</sys:String>
     <sys:String x:Key="Str_Card_TimerTitle">TIMER RESOLUTION</sys:String>
     <sys:String x:Key="Str_Card_TimerLocked">LOCKED</sys:String>
     <sys:String x:Key="Str_Card_TimerUnlocked">UNLOCKED</sys:String>

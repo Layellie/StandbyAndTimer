@@ -67,6 +67,17 @@ public sealed class FakeLoc : ILocalizationService
     public event EventHandler? LanguageChanged { add { } remove { } }
 }
 
+// Windows 11 that already has the switch on, changed after the last boot:
+// the System settings panel renders its "restart pending" state. Writes
+// are accepted and go nowhere.
+public sealed class FakeGlobalTimer : IGlobalTimerSetting
+{
+    public bool IsSupported => true;
+    public bool IsEnabled { get; private set; } = true;
+    public bool TrySetEnabled(bool enabled) { IsEnabled = enabled; return true; }
+    public DateTime LastBootUtc => DateTime.UtcNow.AddHours(-1);
+}
+
 public static class Program
 {
     static T Null<T>() where T : class => DispatchProxy.Create<T, NullProxy>();
@@ -288,9 +299,11 @@ public static class Program
         var loc = new FakeLoc();
         var settingsVm = new SettingsViewModel(Null<IAutoStartService>(), loc, Null<ISettingsService>(),
                                                Null<IUpdateService>(), Null<IThemeService>(), Null<ILogTailReader>());
+        var systemVm = new SystemViewModel(new FakeGlobalTimer());
+        systemVm.Initialize(promptAnswered: true, setByApp: true, changedUtc: DateTime.UtcNow, bootValue: false);
         var vm = new MainViewModel(Null<ITimerResolutionService>(), Null<IStandbyPurgeService>(),
                                    Null<IMemoryMonitorService>(), Null<ISettingsService>(), loc,
-                                   Null<IGameDetectionService>(), settingsVm);
+                                   Null<IGameDetectionService>(), settingsVm, systemVm);
 
         // Sample data written straight to the backing fields: no OnXChanged
         // partials run, so nothing tries to persist.
@@ -641,6 +654,14 @@ public static class Program
                 }
                 failures += CheckLayout(root, $"{tag} {name}");
                 SetField(vm, flag, false); raise.Invoke(vm, [prop]); Pump();
+            }
+            // System settings panel (restart pending) and the start-up question.
+            foreach (var (show, name) in new (Action<bool>, string)[] { (v => systemVm.IsOpen = v, "system"), (v => systemVm.IsPromptVisible = v, "prompt") })
+            {
+                show(true); Pump();
+                Save(root, Path.Combine(outDir, $"{tag}-4-{name}.png"));
+                failures += CheckLayout(root, $"{tag} {name}");
+                show(false); Pump();
             }
             {
                 var purge = Walk(root).OfType<StandbyAndTimer.Views.Cards.StandbyPurgeCard>().Single();

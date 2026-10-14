@@ -16,11 +16,21 @@ internal sealed class SettingsService : ISettingsService
     // Tests point it at a throwaway HKCU key.
     internal SettingsService(string keyPath) => _keyPath = keyPath;
 
+    // Set when Load could not read what is stored. Save then writes nothing
+    // for the rest of the session: otherwise the defaults Load fell back to
+    // would overwrite every stored setting at exit (an update with a read
+    // bug would wipe the user's settings).
+    private bool _loadFailed;
+
+    // Tests: makes the next Load fail the way a read bug would.
+    internal Action? BeforeRead { get; set; }
+
     public AppSettings Load()
     {
         try
         {
             using var key = Registry.CurrentUser.OpenSubKey(_keyPath);
+            BeforeRead?.Invoke();
             if (key is null)
                 return new AppSettings();
 
@@ -52,6 +62,10 @@ internal sealed class SettingsService : ISettingsService
                 IdleThresholdMinutes  = GetInt (key,     "IdleThresholdMinutes", 5),
                 TimerIdleOffEnabled   = GetBool(key,     "TimerIdleOffEnabled"),
                 TimerIdleOffMinutes   = GetInt (key,     "TimerIdleOffMinutes", 10),
+                GlobalTimerPromptAnswered = GetBool(key, "GlobalTimerPromptAnswered"),
+                GlobalTimerSetByApp       = GetBool(key, "GlobalTimerSetByApp"),
+                GlobalTimerChangedUtc     = GetUtc (key, "GlobalTimerChangedUtc"),
+                GlobalTimerBootValue      = GetBool(key, "GlobalTimerBootValue"),
 
                 PurgeHotkey           = key.GetValue("PurgeHotkey")?.ToString() ?? "Ctrl+Alt+P",
                 TimerHotkey           = key.GetValue("TimerHotkey")?.ToString() ?? "Ctrl+Alt+T",
@@ -79,17 +93,24 @@ internal sealed class SettingsService : ISettingsService
                 .ToList();
             settings.IgnoredGamePaths = SplitPaths(key.GetValue("IgnoredGamePaths")).ToList();
 
+            _loadFailed = false;
             return settings;
         }
         catch (Exception ex)
         {
             Logger.Error("SettingsService.Load", ex);
+            _loadFailed = true;   // see the field: keep what is stored
             return new AppSettings();
         }
     }
 
     public void Save(AppSettings settings)
     {
+        if (_loadFailed)
+        {
+            Logger.Warn("SettingsService.Save skipped: settings failed to load this session, stored values kept");
+            return;
+        }
         try
         {
             using var key = Registry.CurrentUser.CreateSubKey(_keyPath);
@@ -119,6 +140,13 @@ internal sealed class SettingsService : ISettingsService
             key.SetValue("IdleThresholdMinutes",   settings.IdleThresholdMinutes,  RegistryValueKind.DWord);
             key.SetValue("TimerIdleOffEnabled",    settings.TimerIdleOffEnabled    ? "1" : "0");
             key.SetValue("TimerIdleOffMinutes",    settings.TimerIdleOffMinutes,   RegistryValueKind.DWord);
+            key.SetValue("GlobalTimerPromptAnswered", settings.GlobalTimerPromptAnswered ? "1" : "0");
+            key.SetValue("GlobalTimerSetByApp",       settings.GlobalTimerSetByApp       ? "1" : "0");
+            key.SetValue("GlobalTimerBootValue",      settings.GlobalTimerBootValue      ? "1" : "0");
+            if (settings.GlobalTimerChangedUtc is { } changed)
+                key.SetValue("GlobalTimerChangedUtc", changed.ToUniversalTime().ToString("o", CultureInfo.InvariantCulture));
+            else
+                key.DeleteValue("GlobalTimerChangedUtc", throwOnMissingValue: false);
             key.SetValue("PurgeHotkey",            settings.PurgeHotkey            ?? "Ctrl+Alt+P");
             key.SetValue("TimerHotkey",            settings.TimerHotkey            ?? "Ctrl+Alt+T");
             key.SetValue("AutoPurgeHotkey",        settings.AutoPurgeHotkey        ?? "Ctrl+Alt+O");
@@ -175,6 +203,12 @@ internal sealed class SettingsService : ISettingsService
         if (v == "0")  return false;
         return bool.TryParse(v, out bool parsed) ? parsed : defaultValue;
     }
+
+    // Round-trip ("o") UTC timestamp; missing or unparsable is null.
+    private static DateTime? GetUtc(RegistryKey key, string name) =>
+        DateTime.TryParse(key.GetValue(name)?.ToString(), CultureInfo.InvariantCulture,
+                          DateTimeStyles.RoundtripKind, out var t)
+            ? t.ToUniversalTime() : null;
 
     // Enum.TryParse also accepts any number ("7"), giving a value the enum
     // does not define; a hand-edited or corrupt value falls back instead.

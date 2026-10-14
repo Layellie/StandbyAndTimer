@@ -74,6 +74,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<GameEntry> Games    { get; } = [];
     public SettingsViewModel               Settings { get; }
+    public SystemViewModel                 SystemSettings { get; }
 
     public string TimerButtonLabel => _localization.GetString(
         TimerActive ? "Str_Timer_Active" : "Str_Timer_Inactive");
@@ -106,7 +107,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         ISettingsService            settingsService,
         ILocalizationService        localization,
         IGameDetectionService       gameDetection,
-        SettingsViewModel           settingsViewModel)
+        SettingsViewModel           settingsViewModel,
+        SystemViewModel?            systemViewModel = null)
     {
         _timerService    = timerService;
         _purgeService    = purgeService;
@@ -117,8 +119,21 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
         Settings = settingsViewModel;
         Settings.SettingsChanged   += (_, _) => PersistSettings();
-        Settings.SettingsImported  += (_, imported) => ApplySettings(imported);
+        // System settings describe this machine (its registry, its last
+        // boot), not the exported one: an import keeps the current values.
+        Settings.SettingsImported  += (_, imported) =>
+        {
+            var now = BuildCurrentSettings();
+            imported.GlobalTimerPromptAnswered = now.GlobalTimerPromptAnswered;
+            imported.GlobalTimerSetByApp       = now.GlobalTimerSetByApp;
+            imported.GlobalTimerChangedUtc     = now.GlobalTimerChangedUtc;
+            imported.GlobalTimerBootValue      = now.GlobalTimerBootValue;
+            ApplySettings(imported);
+        };
         Settings.SnapshotProvider  = BuildCurrentSettings;
+
+        SystemSettings = systemViewModel ?? SystemViewModel.Inert();
+        SystemSettings.SettingsChanged += (_, _) => PersistSettings();
 
         _memoryService.SnapshotUpdated     += OnSnapshotUpdated;
         _purgeService.PurgeSucceeded       += OnPurgeSucceeded;
@@ -154,6 +169,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         // crash mid-wizard won't strand them out of the onboarding.
         if (!settings.FirstRunCompleted)
             await Application.Current.Dispatcher.InvokeAsync(() => IsWizardVisible = true);
+        else
+            // The one-time "apply the timer to all games?" question; on a
+            // first run it follows the wizard (DismissWizard).
+            await OnUiAsync(SystemSettings.MaybeShowPrompt).ConfigureAwait(false);
     }
 
     // ── Settings helpers ──────────────────────────────────────────────────────
@@ -191,6 +210,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 s.NotifyOnPurge, s.NotifyOnTimerToggle, s.NotifyOnGameDetected,
                 s.PurgeHotkey, s.TimerHotkey, s.AutoPurgeHotkey,
                 s.TimerIdleOffEnabled, s.TimerIdleOffMinutes);
+            SystemSettings.Initialize(s.GlobalTimerPromptAnswered, s.GlobalTimerSetByApp,
+                              s.GlobalTimerChangedUtc, s.GlobalTimerBootValue);
         }
         SyncMonitorThresholds();
         SyncMonitorGames();
@@ -297,6 +318,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         AutoPurgeHotkey       = Settings.AutoPurgeHotkeyText,
         TimerIdleOffEnabled   = Settings.TimerIdleOffEnabled,
         TimerIdleOffMinutes   = Settings.TimerIdleOffMinutes,
+        GlobalTimerPromptAnswered = SystemSettings.PromptAnswered,
+        GlobalTimerSetByApp       = SystemSettings.GlobalTimerSetByApp,
+        GlobalTimerChangedUtc     = SystemSettings.GlobalTimerChangedUtc,
+        GlobalTimerBootValue      = SystemSettings.GlobalTimerBootValue,
         FirstRunCompleted     = _firstRunCompleted,
         Games                 = [.. Games],
         IgnoredGamePaths      = [.. _ignoredGamePaths]
@@ -742,6 +767,17 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         // Persist immediately so the wizard doesn't return on the next launch
         // even if the process is killed before normal OnExit shutdown runs.
         _settingsService.Save(BuildCurrentSettings());
+        SystemSettings.MaybeShowPrompt();
+    }
+
+    // UI-thread work from InitializeAsync, which may resume off it. Inline
+    // when already on the UI thread (a blocked caller would deadlock on
+    // InvokeAsync) or without a WPF Application (unit tests).
+    private static Task OnUiAsync(Action action)
+    {
+        if (Application.Current?.Dispatcher is { } d && !d.CheckAccess()) return d.InvokeAsync(action).Task;
+        action();
+        return Task.CompletedTask;
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

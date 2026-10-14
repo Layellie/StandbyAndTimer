@@ -12,6 +12,23 @@
 
     <!-- Yeni kart başlıkları ve mikro-etiketler (modern tasarım) -->
     <sys:String x:Key="Str_TitleBar_Admin">Yönetici</sys:String>
+
+    <!-- Sistem ayarları (Yönetici rozeti) ve açılıştaki tek seferlik soru -->
+    <sys:String x:Key="Str_TitleBar_AdminTip">Sistem ayarları</sys:String>
+    <sys:String x:Key="Str_System_Title">Sistem ayarları</sys:String>
+    <sys:String x:Key="Str_System_Subtitle">Uygulamanın yönetici izniyle Windows'ta değiştirdiği ayarlar</sys:String>
+    <sys:String x:Key="Str_System_GlobalTimer">Timer'ı tüm oyunlara uygula</sys:String>
+    <sys:String x:Key="Str_System_GlobalTimerDesc1">Windows 11'de timer'ı kendisi istemeyen oyunlar (bazı hikâye ve tek oyunculu oyunlar) 0,5 ms'yi almaz; Windows onlara varsayılan 15,6 ms'yi verir. Timer'ı kendisi isteyen oyunlar (FPS oyunlarının çoğu) 0,5 ms'yi zaten alır.</sys:String>
+    <sys:String x:Key="Str_System_GlobalTimerDesc2">Bu ayar Windows'un eski davranışını geri getirir: timer açıkken 0,5 ms tüm programlara uygulanır. Güç tüketimi biraz artabilir.</sys:String>
+    <sys:String x:Key="Str_System_GlobalTimerDesc3">Ayarı açıp kapatmak bir kez yeniden başlatma ister. Sonrasında TIMER'ı açıp kapatmak anında etki eder, yeniden başlatma gerekmez.</sys:String>
+    <sys:String x:Key="Str_System_RestartPending">Yeniden başlatınca geçerli olur.</sys:String>
+    <sys:String x:Key="Str_System_Unsupported">Bu ayar sadece Windows 11'de var.</sys:String>
+    <sys:String x:Key="Str_System_WriteFailed">Ayar yazılamadı; ayrıntı log'da.</sys:String>
+    <sys:String x:Key="Str_System_Close">Kapat</sys:String>
+    <sys:String x:Key="Str_GlobalPrompt_Title">Timer tüm oyunlara uygulansın mı?</sys:String>
+    <sys:String x:Key="Str_GlobalPrompt_Later">İstediğin zaman sağ üstteki Yönetici rozetinden değiştirebilirsin.</sys:String>
+    <sys:String x:Key="Str_GlobalPrompt_Yes">Aç</sys:String>
+    <sys:String x:Key="Str_GlobalPrompt_No">Şimdilik hayır</sys:String>
     <sys:String x:Key="Str_Card_TimerTitle">TIMER ÇÖZÜNÜRLÜĞÜ</sys:String>
     <sys:String x:Key="Str_Card_TimerLocked">KİLİTLİ</sys:String>
     <sys:String x:Key="Str_Card_TimerUnlocked">KİLİTSİZ</sys:String>
