@@ -65,6 +65,18 @@ internal static class NativeMethods
         ref PROCESS_POWER_THROTTLING_STATE processInformation,
         int    processInformationSize);
 
+    /// <summary>
+    /// With (-1, -1): removes as many pages as possible from the process's
+    /// working set (they move to the standby / modified lists and fault back
+    /// in on use). Used once when the window goes to the tray.
+    /// </summary>
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool SetProcessWorkingSetSize(IntPtr hProcess, nint dwMinimumWorkingSetSize, nint dwMaximumWorkingSetSize);
+
+    [DllImport("kernel32.dll")]
+    internal static extern IntPtr GetCurrentProcess();
+
     /// <summary>Prevents the system from sleeping while the app is running.</summary>
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     internal static extern uint SetThreadExecutionState(uint esFlags);

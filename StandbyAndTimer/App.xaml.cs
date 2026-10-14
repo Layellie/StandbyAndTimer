@@ -174,7 +174,7 @@ public partial class App : Application
         StartShowWindowListener(_showWindowSignal!, _showWindowSignalCts!.Token);
 
         // Hotkeys require the HWND to exist, which is guaranteed after Show()
-        // (and after HideOffscreen, since that internally calls Show too).
+        // (and after HideOffscreen, which creates it without showing the window).
         // Each binding dispatches back to the UI thread; the command itself
         // does the dispatcher hop work.
         var hotkeys = _services.GetRequiredService<IHotkeyService>();

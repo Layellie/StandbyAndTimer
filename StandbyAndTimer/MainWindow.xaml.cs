@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Threading;
 using StandbyAndTimer.Services.Native;
 using StandbyAndTimer.ViewModels;
 
@@ -12,9 +13,12 @@ public partial class MainWindow : Window
 
     private bool _forceClose;
 
-    // Off-screen "hidden" state — the window stays Visible (so DWM keeps compositing
-    // it, which is what stops Win11 from throttling our 0.5 ms timer request), but
-    // is moved off the desktop, made transparent, and removed from the taskbar.
+    // Tray state. The window used to stay Visible off-screen at Opacity 0 so
+    // Windows 11 would not ignore the timer request of a hidden window. The
+    // process opts out of that throttling (App.DisablePowerThrottling), and
+    // measured with the window really hidden the system stayed at 0.5 ms
+    // while a game held 1 ms; a visible window kept rendering (bindings tick
+    // every second) and held its GPU resources for nothing.
     private bool   _offscreen;
     private double _savedLeft = double.NaN;
     private double _savedTop  = double.NaN;
@@ -76,7 +80,7 @@ public partial class MainWindow : Window
 
     // ── Off-screen "tray" mode ────────────────────────────────────────────────
 
-    /// <summary>True while the window is parked at (-32000, -32000) with Opacity=0 — i.e. "in the tray".</summary>
+    /// <summary>True while the window is hidden in the tray.</summary>
     internal bool IsOffscreen => _offscreen;
 
     /// <summary>
@@ -92,7 +96,7 @@ public partial class MainWindow : Window
         if (_offscreen) return;
         _offscreen = true;
 
-        if (WindowState == WindowState.Normal)
+        if (IsVisible && WindowState == WindowState.Normal)
         {
             _savedLeft = Left;
             _savedTop  = Top;
@@ -100,17 +104,21 @@ public partial class MainWindow : Window
 
         WindowState   = WindowState.Normal;
         ShowInTaskbar = false;
-        Opacity       = 0;
-        Left          = -32000;
-        Top           = -32000;
-
-        if (!IsVisible) Show();
+        // The HWND must exist even if the window was never shown (start-up
+        // with -hidden): hotkeys and the single-instance signal attach to it.
+        new WindowInteropHelper(this).EnsureHandle();
+        Hide();
+        SetRenderMode(RenderMode.SoftwareOnly);   // let WPF drop its GPU resources while hidden
+        // Once the hide has been processed: give the pages the window no
+        // longer touches back to Windows (games can use that RAM).
+        Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(TrimWorkingSet));
     }
 
     internal void ShowFromOffscreen()
     {
         _offscreen = false;
 
+        SetRenderMode(RenderMode.Default);
         Opacity       = 1;
         ShowInTaskbar = true;
 
@@ -130,6 +138,19 @@ public partial class MainWindow : Window
         Activate();
     }
 
+
+    private void SetRenderMode(RenderMode mode)
+    {
+        if (HwndSource.FromHwnd(new WindowInteropHelper(this).Handle)?.CompositionTarget is { } target)
+            target.RenderMode = mode;
+    }
+
+    private void TrimWorkingSet()
+    {
+        if (!_offscreen) return;   // shown again meanwhile
+        if (!NativeMethods.SetProcessWorkingSetSize(NativeMethods.GetCurrentProcess(), -1, -1))
+            Services.Logger.Warn($"Working set trim failed: {System.Runtime.InteropServices.Marshal.GetLastWin32Error()}");
+    }
     protected override void OnStateChanged(EventArgs e)
     {
         base.OnStateChanged(e);
