@@ -37,3 +37,16 @@ public class ProcessSnapshotTests
             Assert.Contains(self, RunningGames.Take().Names);
     }
 }
+
+public class ProcessShortNameTests
+{
+    [Theory]
+    [InlineData("cs2.exe", "cs2")]
+    [InlineData("VALORANT-Win64-Shipping.EXE", "VALORANT-Win64-Shipping")]
+    [InlineData("my.game.exe", "my.game")]
+    [InlineData("provjobd.exe448854178", "provjobd.exe448854178")]   // seen on a CI runner
+    [InlineData("Memory Compression", "Memory Compression")]
+    [InlineData("Registry", "Registry")]
+    public void Names_follow_Process_ProcessName(string image, string expected) =>
+        Assert.Equal(expected, RunningGames.ShortName(image));
+}

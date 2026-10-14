@@ -97,7 +97,7 @@ internal static class RunningGames
                         IntPtr text = Marshal.ReadIntPtr(entry, ImageNameBuffer);
                         if (text != IntPtr.Zero && length > 0)   // the Idle process has no name
                         {
-                            string name = Path.GetFileNameWithoutExtension(Marshal.PtrToStringUni(text, length / 2));
+                            string name = ShortName(Marshal.PtrToStringUni(text, length / 2));
                             snapshot.Add(name, (int)Marshal.ReadIntPtr(entry, UniqueProcessId));
                         }
                         int next = Marshal.ReadInt32(entry, NextEntryOffset);
@@ -115,6 +115,14 @@ internal static class RunningGames
             }
         }
     }
+
+    /// <summary>
+    /// The name Process.ProcessName gives the same image: only a trailing
+    /// ".exe" is removed ("provjobd.exe448854178" stays as it is; a CI runner
+    /// has one). Path.GetFileNameWithoutExtension would cut any extension.
+    /// </summary>
+    internal static string ShortName(string imageName) =>
+        imageName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? imageName[..^4] : imageName;
 
     private static void Grow(int size)
     {
