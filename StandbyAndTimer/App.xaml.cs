@@ -26,6 +26,9 @@ namespace StandbyAndTimer;
 public partial class App : Application
 {
     private static Mutex? _singleInstanceMutex;
+    // A second launch opens the mutex without owning it; releasing it then
+    // threw in OnExit and crashed that process (WER event 1000).
+    private static bool   _ownsSingleInstanceMutex;
 
     private readonly CrashHandler _crashHandler = new();
 
@@ -79,6 +82,7 @@ public partial class App : Application
         // dialog. The primary listener dispatches to the UI thread and
         // surfaces the window from offscreen / tray.
         _singleInstanceMutex = new Mutex(true, AppConstants.SingleInstanceMutexName, out bool isNewInstance);
+        _ownsSingleInstanceMutex = isNewInstance;
         if (!isNewInstance)
         {
             try
@@ -272,7 +276,7 @@ public partial class App : Application
         _showWindowSignal?.Dispose();
         _showWindowSignalCts?.Dispose();
 
-        _singleInstanceMutex?.ReleaseMutex();
+        if (_ownsSingleInstanceMutex) _singleInstanceMutex?.ReleaseMutex();
         _singleInstanceMutex?.Dispose();
 
         base.OnExit(e);

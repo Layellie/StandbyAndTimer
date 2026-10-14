@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO;
 using StandbyAndTimer.Core.Interfaces;
 using StandbyAndTimer.Infrastructure;
 
@@ -22,7 +23,9 @@ internal sealed class AutoStartService : IAutoStartService
     {
         try
         {
-            var psi = new ProcessStartInfo("schtasks.exe", args)
+            // Full path: this process is elevated, and a bare name is also
+            // looked up in the current directory (Setup.iss uses {sys} too).
+            var psi = new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "schtasks.exe"), args)
             {
                 WindowStyle    = ProcessWindowStyle.Hidden,
                 CreateNoWindow = true

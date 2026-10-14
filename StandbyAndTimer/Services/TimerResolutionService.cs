@@ -104,8 +104,9 @@ internal sealed class TimerResolutionService : ITimerResolutionService
         //    drift can never persist longer than ~50 ms even with a CPU-bound
         //    game running on the same cores.
         StopWatchdog();
-        _watchdogStop = new ManualResetEventSlim(initialState: false);
-        _watchdogThread = new Thread(WatchdogLoop)
+        var stop = new ManualResetEventSlim(initialState: false);
+        _watchdogStop = stop;
+        _watchdogThread = new Thread(() => WatchdogLoop(stop))
         {
             Name         = "TimerResolution-Watchdog",
             IsBackground = true,
@@ -140,10 +141,14 @@ internal sealed class TimerResolutionService : ITimerResolutionService
         _watchdogStop?.Set();
         // Bounded join — if the thread is somehow stuck (e.g. an MMCSS revert
         // taking longer than expected during shutdown), we don't want to hang
-        // the whole process; the OS will reclaim the thread anyway.
-        _watchdogThread?.Join(TimeSpan.FromMilliseconds(500));
+        // the whole process; the OS will reclaim the thread anyway. Each
+        // thread owns its stop event, so a straggler cannot pick up the next
+        // Activate's event; it is only disposed once its thread has ended
+        // (a Wait on a disposed event would throw on that raw thread and
+        // take the process down).
+        bool ended = _watchdogThread?.Join(TimeSpan.FromMilliseconds(500)) ?? true;
         _watchdogThread = null;
-        _watchdogStop?.Dispose();
+        if (ended) _watchdogStop?.Dispose();
         _watchdogStop = null;
     }
 
@@ -151,7 +156,7 @@ internal sealed class TimerResolutionService : ITimerResolutionService
     // WatchdogTickMs. Registers as AVRT "Pro Audio" on entry so Win 11 won't
     // EcoQoS-throttle the watchdog itself — without this, the very thread
     // responsible for fighting throttling could be throttled.
-    private void WatchdogLoop()
+    private void WatchdogLoop(ManualResetEventSlim stop)
     {
         uint taskIndex = 0;
         IntPtr avrt = NativeMethods.AvSetMmThreadCharacteristics(AppConstants.MmcssProAudioTaskName, ref taskIndex);
@@ -159,7 +164,7 @@ internal sealed class TimerResolutionService : ITimerResolutionService
         {
             // ManualResetEventSlim.Wait(timeout) returns true on signal, false
             // on timeout — looping until signal gives clean cancellation.
-            while (_watchdogStop is { } stop && !stop.Wait(WatchdogTickMs))
+            while (!stop.Wait(WatchdogTickMs))
                 SelfHeal();
         }
         finally

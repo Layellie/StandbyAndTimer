@@ -116,37 +116,58 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
         {
             while (await timer.WaitForNextTickAsync(ct).ConfigureAwait(false))
             {
-                // Which listed games run right now: one process enumeration
-                // per tick, and only when there is a list to check.
-                var watched = WatchedGamePaths;
-                List<string> running = watched.Count > 0
-                    ? RunningGames.Match(watched, RunningGames.CurrentProcessNames())
-                    : [];
-
-                var snapshot = ReadSnapshot() with { RunningGamePaths = running };
-                SnapshotUpdated?.Invoke(this, snapshot);
-
-                // Idle gate: when AutoPurgeIdleOnly is on, suppress the purge
-                // until the user has been quiet for IdleThresholdMs.
-                bool idleGate = !AutoPurgeIdleOnly
-                             || _idleMonitor.TimeSinceLastInput.TotalMilliseconds >= IdleThresholdMs;
-
-                var noPurge = NoAutoPurgeGamePaths;
-                bool blocked = noPurge.Count > 0
-                    && running.Any(p => noPurge.Contains(p, StringComparer.OrdinalIgnoreCase));
-
-                bool purgeNeeded = ShouldAutoPurge(AutoPurgeEnabled, StandbyLimitMb, FreeLimitMb, snapshot,
-                    idleGate, blocked, AutoPurgeOnlyInGames, running.Count > 0);
-
-                if (purgeNeeded)
-                    await _purgeService.PurgeAsync().ConfigureAwait(false);
-
-                if (GameModeEnabled && GamePaths.Count > 0)
-                    await _processService.CheckAndOptimizeAsync(GamePaths).ConfigureAwait(false);
+                // One bad tick must not end the loop: auto purge, game
+                // boost and game detection would stop until a restart.
+                try { await TickAsync().ConfigureAwait(false); }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    Logger.Warn($"MemoryMonitor tick: {ex.GetType().Name}: {ex.Message}");
+                }
             }
         }
         catch (OperationCanceledException) { }
     }
+
+    private async Task TickAsync()
+    {
+        // Which listed games run right now: one process enumeration
+        // per tick, and only when there is a list to check.
+        var watched = WatchedGamePaths;
+        List<string> running = watched.Count > 0
+            ? RunningGames.Match(watched, RunningGames.CurrentProcessNames())
+            : [];
+
+        var snapshot = ReadSnapshot() with { RunningGamePaths = running };
+        SnapshotUpdated?.Invoke(this, snapshot);
+
+        // Idle gate: when AutoPurgeIdleOnly is on, suppress the purge
+        // until the user has been quiet for IdleThresholdMs.
+        bool idleGate = !AutoPurgeIdleOnly
+                     || _idleMonitor.TimeSinceLastInput.TotalMilliseconds >= IdleThresholdMs;
+
+        var noPurge = NoAutoPurgeGamePaths;
+        bool blocked = noPurge.Count > 0
+            && running.Any(p => noPurge.Contains(p, StringComparer.OrdinalIgnoreCase));
+
+        bool purgeNeeded = ShouldAutoPurge(AutoPurgeEnabled, StandbyLimitMb, FreeLimitMb, snapshot,
+            idleGate, blocked, AutoPurgeOnlyInGames, running.Count > 0);
+
+        if (purgeNeeded)
+            await _purgeService.PurgeAsync().ConfigureAwait(false);
+
+        if (GameModeEnabled && GamePaths.Count > 0)
+            await _processService.CheckAndOptimizeAsync(BoostTargets(GamePaths, running)).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The boost-enabled games that are running. GamePaths is a subset of
+    /// WatchedGamePaths, so <paramref name="running"/> already tells which run;
+    /// passing only those saves a full process snapshot (~2.5 ms measured)
+    /// per listed game per second. Called even when empty, so exited PIDs
+    /// are still pruned.
+    /// </summary>
+    internal static List<string> BoostTargets(IReadOnlyList<string> boostPaths, IReadOnlyList<string> running) =>
+        boostPaths.Where(p => running.Contains(p, StringComparer.OrdinalIgnoreCase)).ToList();
 
     /// <summary>
     /// The automatic purge decision, Win32-free. Master switch on, both
