@@ -41,6 +41,12 @@ public sealed class AppSettings
     public bool        AutoPurgeOnlyInGames  { get; set; }
     public int         IdleThresholdMinutes  { get; set; } = 5;
 
+    // v2.4.0 — switch the timer off after this many minutes without input
+    // (an active timer also keeps Windows from sleeping), back on at the
+    // next input. Off by default: unchanged behaviour on upgrade.
+    public bool        TimerIdleOffEnabled   { get; set; }
+    public int         TimerIdleOffMinutes   { get; set; } = 10;
+
     // v2.1.0 — global hotkeys for manual purge / timer toggle. Stored as
     // "Ctrl+Alt+P"-style strings so the registry value is human-readable and
     // a future capture-textbox can round-trip via HotkeyBinding.Parse.

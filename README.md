@@ -29,8 +29,8 @@ StandbyAndTimer runs in the system tray and does three separate jobs. You can us
 ## How to use it
 
 1. Download the installer from the [latest release](https://github.com/Layellie/StandbyAndTimer/releases/latest) and run it. It asks for administrator rights, because changing the timer and memory settings needs them.
-2. Press **TIMER**. If you want the timer on every time the app starts, click **UNLOCKED** on the Timer card to lock it.
-3. Leave **AUTO PURGE** off unless your games stutter when RAM fills up. If they do, turn it on and set the two limits. The **?** button has a table of suggested values for each RAM size.
+2. Press **TIMER**. If you want the timer on every time the app starts, click **UNLOCKED** on the Timer card to lock it. While the timer is on, Windows does not go to sleep by itself; to change that, pick a time under Settings → General → **Turn the timer off when idle**.
+3. Leave **AUTO PURGE** off unless your games stutter when RAM fills up. If they do, turn it on and set the two limits. The **?** button opens a guide to every feature, with suggested limits for each RAM size.
 4. Close the window when you are done. The app keeps working from the tray; right click the tray icon for quick actions.
 
 Hotkeys work from anywhere: `Ctrl+Alt+P` clears standby memory, `Ctrl+Alt+T` turns the timer on or off, `Ctrl+Alt+O` turns auto purge on or off. You can change them under Settings.
@@ -56,7 +56,7 @@ WPF on .NET 10, MVVM. Every Windows API call lives in `Services/Native/NativeMet
 ```powershell
 dotnet build StandbyAndTimer/StandbyAndTimer.csproj -c Release
 dotnet run --project StandbyAndTimer/StandbyAndTimer.csproj   # run as administrator
-.\build-installer.ps1 -Version 2.3.1                          # needs Inno Setup 6
+.\build-installer.ps1 -Version 2.4.0                          # needs Inno Setup 6
 ```
 
 ## License
@@ -80,8 +80,8 @@ StandbyAndTimer sistem tepsisinde çalışır ve birbirinden bağımsız üç i�
 ## Nasıl kullanılır?
 
 1. Kurulum dosyasını [son sürümden](https://github.com/Layellie/StandbyAndTimer/releases/latest) indirip çalıştırın. Timer ve bellek ayarlarını değiştirmek yönetici yetkisi gerektirdiği için kurulum bu yetkiyi ister.
-2. **TIMER** butonuna basın. Timer'ın uygulama her açıldığında açık gelmesini istiyorsanız Timer kartındaki **KİLİTSİZ** yazısına tıklayıp kilitleyin.
-3. Oyunlarınız RAM dolduğunda takılmıyorsa **OTO TEMİZLE**'yi kapalı bırakın. Takılıyorsa açın ve iki sınırı ayarlayın. **?** butonunda her RAM boyutu için önerilen değerlerin tablosu var.
+2. **TIMER** butonuna basın. Timer'ın uygulama her açıldığında açık gelmesini istiyorsanız Timer kartındaki **KİLİTSİZ** yazısına tıklayıp kilitleyin. Timer açıkken Windows kendiliğinden uykuya geçmez; bunu değiştirmek için Ayarlar → Genel → **Boştayken timer'ı kapat** altından bir süre seçin.
+3. Oyunlarınız RAM dolduğunda takılmıyorsa **OTO TEMİZLE**'yi kapalı bırakın. Takılıyorsa açın ve iki sınırı ayarlayın. **?** butonu her özelliği anlatan bir kılavuz açar; her RAM boyutu için önerilen sınırlar da orada.
 4. İşiniz bitince pencereyi kapatın. Uygulama tepside çalışmaya devam eder; hızlı işlemler için tepsi simgesine sağ tıklayın.
 
 Kısayollar her yerden çalışır: `Ctrl+Alt+P` standby belleği temizler, `Ctrl+Alt+T` timer'ı açıp kapatır, `Ctrl+Alt+O` oto temizlemeyi açıp kapatır. Ayarlar sekmesinden değiştirebilirsiniz.
@@ -107,7 +107,7 @@ Her sürümün notları [Releases sayfasında](https://github.com/Layellie/Stand
 ```powershell
 dotnet build StandbyAndTimer/StandbyAndTimer.csproj -c Release
 dotnet run --project StandbyAndTimer/StandbyAndTimer.csproj   # yönetici olarak çalıştırın
-.\build-installer.ps1 -Version 2.3.1                          # Inno Setup 6 gerekir
+.\build-installer.ps1 -Version 2.4.0                          # Inno Setup 6 gerekir
 ```
 
 ## Lisans

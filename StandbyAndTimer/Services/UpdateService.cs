@@ -75,10 +75,20 @@ internal sealed partial class UpdateService : IUpdateService
     public async Task DownloadAsync(
         string             assetUrl,
         string             targetPath,
-        string             expectedSha256 = "",
+        string             expectedSha256,
         IProgress<double>? progress       = null,
         CancellationToken  ct             = default)
     {
+        // This process is elevated and runs what it downloads, so it never
+        // runs an installer it cannot verify. Checked before any network.
+        string expected = NormalizeSha256(expectedSha256);
+
+        // %TEMP% is writable by the (non-elevated) user: a file, hard link or
+        // symlink planted at the target path would make this elevated write
+        // land somewhere else. Remove whatever is there and create anew;
+        // CreateNew fails rather than follow anything put back meanwhile.
+        if (File.Exists(targetPath)) File.Delete(targetPath);
+
         using var resp = await _download
             .GetAsync(assetUrl, HttpCompletionOption.ResponseHeadersRead, ct)
             .ConfigureAwait(false);
@@ -93,7 +103,7 @@ internal sealed partial class UpdateService : IUpdateService
 
         // Stream into the destination file while feeding the same bytes into
         // the hash transform — no second read pass needed.
-        await using (var dst = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None))
+        await using (var dst = new FileStream(targetPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
         {
             var buffer = new byte[81920];
             int read;
@@ -109,30 +119,61 @@ internal sealed partial class UpdateService : IUpdateService
         }
 
         string actual = Convert.ToHexString(sha.Hash!).ToLowerInvariant();
-
-        if (!string.IsNullOrWhiteSpace(expectedSha256))
+        if (!string.Equals(actual, expected, StringComparison.Ordinal))
         {
-            string expected = expectedSha256.Trim().ToLowerInvariant();
-            if (!string.Equals(actual, expected, StringComparison.Ordinal))
-            {
-                try { File.Delete(targetPath); } catch { /* best-effort cleanup */ }
-                Logger.Error($"Update SHA256 mismatch — expected {expected}, got {actual}. File deleted.");
-                throw new InvalidDataException(
-                    $"Downloaded installer failed integrity check (SHA-256 mismatch).");
-            }
-            Logger.Info($"Update SHA256 verified: {actual}");
+            try { File.Delete(targetPath); } catch { /* best-effort cleanup */ }
+            Logger.Error($"Update SHA256 mismatch — expected {expected}, got {actual}. File deleted.");
+            throw new InvalidDataException(
+                $"Downloaded installer failed integrity check (SHA-256 mismatch).");
         }
-        else
-        {
-            Logger.Warn($"Update SHA256 not published by release — installer hash is {actual}. " +
-                        $"Skipping integrity verification.");
-        }
-
+        Logger.Info($"Update SHA256 verified: {actual}");
         Logger.Info($"Update download finished: {downloaded:N0} bytes -> {targetPath}");
     }
 
-    /// <summary>File name prefix of the installers DownloadAsync callers save to %TEMP%.</summary>
+    /// <summary>Lower-case 64-hex SHA-256, or <see cref="InvalidDataException"/> when there is none.</summary>
+    internal static string NormalizeSha256(string? sha256)
+    {
+        string s = sha256?.Trim().ToLowerInvariant() ?? string.Empty;
+        if (s.Length != 64 || !s.All(char.IsAsciiHexDigitLower))
+            throw new InvalidDataException("The release publishes no SHA-256 for its installer, so it cannot be verified.");
+        return s;
+    }
+
+    /// <summary>
+    /// Opens the downloaded installer so that nobody can write, rename or
+    /// delete it, and checks the SHA-256 again from that handle. Start the
+    /// installer while the returned stream is open: what was verified is
+    /// then exactly what runs (the download check alone left a window in
+    /// which a user-level process could swap the file in %TEMP%).
+    /// </summary>
+    internal static FileStream OpenVerifiedInstaller(string path, string expectedSha256)
+    {
+        string expected = NormalizeSha256(expectedSha256);
+        var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        try
+        {
+            string actual = Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
+            if (!string.Equals(actual, expected, StringComparison.Ordinal))
+                throw new InvalidDataException("The installer changed after it was downloaded (SHA-256 mismatch).");
+            return stream;
+        }
+        catch
+        {
+            stream.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>File name prefix of the installers DownloadAsync callers save.</summary>
     internal const string DownloadedInstallerPrefix = "StandbyAndTimer_Setup_";
+
+    /// <summary>
+    /// Where in-app updates download the installer: next to the app, i.e.
+    /// under Program Files, which only administrators can write. The app is
+    /// elevated and runs that file; in %TEMP% (2.4.0-beta3 and older) any
+    /// user-level process could replace it or plant a link at its path.
+    /// </summary>
+    internal static string DownloadDirectory => Path.Combine(AppContext.BaseDirectory, "updates");
 
     /// <summary>
     /// Deletes installers left in <paramref name="dir"/> by earlier in-app

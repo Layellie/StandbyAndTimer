@@ -76,6 +76,7 @@
     <sys:String x:Key="Str_Settings_Downloading">İndiriliyor… %{0}</sys:String>
     <sys:String x:Key="Str_Settings_LaunchingInstaller">Yükleyici başlatılıyor…</sys:String>
     <sys:String x:Key="Str_Settings_DownloadFailed">İndirme başarısız</sys:String>
+    <sys:String x:Key="Str_Settings_UpdateNoHash">Bu sürüm doğrulanamıyor (SHA-256 yok): release sayfasından indir</sys:String>
     <sys:String x:Key="Str_Settings_ExportOk">Ayarlar dışa aktarıldı</sys:String>
     <sys:String x:Key="Str_Settings_ImportOk">Ayarlar yüklendi</sys:String>
     <sys:String x:Key="Str_Settings_ImportFail">İçe aktarma başarısız</sys:String>
@@ -119,6 +120,8 @@
     <sys:String x:Key="Str_Status_TimerLockedOn">Timer kilitlendi — her açılışta otomatik açılacak</sys:String>
     <sys:String x:Key="Str_Status_TimerLockedOff">Timer kilidi açıldı — sonraki açılışta kapalı başlayacak</sys:String>
     <sys:String x:Key="Str_Status_TimerLockedInGame">Timer oyunlara bağlandı: listedeki bir oyun açılınca açılacak</sys:String>
+    <sys:String x:Key="Str_Status_TimerIdleOff">{0} dk girdi yok: timer kapandı, PC uyuyabilir</sys:String>
+    <sys:String x:Key="Str_Status_TimerIdleBack">Hoş geldin: timer tekrar açık ({0:F2} ms)</sys:String>
     <sys:String x:Key="Str_Status_TimerGameOn">Oyun açıldı, timer açık</sys:String>
     <sys:String x:Key="Str_Status_TimerGameOff">Oyun kapandı, timer kapalı</sys:String>
     <sys:String x:Key="Str_Status_AutoPurgeOn">Oto temizle açık</sys:String>
@@ -130,15 +133,39 @@
     <!-- Hakkında penceresi -->
     <sys:String x:Key="Str_About_Title">Hakkında ve Kullanım Kılavuzu</sys:String>
     <sys:String x:Key="Str_About_Subtitle">Sistem optimizasyon aracı</sys:String>
-    <sys:String x:Key="Str_About_Feature1">Sistem timer'ını 0.5 ms'ye kilitler; girdi gecikmesini azaltır.</sys:String>
-    <sys:String x:Key="Str_About_Feature2">Standby bellek listesini otomatik ya da elle temizler.</sys:String>
-    <sys:String x:Key="Str_About_Feature3">Game Mode: listedeki oyunlara Yüksek öncelik ve tüm CPU çekirdeklerini verir.</sys:String>
     <sys:String x:Key="Str_About_ThresholdsTitle">ÖNERİLEN TEMİZLEME EŞİKLERİ</sys:String>
     <sys:String x:Key="Str_About_ColRam">RAM</sys:String>
     <sys:String x:Key="Str_About_ColList">Liste en az</sys:String>
     <sys:String x:Key="Str_About_ColFree">Serbest altında</sys:String>
     <sys:String x:Key="Str_About_Developer">Geliştirici: LAYE77IE</sys:String>
     <sys:String x:Key="Str_About_Close">Kapat</sys:String>
+
+    <!-- Hakkında / kullanım kılavuzu (AboutOverlay) -->
+    <sys:String x:Key="Str_Help_Intro">StandbyAndTimer oyunlarda gecikmeyi ve takılmaları azaltmak için üç şey yapar: Windows zamanlayıcısını hızlandırır, standby belleği temizler ve oyunlarına öncelik verir. Pencereyi kapatınca tepside çalışmaya devam eder.</sys:String>
+    <sys:String x:Key="Str_Help_TimerTitle">TIMER</sys:String>
+    <sys:String x:Key="Str_Help_Timer1">Windows zamanlayıcısı normalde yaklaşık 15,6 ms aralıklarla çalışır. TIMER'a basınca bu süre 0,5 ms'ye iner; kare zamanlaması ve girdi gecikmesi daha tutarlı olur. Kartta Windows'un bildirdiği gerçek değer görünür.</sys:String>
+    <sys:String x:Key="Str_Help_Timer2">TIMER başlığının yanındaki kilit: KİLİTSİZ iken timer sadece TIMER'a basınca açılır. KİLİTLİ iken uygulama her açıldığında açılır. OYUNDA iken listedeki bir oyun açılınca açılır, son oyun kapanınca kapanır. Tıkladıkça bu sırayla değişir.</sys:String>
+    <sys:String x:Key="Str_Help_Timer3">Timer açıkken Windows kendiliğinden uykuya geçmez. Ayarlar → Genel → "Boştayken timer'ı kapat" ile PC seçtiğin süre kullanılmazsa timer kapanır ve PC uyuyabilir; ilk dokunuşta timer geri açılır.</sys:String>
+    <sys:String x:Key="Str_Help_Timer4">Uygulama kapanınca timer Windows'un varsayılanına döner.</sys:String>
+    <sys:String x:Key="Str_Help_StandbyTitle">STANDBY BELLEK</sys:String>
+    <sys:String x:Key="Str_Help_Standby1">Windows son kullandığın dosyaları RAM'de "standby" olarak tutar. Bu normaldir ve çoğu zaman işe yarar; ama boş bellek çok azalınca bazı oyunlarda takılmaya yol açabilir. "Temizlenebilir" bu listenin şu anki boyutudur.</sys:String>
+    <sys:String x:Key="Str_Help_Standby2">Standby Temizle butonu, tepsi menüsü ya da kısayol listeyi hemen boşaltır.</sys:String>
+    <sys:String x:Key="Str_Help_Standby3">OTO TEMİZLE açıksa uygulama her saniye bakar: liste "Liste boyutu en az" değerini geçmiş ve boş bellek "Serbest bellek altında" değerinin altına inmişse temizler. İki değerden biri 0 ise otomatik temizlik yapılmaz.</sys:String>
+    <sys:String x:Key="Str_Help_Standby4">"Sadece boştayken": belirttiğin dakika boyunca fare ve klavye kullanılmadıysa temizler. "Sadece oyun açıkken": yalnızca Oyun Modu listesindeki bir oyun çalışırken temizler. İkisi birlikte seçilemez.</sys:String>
+    <sys:String x:Key="Str_Help_Standby5">Hafif temizlik: sadece Windows'un en az tekrar kullanılacak dediği kısmı siler. Daha yumuşaktır ama çoğu sistemde az yer açar.</sys:String>
+    <sys:String x:Key="Str_Help_GameTitle">OYUN MODU</sys:String>
+    <sys:String x:Key="Str_Help_Game1">Oyun Modu açıkken listedeki bir oyun çalışınca ona Yüksek öncelik ve tüm CPU çekirdekleri verilir, Windows'un arka plan kısıtlaması (EcoQoS) kapatılır.</sys:String>
+    <sys:String x:Key="Str_Help_Game2">Oyun eklemek için EKLE'ye bas ya da .exe dosyasını listeye sürükle. Tam ekran çalışan bir oyunu uygulama kendisi de bulup OTO etiketiyle ekler; OTO bir oyunu silersen bir daha eklenmez. Oyunlar .exe adına göre tanınır.</sys:String>
+    <sys:String x:Key="Str_Help_Game3">Listeden bir oyun seçince altındaki iki ayar sadece o oyun içindir. "Yüksek öncelik ver" kapalıysa uygulama o oyuna hiç dokunmaz; Process Lasso gibi bir araç kullanıyorsan kapat (oyunun bir sonraki açılışında geçerli olur). "Açıkken oto temizle" kapalıysa o oyun çalışırken otomatik temizlik durur.</sys:String>
+    <sys:String x:Key="Str_Help_KeysTitle">KISAYOLLAR VE BİLDİRİMLER</sys:String>
+    <sys:String x:Key="Str_Help_Keys1">Varsayılan kısayollar: Ctrl+Alt+P temizler, Ctrl+Alt+T timer'ı açıp kapatır, Ctrl+Alt+O oto temizliği açıp kapatır. Değiştirmek için Ayarlar → Kısayollar'da kısayola tıklayıp yeni tuşlara bas; Esc vazgeçer. Kısayollar uygulama arka plandayken de çalışır.</sys:String>
+    <sys:String x:Key="Str_Help_Keys2">Bildirimler temizlikte, timer açılıp kapanınca, bir oyun listeye eklenince ve listedeki bir oyun başlayınca çıkar. Her biri Ayarlar → Bildirimler'den kapatılabilir.</sys:String>
+    <sys:String x:Key="Str_Help_MoreTitle">AYARLAR VE DİĞER</sys:String>
+    <sys:String x:Key="Str_Help_More1">Başlangıçta başlat: Windows'a girince Görev Zamanlayıcı ile tepside açılır.</sys:String>
+    <sys:String x:Key="Str_Help_More2">Güncellemeler: açılışta GitHub'da yeni sürüm aranır, Ayarlar'dan indirilip kurulur. İndirilen dosya SHA256 ile doğrulanır; doğrulanamazsa kurulmaz.</sys:String>
+    <sys:String x:Key="Str_Help_More3">Ayarları dışa aktar / içe aktar: tüm ayarları ve oyun listesini bir dosyaya kaydeder; başka bir PC'ye taşımak ya da yedeklemek için.</sys:String>
+    <sys:String x:Key="Str_Help_More4">Bir sorun olursa: Ayarlar → Log Klasörünü Aç. Uygulamayı kaldırınca ayarlar ve loglar da silinir.</sys:String>
+    <sys:String x:Key="Str_Help_More5">Uygulama yönetici izniyle çalışır: timer, bellek temizliği ve oyun önceliği bunu gerektirir.</sys:String>
 
     <!-- Tek instance uyarısı -->
     <sys:String x:Key="Str_AlreadyRunning" xml:space="preserve">Uygulama zaten arka planda çalışıyor.&#x0a;Sistem tepsisindeki simgeye bakın.</sys:String>
@@ -204,10 +231,17 @@
     <!-- Sekmeler + Ayarlar sayfası (yatay düzen) -->
     <sys:String x:Key="Str_Tab_Status">Durum</sys:String>
     <sys:String x:Key="Str_Tab_Settings">Ayarlar</sys:String>
-    <sys:String x:Key="Str_Settings_StartupSection">BAŞLANGIÇ</sys:String>
+    <sys:String x:Key="Str_Settings_StartupSection">GENEL</sys:String>
     <sys:String x:Key="Str_Settings_AppearanceSection">GÖRÜNÜM</sys:String>
     <sys:String x:Key="Str_Settings_LaunchOnStartupDesc">Oturum açılınca Görev Zamanlayıcı ile başlar</sys:String>
     <sys:String x:Key="Str_Settings_CheckUpdateOnStartup">Açılışta güncelleme kontrolü</sys:String>
     <sys:String x:Key="Str_Settings_CheckUpdateOnStartupDesc">Yeni sürüm varsa tepside bildirim gösterir</sys:String>
+    <sys:String x:Key="Str_Settings_TimerIdleOff">Boştayken timer'ı kapat</sys:String>
+    <sys:String x:Key="Str_Settings_TimerIdleOffDesc">PC uyuyabilsin; dönünce tekrar açılır</sys:String>
+    <sys:String x:Key="Str_Settings_TimerIdleOffTip">Timer açıkken Windows kendiliğinden uykuya geçmez. Bu açıkken seçtiğin süre boyunca fare ya da klavye kullanılmazsa timer kapanır (PC yine uyuyabilir), ilk dokunuşta tekrar açılır. Game Mode listesindeki bir oyun açıkken hiç kapanmaz: gamepad girdisi sayılmıyor.</sys:String>
+    <sys:String x:Key="Str_IdleOff_Off">Kapalı</sys:String>
+    <sys:String x:Key="Str_IdleOff_Minutes">{0} dk</sys:String>
+    <sys:String x:Key="Str_IdleOff_Custom">Özel</sys:String>
+    <sys:String x:Key="Str_IdleOff_CustomTip">Dakika (1-240)</sys:String>
 
 </ResourceDictionary>
