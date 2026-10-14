@@ -20,17 +20,47 @@
             <Setter Property="Foreground" Value="{DynamicResource AppFgDim}"/>
             <Setter Property="Margin"     Value="0,0,0,4"/>
         </Style>
-        <Style x:Key="AboutFeatureStyle" TargetType="TextBlock">
+
+        <!-- Guide: section heading, plain paragraph, and a bulleted
+             paragraph whose wrapped lines stay indented under the text. -->
+        <Style x:Key="HelpSectionStyle" TargetType="TextBlock" BasedOn="{StaticResource PageSectionLabelStyle}">
+            <Setter Property="Foreground" Value="{DynamicResource AccentText}"/>
+            <Setter Property="Margin"     Value="0,12,0,6"/>
+        </Style>
+        <Style x:Key="HelpTextStyle" TargetType="TextBlock">
             <Setter Property="FontSize"     Value="12"/>
+            <Setter Property="LineHeight"   Value="17"/>
             <Setter Property="Foreground"   Value="{DynamicResource AppFg}"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
+        <Style x:Key="HelpBulletStyle" TargetType="ContentControl">
+            <Setter Property="Margin"    Value="0,0,0,6"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContentControl">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="14"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Ellipse Width="4" Height="4" Margin="2,7,0,0"
+                                     HorizontalAlignment="Left" VerticalAlignment="Top"
+                                     Fill="{DynamicResource AccentText}"/>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}"
+                                       Style="{StaticResource HelpTextStyle}"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
-    <!-- About dialog. It used to be one Consolas text block whose encoded
-         line breaks XAML collapsed into spaces, so features and the threshold
-         table ran together into one paragraph. Now: header + version,
-         three feature rows, a real table, developer line. -->
+    <!-- About + usage guide. Fixed header and footer, the guide scrolls in
+         between (the window is a fixed 760x520). Clicking the dim overlay
+         closes it; clicks inside the dialog do not (DialogMouseDown), so
+         selecting or scrolling while reading never closes it. -->
     <Border Background="{DynamicResource ModalOverlayBrush}"
             Visibility="{Binding IsAboutVisible, Converter={StaticResource BoolToVis}}">
         <Border.InputBindings>
@@ -42,110 +72,137 @@
                 BorderBrush="{DynamicResource BorderColor}"
                 BorderThickness="1"
                 CornerRadius="{StaticResource RadiusLarge}"
-                Padding="22,18"
-                Width="420">
-            <StackPanel>
+                Padding="22,18,8,16"
+                Width="620"
+                MaxHeight="470"
+                MouseLeftButtonDown="DialogMouseDown">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
                 <!-- Header: title + version -->
-                <Grid Margin="0,0,0,2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <Ellipse Width="9" Height="9"
-                             Fill="{DynamicResource AccentPrimary}"
-                             VerticalAlignment="Center"
-                             Margin="0,0,8,0"/>
-                    <TextBlock Grid.Column="1"
-                               Text="{Binding AboutTitle}"
-                               FontSize="14"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource AppFg}"
-                               VerticalAlignment="Center"/>
-                    <TextBlock Grid.Column="2"
-                               Text="{Binding Settings.CurrentVersion, StringFormat=v{0}}"
-                               FontSize="11"
-                               Foreground="{DynamicResource AppFgDim}"
-                               VerticalAlignment="Center"/>
-                </Grid>
-                <TextBlock Text="{DynamicResource Str_About_Subtitle}"
-                           FontSize="12"
-                           Foreground="{DynamicResource AppFgDim}"
-                           Margin="17,0,0,14"/>
-
-                <!-- Features -->
-                <Grid Margin="0,0,0,14">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="22"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="1" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AccentText}"/>
-                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{DynamicResource Str_About_Feature1}"
-                               Style="{StaticResource AboutFeatureStyle}" Margin="0,0,0,6"/>
-                    <TextBlock Grid.Row="1" Text="2" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AccentText}"/>
-                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{DynamicResource Str_About_Feature2}"
-                               Style="{StaticResource AboutFeatureStyle}" Margin="0,0,0,6"/>
-                    <TextBlock Grid.Row="2" Text="3" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AccentText}"/>
-                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{DynamicResource Str_About_Feature3}"
-                               Style="{StaticResource AboutFeatureStyle}"/>
-                </Grid>
-
-                <!-- Recommended thresholds -->
-                <TextBlock Text="{DynamicResource Str_About_ThresholdsTitle}"
-                           Style="{StaticResource PageSectionLabelStyle}"/>
-                <Border Background="{DynamicResource SurfaceBg}"
-                        BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1"
-                        CornerRadius="{StaticResource RadiusMedium}"
-                        Padding="12,8"
-                        Margin="0,0,0,14">
+                <StackPanel Grid.Row="0" Margin="0,0,14,6">
                     <Grid>
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{DynamicResource Str_About_ColRam}"  Style="{StaticResource AboutHeadStyle}" HorizontalAlignment="Left"/>
-                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{DynamicResource Str_About_ColList}" Style="{StaticResource AboutHeadStyle}"/>
-                        <TextBlock Grid.Row="0" Grid.Column="2" Text="{DynamicResource Str_About_ColFree}" Style="{StaticResource AboutHeadStyle}"/>
-
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="4 GB"    Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
-                        <TextBlock Grid.Row="1" Grid.Column="1" Text="512 MB"  Style="{StaticResource AboutCellStyle}"/>
-                        <TextBlock Grid.Row="1" Grid.Column="2" Text="512 MB"  Style="{StaticResource AboutCellStyle}"/>
-
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="8 GB"    Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
-                        <TextBlock Grid.Row="2" Grid.Column="1" Text="1024 MB" Style="{StaticResource AboutCellStyle}"/>
-                        <TextBlock Grid.Row="2" Grid.Column="2" Text="1024 MB" Style="{StaticResource AboutCellStyle}"/>
-
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="16 GB"   Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
-                        <TextBlock Grid.Row="3" Grid.Column="1" Text="2048 MB" Style="{StaticResource AboutCellStyle}"/>
-                        <TextBlock Grid.Row="3" Grid.Column="2" Text="1024 MB" Style="{StaticResource AboutCellStyle}"/>
-
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="32 GB"   Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
-                        <TextBlock Grid.Row="4" Grid.Column="1" Text="4096 MB" Style="{StaticResource AboutCellStyle}"/>
-                        <TextBlock Grid.Row="4" Grid.Column="2" Text="2048 MB" Style="{StaticResource AboutCellStyle}"/>
-
-                        <TextBlock Grid.Row="5" Grid.Column="0" Text="64 GB"   Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
-                        <TextBlock Grid.Row="5" Grid.Column="1" Text="8192 MB" Style="{StaticResource AboutCellStyle}"/>
-                        <TextBlock Grid.Row="5" Grid.Column="2" Text="2048 MB" Style="{StaticResource AboutCellStyle}"/>
+                        <Ellipse Width="9" Height="9"
+                                 Fill="{DynamicResource AccentPrimary}"
+                                 VerticalAlignment="Center"
+                                 Margin="0,0,8,0"/>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding AboutTitle}"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppFg}"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2"
+                                   Text="{Binding Settings.CurrentVersion, StringFormat=v{0}}"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource AppFgDim}"
+                                   VerticalAlignment="Center"/>
                     </Grid>
-                </Border>
+                    <TextBlock Text="{DynamicResource Str_About_Subtitle}"
+                               FontSize="12"
+                               Foreground="{DynamicResource AppFgDim}"
+                               Margin="17,0,0,0"/>
+                </StackPanel>
+
+                <!-- Guide -->
+                <ScrollViewer Grid.Row="1"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Focusable="False">
+                    <StackPanel Margin="0,0,14,0">
+                        <TextBlock Text="{DynamicResource Str_Help_Intro}" Style="{StaticResource HelpTextStyle}"
+                                   Foreground="{DynamicResource AppFgDim}" Margin="0,4,0,0"/>
+
+                        <TextBlock Text="{DynamicResource Str_Help_TimerTitle}" Style="{StaticResource HelpSectionStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Timer1}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Timer2}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Timer3}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Timer4}" Style="{StaticResource HelpBulletStyle}"/>
+
+                        <TextBlock Text="{DynamicResource Str_Help_StandbyTitle}" Style="{StaticResource HelpSectionStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Standby1}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Standby2}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Standby3}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Standby4}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Standby5}" Style="{StaticResource HelpBulletStyle}"/>
+
+                        <!-- Recommended thresholds -->
+                        <TextBlock Text="{DynamicResource Str_About_ThresholdsTitle}"
+                                   Style="{StaticResource PageSectionLabelStyle}" Margin="2,6,0,6"/>
+                        <Border Background="{DynamicResource SurfaceBg}"
+                                BorderBrush="{DynamicResource BorderColor}"
+                                BorderThickness="1"
+                                CornerRadius="{StaticResource RadiusMedium}"
+                                Padding="12,8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{DynamicResource Str_About_ColRam}"  Style="{StaticResource AboutHeadStyle}" HorizontalAlignment="Left"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{DynamicResource Str_About_ColList}" Style="{StaticResource AboutHeadStyle}"/>
+                                <TextBlock Grid.Row="0" Grid.Column="2" Text="{DynamicResource Str_About_ColFree}" Style="{StaticResource AboutHeadStyle}"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="4 GB"    Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="512 MB"  Style="{StaticResource AboutCellStyle}"/>
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="512 MB"  Style="{StaticResource AboutCellStyle}"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="8 GB"    Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="1024 MB" Style="{StaticResource AboutCellStyle}"/>
+                                <TextBlock Grid.Row="2" Grid.Column="2" Text="1024 MB" Style="{StaticResource AboutCellStyle}"/>
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="16 GB"   Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="2048 MB" Style="{StaticResource AboutCellStyle}"/>
+                                <TextBlock Grid.Row="3" Grid.Column="2" Text="1024 MB" Style="{StaticResource AboutCellStyle}"/>
+
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="32 GB"   Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="4096 MB" Style="{StaticResource AboutCellStyle}"/>
+                                <TextBlock Grid.Row="4" Grid.Column="2" Text="2048 MB" Style="{StaticResource AboutCellStyle}"/>
+
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="64 GB"   Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="8192 MB" Style="{StaticResource AboutCellStyle}"/>
+                                <TextBlock Grid.Row="5" Grid.Column="2" Text="2048 MB" Style="{StaticResource AboutCellStyle}"/>
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Text="{DynamicResource Str_Help_GameTitle}" Style="{StaticResource HelpSectionStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Game1}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Game2}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Game3}" Style="{StaticResource HelpBulletStyle}"/>
+
+                        <TextBlock Text="{DynamicResource Str_Help_KeysTitle}" Style="{StaticResource HelpSectionStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Keys1}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Keys2}" Style="{StaticResource HelpBulletStyle}"/>
+
+                        <TextBlock Text="{DynamicResource Str_Help_MoreTitle}" Style="{StaticResource HelpSectionStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_More1}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_More2}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_More3}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_More4}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_More5}" Style="{StaticResource HelpBulletStyle}"/>
+                    </StackPanel>
+                </ScrollViewer>
 
                 <!-- Footer: developer + close -->
-                <Grid>
+                <Grid Grid.Row="2" Margin="0,12,14,0">
                     <TextBlock Text="{DynamicResource Str_About_Developer}"
                                FontSize="11"
                                Foreground="{DynamicResource AppFgDim}"
@@ -156,7 +213,7 @@
                             HorizontalAlignment="Right"
                             MinWidth="80" Height="30"/>
                 </Grid>
-            </StackPanel>
+            </Grid>
         </Border>
     </Border>
 </UserControl>

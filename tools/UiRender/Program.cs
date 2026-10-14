@@ -593,6 +593,16 @@ public static class Program
                 var raise = vm.GetType().GetMethod("OnPropertyChanged", BindingFlags.Instance | BindingFlags.NonPublic, [typeof(string)])!;
                 SetField(vm, flag, true);  raise.Invoke(vm, [prop]); Pump();
                 Save(root, Path.Combine(outDir, $"{tag}-4-{name}.png"));
+                // The guide scrolls: also render its end (thresholds table, last sections).
+                if (name == "about")
+                {
+                    var sv = Walk(Walk(root).OfType<StandbyAndTimer.Views.Overlays.AboutOverlay>().Single()).OfType<ScrollViewer>().Single();
+                    bool scrolls = sv.ScrollableHeight > 0;
+                    if (!scrolls) { failures++; Log($"  FAIL [{tag}] about: guide does not scroll (ScrollableHeight=0)"); }
+                    sv.ScrollToEnd(); Pump();
+                    Save(root, Path.Combine(outDir, $"{tag}-4-about-end.png"));
+                    sv.ScrollToHome(); Pump();
+                }
                 failures += CheckLayout(root, $"{tag} {name}");
                 SetField(vm, flag, false); raise.Invoke(vm, [prop]); Pump();
             }
