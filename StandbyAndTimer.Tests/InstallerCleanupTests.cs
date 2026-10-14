@@ -49,6 +49,35 @@ public sealed class InstallerCleanupTests : IDisposable
     }
 
     [Fact]
+    public async Task The_setup_that_started_the_app_is_deleted_once_it_exits()
+    {
+        string running = Touch("StandbyAndTimer_Setup_v2.4.0.exe");
+        var lockStream = new FileStream(running, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+        Task<int> cleanup = UpdateService.DeleteDownloadedInstallersAsync(
+            _dir, TimeSpan.FromMilliseconds(20), maxAttempts: 200);
+        await Task.Delay(100);
+        Assert.True(File.Exists(running));
+        lockStream.Dispose();                                   // setup exits
+
+        Assert.Equal(1, await cleanup);
+        Assert.False(File.Exists(running));
+    }
+
+    [Fact]
+    public async Task Gives_up_after_the_last_attempt()
+    {
+        string running = Touch("StandbyAndTimer_Setup_v2.4.0.exe");
+        using var lockStream = new FileStream(running, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+        int deleted = await UpdateService.DeleteDownloadedInstallersAsync(
+            _dir, TimeSpan.FromMilliseconds(1), maxAttempts: 3);
+
+        Assert.Equal(0, deleted);
+        Assert.True(File.Exists(running));
+    }
+
+    [Fact]
     public void Missing_folder_is_not_an_error() =>
         Assert.Equal(0, UpdateService.DeleteDownloadedInstallers(Path.Combine(_dir, "nope")));
 }

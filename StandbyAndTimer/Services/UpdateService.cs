@@ -159,6 +159,28 @@ internal sealed partial class UpdateService : IUpdateService
         return deleted;
     }
 
+    /// <summary>
+    /// <see cref="DeleteDownloadedInstallers"/>, retried while a setup is
+    /// still locked. The installer starts the updated app before it exits
+    /// itself (measured: ~3 s), so a single pass at startup always left the
+    /// installer that had just run.
+    /// </summary>
+    internal static async Task<int> DeleteDownloadedInstallersAsync(
+        string dir, TimeSpan retryDelay, int maxAttempts)
+    {
+        int deleted = 0;
+        for (int attempt = 1; ; attempt++)
+        {
+            deleted += DeleteDownloadedInstallers(dir);
+            if (attempt >= maxAttempts || !HasDownloadedInstallers(dir)) return deleted;
+            await Task.Delay(retryDelay).ConfigureAwait(false);
+        }
+    }
+
+    private static bool HasDownloadedInstallers(string dir) =>
+        Directory.Exists(dir)
+        && Directory.EnumerateFiles(dir, DownloadedInstallerPrefix + "*.exe").Any();
+
     // InformationalVersion keeps a "-beta1" suffix (the assembly version
     // drops it), so a beta build sees its own final release as newer.
     private static string CurrentVersion()
