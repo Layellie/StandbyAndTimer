@@ -206,8 +206,10 @@ public partial class App : Application
         if (savedSettings.UpdateCheckEnabled)
             _ = SilentUpdateCheckAsync();
 
-        // Installers downloaded by earlier in-app updates; off the UI thread.
-        _ = Task.Run(() => UpdateService.DeleteDownloadedInstallers(Path.GetTempPath()));
+        // Installers downloaded by in-app updates; off the UI thread. The one
+        // that just started us is still running for a few seconds, so retry.
+        _ = Task.Run(() => UpdateService.DeleteDownloadedInstallersAsync(
+            Path.GetTempPath(), TimeSpan.FromSeconds(10), maxAttempts: 6));
     }
 
     private async Task InitializeViewModelAsync(Stopwatch sw)
