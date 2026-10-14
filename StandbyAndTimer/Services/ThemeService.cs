@@ -11,6 +11,8 @@ internal sealed class ThemeService : IThemeService
     {
         [Theme.Dark]  = "Views/Styles/Palette.Dark.xaml",
         [Theme.Light] = "Views/Styles/Palette.Light.xaml",
+        [Theme.Black] = "Views/Styles/Palette.Black.xaml",
+        [Theme.White] = "Views/Styles/Palette.White.xaml",
     };
 
     // Slot 0 = Theme.xaml (styles), Slot 1 = Palette.*.xaml (swapped here),
@@ -56,7 +58,8 @@ internal sealed class ThemeService : IThemeService
 
     private static void ApplyPalette(Theme effective)
     {
-        var key  = effective == Theme.Light ? Theme.Light : Theme.Dark;
+        // System is resolved before this; anything unknown keeps Dark.
+        var key  = PalettePaths.ContainsKey(effective) ? effective : Theme.Dark;
         var uri  = new Uri(PalettePaths[key], UriKind.Relative);
         var dict = new ResourceDictionary { Source = uri };
         var merged = Application.Current.Resources.MergedDictionaries;

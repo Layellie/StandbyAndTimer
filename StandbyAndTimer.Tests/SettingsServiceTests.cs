@@ -141,6 +141,29 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal(TimerLockMode.Unlocked, _service.Load().TimerLock);
     }
 
+    [Theory]
+    [InlineData(Theme.Black)]
+    [InlineData(Theme.White)]
+    [InlineData(Theme.System)]
+    public void Every_theme_loads_back(Theme theme)
+    {
+        _service.Save(new AppSettings { Theme = theme });
+
+        Assert.Equal(theme, _service.Load().Theme);
+    }
+
+    [Theory]                   // values written before Black/White existed
+    [InlineData("Dark", Theme.Dark)]
+    [InlineData("Light", Theme.Light)]
+    [InlineData("System", Theme.System)]
+    public void Themes_saved_by_older_versions_still_load(string raw, Theme expected)
+    {
+        using (var key = Key())
+            key.SetValue("Theme", raw);
+
+        Assert.Equal(expected, _service.Load().Theme);
+    }
+
     [Fact]
     public void Imported_true_false_and_string_numbers_are_read()
     {

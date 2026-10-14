@@ -152,7 +152,7 @@ public partial class App : Application
         _tray.Initialize(_iconBase, _iconActive);
         // The saved theme was applied in step 4, before ThemeChanged was
         // subscribed, so hand the tray its starting palette explicitly.
-        _tray.ApplyTheme(IsDarkEffectiveTheme());
+        _tray.ApplyTheme(EffectiveTheme());
         Mark("window + tray");
 
         // Show the window FIRST so the user gets immediate visual feedback,
@@ -396,17 +396,17 @@ public partial class App : Application
     private void OnThemeChanged(object? sender, EventArgs e) =>
         Dispatcher.InvokeAsync(() =>
         {
-            _tray?.ApplyTheme(IsDarkEffectiveTheme());
+            _tray?.ApplyTheme(EffectiveTheme());
 
             if (_mainWindow is null) return;
             var hwnd = new System.Windows.Interop.WindowInteropHelper(_mainWindow).Handle;
             StandbyAndTimer.MainWindow.ApplyDarkTitleBar(hwnd);
         });
 
-    // Theme.System is already resolved by EffectiveTheme; anything that is
-    // not explicitly Light keeps the dark default.
-    private bool IsDarkEffectiveTheme() =>
-        _themeService?.EffectiveTheme != Core.Models.Theme.Light;
+    // Theme.System is already resolved by EffectiveTheme; no service yet
+    // keeps the dark default.
+    private Core.Models.Theme EffectiveTheme() =>
+        _themeService?.EffectiveTheme ?? Core.Models.Theme.Dark;
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {

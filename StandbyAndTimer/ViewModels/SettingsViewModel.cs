@@ -115,7 +115,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     public event EventHandler<AppSettings>? SettingsImported;
 
     public Language[] LanguageOptions { get; } = [Language.English, Language.Turkish];
-    public Theme[]    ThemeOptions    { get; } = [Theme.Dark, Theme.Light, Theme.System];
+    public Theme[]    ThemeOptions    { get; } = [Theme.Dark, Theme.Black, Theme.Light, Theme.White, Theme.System];
 
     // Shown in the Settings panel footer. The release pipeline passes
     // -p:Version=X.Y.Z to dotnet publish so this lines up with the GitHub

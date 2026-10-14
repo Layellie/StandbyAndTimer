@@ -1,3 +1,5 @@
+using StandbyAndTimer.Core.Models;
+
 namespace StandbyAndTimer.Core.Interfaces;
 
 // Owns the WinForms NotifyIcon + its themed (dark / light) context menu. App.xaml.cs
@@ -34,8 +36,8 @@ public interface ITrayIconService : IDisposable
     /// <summary>Re-renders just the menu labels — call when language changes.</summary>
     void RefreshLabels();
 
-    /// <summary>Switches the context menu between the dark and light palette — call on start and when the effective theme changes.</summary>
-    void ApplyTheme(bool isDark);
+    /// <summary>Switches the context menu to the palette of <paramref name="effectiveTheme"/> (never System) — call on start and when the effective theme changes.</summary>
+    void ApplyTheme(Theme effectiveTheme);
 
     /// <summary>Shows a balloon notification. Title and body are pre-localized.</summary>
     void ShowBalloon(string title, string body);
