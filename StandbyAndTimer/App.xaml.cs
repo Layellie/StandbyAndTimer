@@ -152,6 +152,14 @@ public partial class App : Application
         // ── 5. Build window and tray ──────────────────────────────────────────
         _iconBase   = AppIconLoader.LoadAppIcon();
         _iconActive = AppIconLoader.BuildActiveIcon(_iconBase);
+        // Started hidden (auto-start): no GPU until the window is first
+        // shown (MainWindow.ShowFromOffscreen switches back). Otherwise WPF
+        // sets up Direct3D at start-up and the graphics driver keeps its
+        // memory and threads while the window is never on screen. Measured:
+        // 110 MB / 51 threads -> 71 MB / 28 threads in the tray.
+        bool startHidden = e.Args.Contains("-hidden");
+        if (startHidden)
+            System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
         _mainWindow = new MainWindow(_viewModel) { Icon = AppIconLoader.IconToImageSource(_iconBase) };
         _tray.Initialize(_iconBase, _iconActive);
         // The saved theme was applied in step 4, before ThemeChanged was
@@ -162,7 +170,7 @@ public partial class App : Application
         // Show the window FIRST so the user gets immediate visual feedback,
         // then kick off the (potentially-slow) viewmodel initialisation in
         // parallel.
-        if (e.Args.Contains("-hidden"))
+        if (startHidden)
             _mainWindow.HideOffscreen();
         else
             _mainWindow.Show();
@@ -174,7 +182,7 @@ public partial class App : Application
         StartShowWindowListener(_showWindowSignal!, _showWindowSignalCts!.Token);
 
         // Hotkeys require the HWND to exist, which is guaranteed after Show()
-        // (and after HideOffscreen, since that internally calls Show too).
+        // (and after HideOffscreen, which creates it without showing the window).
         // Each binding dispatches back to the UI thread; the command itself
         // does the dispatcher hop work.
         var hotkeys = _services.GetRequiredService<IHotkeyService>();

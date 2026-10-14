@@ -28,9 +28,11 @@ internal static class AppBootstrapper
         services.AddSingleton<IGameDetectionService,       GameDetectionService>();
         services.AddSingleton<ITrayIconService,            TrayIconService>();
         services.AddSingleton<ILogTailReader,              LogTailReader>();
+        services.AddSingleton<IGlobalTimerSetting,         GlobalTimerSetting>();
 
         // ── Presentation ─────────────────────────────────────────────────────
         services.AddSingleton<SettingsViewModel>();
+        services.AddSingleton<SystemViewModel>();
         services.AddSingleton<MainViewModel>();
 
         return services.BuildServiceProvider();

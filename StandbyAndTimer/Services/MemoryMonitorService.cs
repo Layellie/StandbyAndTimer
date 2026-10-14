@@ -12,13 +12,24 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
     private readonly IProcessOptimizationService _processService;
     private readonly IIdleMonitor                _idleMonitor;
 
-    // The total Windows standby list = Normal Priority + Reserve + Core.
-    // Reading only one bucket (as the original did) understated the value by
-    // an order of magnitude on most systems. Counters are created lazily on
-    // the loop thread because their constructor is expensive (~1 s on a cold
-    // process). Building them in the service ctor blocked the UI thread for
-    // ~4.8 s during app startup, since this service is resolved by DI before
-    // the window is shown.
+    // The total Windows standby list = the standby pages of all 8 priorities.
+    // Read with NtQuerySystemInformation(SystemMemoryListInformation): it
+    // gives the same total as the three "Memory\Standby Cache *" counters
+    // (checked to the MB), in ~0.2 µs instead of ~150 µs per read, and
+    // without the ~9 MB / 0.5 s the PerformanceCounter machinery costs.
+    // The counters remain as the fallback if the query ever fails; they are
+    // then created lazily on the loop thread (their constructor blocked the
+    // UI thread for seconds when built in the service ctor).
+    private readonly long[] _memoryList = new long[MemoryListLongs];
+    private bool _nativeStandbyFailed;
+
+    // SYSTEM_MEMORY_LIST_INFORMATION (x64): ZeroPageCount, FreePageCount,
+    // ModifiedPageCount, ModifiedNoWritePageCount, BadPageCount, then
+    // PageCountByPriority[8] (standby by priority), RepurposedPagesByPriority[8],
+    // ModifiedPageCountPageFile: 22 ULONG_PTRs.
+    private const int MemoryListLongs        = 22;
+    private const int StandbyByPriorityStart = 5;
+
     private PerformanceCounter? _standbyNormal;
     private PerformanceCounter? _standbyReserve;
     private PerformanceCounter? _standbyCore;
@@ -105,10 +116,6 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
         // an avrt handle without providing any scheduling benefit for a
         // 1-second poll. Timer-level MMCSS lives in TimerResolutionService.
 
-        // First call after construction; runs off the UI thread because
-        // StartAsync queued us via Task.Run. Cancellation between Start and
-        // the first tick is honoured.
-        EnsureCountersInitialized();
         if (ct.IsCancellationRequested) return;
 
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
@@ -130,12 +137,11 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
 
     private async Task TickAsync()
     {
-        // Which listed games run right now: one process enumeration
-        // per tick, and only when there is a list to check.
+        // Which listed games run right now: one process snapshot per tick,
+        // and only when there is a list to check. Game boost reuses it.
         var watched = WatchedGamePaths;
-        List<string> running = watched.Count > 0
-            ? RunningGames.Match(watched, RunningGames.CurrentProcessNames())
-            : [];
+        ProcessSnapshot? processes = watched.Count > 0 ? RunningGames.Take() : null;
+        List<string> running = processes is not null ? RunningGames.Match(watched, processes.Names) : [];
 
         TimeSpan idleFor = _idleMonitor.TimeSinceLastInput;   // idle gate below + timer idle-off (view model)
         var snapshot = ReadSnapshot() with { RunningGamePaths = running, IdleFor = idleFor };
@@ -157,7 +163,10 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
             await _purgeService.PurgeAsync().ConfigureAwait(false);
 
         if (GameModeEnabled && GamePaths.Count > 0)
-            await _processService.CheckAndOptimizeAsync(BoostTargets(GamePaths, running)).ConfigureAwait(false);
+            await _processService.CheckAndOptimizeAsync(BoostTargets(GamePaths, running),
+                                                        processes is null ? null : processes.PidsOf,
+                                                        processes is null ? null : processes.Contains)
+                                 .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -215,11 +224,39 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
 
     private long ReadStandbyMb()
     {
+        if (!_nativeStandbyFailed)
+        {
+            if (TryReadStandbyBytes(_memoryList, out long native)) return native / (1024 * 1024);
+            _nativeStandbyFailed = true;
+            Logger.Warn("MemoryMonitor: SystemMemoryListInformation query failed, using performance counters");
+        }
+
+        EnsureCountersInitialized();
         double bytes = 0;
         bytes += SafeNext(_standbyNormal);
         bytes += SafeNext(_standbyReserve);
         bytes += SafeNext(_standbyCore);
         return (long)(bytes / (1024 * 1024));
+    }
+
+    /// <summary>Standby list size in bytes (all priorities); false if the query failed.</summary>
+    internal static bool TryReadStandbyBytes(long[] buffer, out long bytes)
+    {
+        bytes = 0;
+        if (IntPtr.Size != 8 || buffer.Length < MemoryListLongs) return false;
+        var handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+        try
+        {
+            if (NativeMethods.NtQuerySystemInformation(NativeMethods.SystemMemoryListInformation,
+                    handle.AddrOfPinnedObject(), MemoryListLongs * sizeof(long), out _) != 0)
+                return false;
+        }
+        finally { handle.Free(); }
+
+        long pages = 0;
+        for (int i = StandbyByPriorityStart; i < StandbyByPriorityStart + 8; i++) pages += buffer[i];
+        bytes = pages * Environment.SystemPageSize;
+        return true;
     }
 
     private static float SafeNext(PerformanceCounter? counter)

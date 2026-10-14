@@ -79,13 +79,18 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
+                        <!-- Timer and Standby memory share the column equally
+                             (two * rows): with Auto + * the Timer card was its
+                             content height and the memory card took the rest,
+                             so the two were visibly uneven. -->
                         <Grid Grid.Column="0">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="8"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
                             <cards:TimerCard Grid.Row="0"/>
-                            <cards:MemoryStatsCard Grid.Row="1"/>
+                            <cards:MemoryStatsCard Grid.Row="2"/>
                         </Grid>
 
                         <cards:StandbyPurgeCard Grid.Column="2"/>
@@ -104,6 +109,8 @@
             <!-- ═══════════════════ MODAL OVERLAYS ═══════════════════ -->
             <overlays:AboutOverlay  Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="18"/>
             <overlays:WizardOverlay Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="19"/>
+            <overlays:SystemOverlay Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="18"/>
+            <overlays:GlobalTimerPromptOverlay Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="19"/>
             <overlays:CloseConfirmationOverlay x:Name="CloseDialog"
                                                Grid.Row="0" Grid.RowSpan="3"
                                                Panel.ZIndex="20"

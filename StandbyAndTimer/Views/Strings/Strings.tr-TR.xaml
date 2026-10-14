@@ -12,6 +12,23 @@
 
     <!-- Yeni kart başlıkları ve mikro-etiketler (modern tasarım) -->
     <sys:String x:Key="Str_TitleBar_Admin">Yönetici</sys:String>
+
+    <!-- Sistem ayarları (Yönetici rozeti) ve açılıştaki tek seferlik soru -->
+    <sys:String x:Key="Str_TitleBar_AdminTip">Sistem ayarları</sys:String>
+    <sys:String x:Key="Str_System_Title">Sistem ayarları</sys:String>
+    <sys:String x:Key="Str_System_Subtitle">Uygulamanın yönetici izniyle Windows'ta değiştirdiği ayarlar</sys:String>
+    <sys:String x:Key="Str_System_GlobalTimer">Timer'ı tüm oyunlara uygula</sys:String>
+    <sys:String x:Key="Str_System_GlobalTimerDesc1">Windows 11'de timer'ı kendisi istemeyen oyunlar (bazı hikâye ve tek oyunculu oyunlar) 0,5 ms'yi almaz; Windows onlara varsayılan 15,6 ms'yi verir. Timer'ı kendisi isteyen oyunlar (FPS oyunlarının çoğu) 0,5 ms'yi zaten alır.</sys:String>
+    <sys:String x:Key="Str_System_GlobalTimerDesc2">Bu ayar Windows'un eski davranışını geri getirir: timer açıkken 0,5 ms tüm programlara uygulanır. Güç tüketimi biraz artabilir.</sys:String>
+    <sys:String x:Key="Str_System_GlobalTimerDesc3">Ayarı açıp kapatmak bir kez yeniden başlatma ister. Sonrasında TIMER'ı açıp kapatmak anında etki eder, yeniden başlatma gerekmez.</sys:String>
+    <sys:String x:Key="Str_System_RestartPending">Yeniden başlatınca geçerli olur.</sys:String>
+    <sys:String x:Key="Str_System_Unsupported">Bu ayar sadece Windows 11'de var.</sys:String>
+    <sys:String x:Key="Str_System_WriteFailed">Ayar yazılamadı; ayrıntı log'da.</sys:String>
+    <sys:String x:Key="Str_System_Close">Kapat</sys:String>
+    <sys:String x:Key="Str_GlobalPrompt_Title">Timer tüm oyunlara uygulansın mı?</sys:String>
+    <sys:String x:Key="Str_GlobalPrompt_Later">İstediğin zaman sağ üstteki Yönetici rozetinden değiştirebilirsin.</sys:String>
+    <sys:String x:Key="Str_GlobalPrompt_Yes">Aç</sys:String>
+    <sys:String x:Key="Str_GlobalPrompt_No">Şimdilik hayır</sys:String>
     <sys:String x:Key="Str_Card_TimerTitle">TIMER ÇÖZÜNÜRLÜĞÜ</sys:String>
     <sys:String x:Key="Str_Card_TimerLocked">KİLİTLİ</sys:String>
     <sys:String x:Key="Str_Card_TimerUnlocked">KİLİTSİZ</sys:String>
@@ -33,8 +50,11 @@
     <sys:String x:Key="Str_Purge_FreeLimitLabel">Serbest bellek altında (MB):</sys:String>
     <sys:String x:Key="Str_Purge_Button">Standby Temizle</sys:String>
     <sys:String x:Key="Str_Purge_LightLabel">Hafif temizlik</sys:String>
-    <sys:String x:Key="Str_Purge_LightDesc">Sadece düşük öncelikli önbelleği siler; sık kullanılan dosyalar bellekte kalır.</sys:String>
+    <sys:String x:Key="Str_Purge_LightDesc">Sadece düşük öncelikli önbelleği siler; sık kullanılanlar kalır.</sys:String>
     <sys:String x:Key="Str_Purge_LightTip">Butonla, otomatik ya da kısayolla yapılan her temizlikte geçerlidir.</sys:String>
+    <sys:String x:Key="Str_Purge_DeepLabel">Derin temizlik</sys:String>
+    <sys:String x:Key="Str_Purge_DeepDesc">Değiştirilmiş sayfaları ve sistem önbelleğini de temizler.</sys:String>
+    <sys:String x:Key="Str_Purge_DeepTip">Her temizlikte (buton, otomatik, kısayol, tepsi) önce değiştirilmiş sayfa listesi diske yazılır ve sistem dosya önbelleği kırpılır, sonra tüm standby listesi temizlenir. Kısa bir disk yazımı olabilir. Hafif temizlikle birlikte seçilemez.</sys:String>
 
     <!-- Oyun modu -->
     <sys:String x:Key="Str_Game_Mode">OYUN MODU</sys:String>
@@ -147,12 +167,14 @@
     <sys:String x:Key="Str_Help_Timer2">TIMER başlığının yanındaki kilit: KİLİTSİZ iken timer sadece TIMER'a basınca açılır. KİLİTLİ iken uygulama her açıldığında açılır. OYUNDA iken listedeki bir oyun açılınca açılır, son oyun kapanınca kapanır. Tıkladıkça bu sırayla değişir.</sys:String>
     <sys:String x:Key="Str_Help_Timer3">Timer açıkken Windows kendiliğinden uykuya geçmez. Ayarlar → Genel → "Boştayken timer'ı kapat" ile PC seçtiğin süre kullanılmazsa timer kapanır ve PC uyuyabilir; ilk dokunuşta timer geri açılır.</sys:String>
     <sys:String x:Key="Str_Help_Timer4">Uygulama kapanınca timer Windows'un varsayılanına döner.</sys:String>
+    <sys:String x:Key="Str_Help_Timer5">Timer'ı kendisi isteyen oyunlar (FPS oyunlarının çoğu) 0,5 ms'yi alır; hiç istemeyenler (bazı hikâye oyunları) Windows 11'de 15,6 ms'de kalır. Onlar için: sağ üstteki Yönetici rozeti → Sistem ayarları → "Timer'ı tüm oyunlara uygula" (bir kez yeniden başlatma gerekir).</sys:String>
     <sys:String x:Key="Str_Help_StandbyTitle">STANDBY BELLEK</sys:String>
     <sys:String x:Key="Str_Help_Standby1">Windows son kullandığın dosyaları RAM'de "standby" olarak tutar. Bu normaldir ve çoğu zaman işe yarar; ama boş bellek çok azalınca bazı oyunlarda takılmaya yol açabilir. "Temizlenebilir" bu listenin şu anki boyutudur.</sys:String>
     <sys:String x:Key="Str_Help_Standby2">Standby Temizle butonu, tepsi menüsü ya da kısayol listeyi hemen boşaltır.</sys:String>
     <sys:String x:Key="Str_Help_Standby3">OTO TEMİZLE açıksa uygulama her saniye bakar: liste "Liste boyutu en az" değerini geçmiş ve boş bellek "Serbest bellek altında" değerinin altına inmişse temizler. İki değerden biri 0 ise otomatik temizlik yapılmaz.</sys:String>
     <sys:String x:Key="Str_Help_Standby4">"Sadece boştayken": belirttiğin dakika boyunca fare ve klavye kullanılmadıysa temizler. "Sadece oyun açıkken": yalnızca Oyun Modu listesindeki bir oyun çalışırken temizler. İkisi birlikte seçilemez.</sys:String>
     <sys:String x:Key="Str_Help_Standby5">Hafif temizlik: sadece Windows'un en az tekrar kullanılacak dediği kısmı siler. Daha yumuşaktır ama çoğu sistemde az yer açar.</sys:String>
+    <sys:String x:Key="Str_Help_Standby6">Derin temizlik: temizlikten önce diske yazılmayı bekleyen (değiştirilmiş) sayfaları yazar ve Windows'un sistem önbelleğini boşaltır; bunlar da standby'a iner ve birlikte temizlenir. Normal temizlikten daha çok yer açar, kısa bir disk yazımı olabilir. Hafif temizlikle birlikte seçilemez.</sys:String>
     <sys:String x:Key="Str_Help_GameTitle">OYUN MODU</sys:String>
     <sys:String x:Key="Str_Help_Game1">Oyun Modu açıkken listedeki bir oyun çalışınca ona Yüksek öncelik ve tüm CPU çekirdekleri verilir, Windows'un arka plan kısıtlaması (EcoQoS) kapatılır.</sys:String>
     <sys:String x:Key="Str_Help_Game2">Oyun eklemek için EKLE'ye bas ya da .exe dosyasını listeye sürükle. Tam ekran çalışan bir oyunu uygulama kendisi de bulup OTO etiketiyle ekler; OTO bir oyunu silersen bir daha eklenmez. Oyunlar .exe adına göre tanınır.</sys:String>

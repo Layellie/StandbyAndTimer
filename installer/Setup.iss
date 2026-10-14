@@ -107,3 +107,16 @@ function InitializeSetup(): Boolean;
 begin
   Result := True;
 end;
+
+// The app's System settings can set GlobalTimerResolutionRequests (HKLM).
+// Uninstalling removes it only when the app set it (GlobalTimerSetByApp in
+// the app's HKCU key, which [Registry] deletes after this step); a value the
+// user had set by hand is left alone. In effect after the next restart.
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  SetByApp: String;
+begin
+  if CurUninstallStep <> usUninstall then Exit;
+  if RegQueryStringValue(HKCU, 'SOFTWARE\{#AppName}', 'GlobalTimerSetByApp', SetByApp) and (SetByApp = '1') then
+    RegDeleteValue(HKLM, 'SYSTEM\CurrentControlSet\Control\Session Manager\kernel', 'GlobalTimerResolutionRequests');
+end;

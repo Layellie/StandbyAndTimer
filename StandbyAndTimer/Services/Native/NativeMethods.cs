@@ -33,6 +33,22 @@ internal static class NativeMethods
         IntPtr SystemInformation,
         int    SystemInformationLength);
 
+    /// <summary>
+    /// SystemInformationClass 5 = SystemProcessInformation: a chain of
+    /// SYSTEM_PROCESS_INFORMATION entries (winternl.h). Returns
+    /// STATUS_INFO_LENGTH_MISMATCH when the buffer is too small.
+    /// </summary>
+    [DllImport("ntdll.dll")]
+    internal static extern int NtQuerySystemInformation(
+        int     SystemInformationClass,
+        IntPtr  SystemInformation,
+        int     SystemInformationLength,
+        out int ReturnLength);
+
+    internal const int SystemProcessInformation    = 5;
+    internal const int SystemMemoryListInformation = 80;   // query: SYSTEM_MEMORY_LIST_INFORMATION
+    internal const int STATUS_INFO_LENGTH_MISMATCH = unchecked((int)0xC0000004);
+
     // ── kernel32.dll ─────────────────────────────────────────────────────────
 
     [DllImport("kernel32.dll")]
@@ -49,6 +65,26 @@ internal static class NativeMethods
         int    processInformationClass,
         ref PROCESS_POWER_THROTTLING_STATE processInformation,
         int    processInformationSize);
+
+    /// <summary>
+    /// With (-1, -1): removes as many pages as possible from the process's
+    /// working set (they move to the standby / modified lists and fault back
+    /// in on use). Used once when the window goes to the tray.
+    /// </summary>
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool SetProcessWorkingSetSize(IntPtr hProcess, nint dwMinimumWorkingSetSize, nint dwMaximumWorkingSetSize);
+
+    [DllImport("kernel32.dll")]
+    internal static extern IntPtr GetCurrentProcess();
+
+    /// <summary>
+    /// (SIZE_T)-1 for both sizes empties the system file cache's working set
+    /// (its pages move to the standby list). Needs SeIncreaseQuotaPrivilege.
+    /// </summary>
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool SetSystemFileCacheSize(nint MinimumFileCacheSize, nint MaximumFileCacheSize, uint Flags);
 
     /// <summary>Prevents the system from sleeping while the app is running.</summary>
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]

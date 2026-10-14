@@ -181,4 +181,60 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.True(s.AutoPurgeEnabled);
         Assert.Equal(2048, s.StandbyLimitMb);
     }
+
+    [Fact]
+    public void A_failed_load_never_overwrites_the_stored_settings()
+    {
+        _service.Save(new AppSettings { StandbyLimitMb = 4096, Theme = Theme.Black, TimerLock = TimerLockMode.Locked });
+        var broken = new SettingsService(_keyPath) { BeforeRead = () => throw new InvalidOperationException("read bug") };
+
+        var fallback = broken.Load();          // what a buggy update would see
+        broken.Save(fallback);                 // and write back at exit
+
+        var s = _service.Load();
+        Assert.Equal(4096, s.StandbyLimitMb);
+        Assert.Equal(Theme.Black, s.Theme);
+        Assert.Equal(TimerLockMode.Locked, s.TimerLock);
+    }
+
+    [Fact]
+    public void Settings_stored_by_2_4_0_survive_an_update_unchanged()
+    {
+        string cs2 = Exe("cs2");
+        // Value for value what 2.4.0 writes (a real user's key, game paths swapped).
+        using (var key = Key())
+        {
+            key.SetValue("StandbyLimitMb", 60, RegistryValueKind.DWord);
+            key.SetValue("FreeLimitMb", 60, RegistryValueKind.DWord);
+            foreach (var (n, v) in new[] {
+                ("GameModeEnabled", "1"), ("AutoStartEnabled", "1"), ("TimerResolutionActive", "1"),
+                ("UpdateCheckEnabled", "1"), ("Language", "English"), ("Theme", "Light"),
+                ("AutoPurgeEnabled", "0"), ("FirstRunCompleted", "1"), ("NotifyOnPurge", "1"),
+                ("NotifyOnTimerToggle", "1"), ("NotifyOnGameDetected", "0"), ("AutoPurgeIdleOnly", "0"),
+                ("PurgeHotkey", "Ctrl+Alt+P"), ("TimerHotkey", "Ctrl+Shift+T"), ("AutoPurgeHotkey", "Ctrl+Alt+O"),
+                ("IgnoredGamePaths", @"C:\Games\witcher3.exe"), ("TimerLocked", "1"), ("TimerLockMode", "Locked"),
+                ("AutoPurgeOnlyInGames", "0"), ("LightPurge", "1"), ("TimerIdleOffEnabled", "1"),
+                ("GamePaths", cs2), ("NoBoostGamePaths", cs2) })
+                key.SetValue(n, v);
+            key.SetValue("IdleThresholdMinutes", 5, RegistryValueKind.DWord);
+            key.SetValue("TimerIdleOffMinutes", 25, RegistryValueKind.DWord);
+        }
+
+        var first = _service.Load();
+        _service.Save(first);                  // the updated app saves at exit
+        var second = _service.Load();
+
+        Assert.Equal(60, first.StandbyLimitMb);
+        Assert.Equal(Theme.Light, first.Theme);
+        Assert.Equal("Ctrl+Shift+T", first.TimerHotkey);
+        Assert.False(first.NotifyOnGameDetected);
+        Assert.True(first.LightPurge);
+        Assert.False(first.DeepPurge);   // not in a 2.4.0 key: off
+        Assert.Equal(TimerLockMode.Locked, first.TimerLock);
+        Assert.Equal(25, first.TimerIdleOffMinutes);
+        Assert.False(Assert.Single(first.Games).BoostPriority);
+        Assert.Equal([@"C:\Games\witcher3.exe"], first.IgnoredGamePaths);
+        // Nothing changes on the way through a save.
+        Assert.Equal(System.Text.Json.JsonSerializer.Serialize(first), System.Text.Json.JsonSerializer.Serialize(second));
+    }
 }

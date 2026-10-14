@@ -7,7 +7,8 @@ A small Windows app for gamers: it makes the system timer finer, frees memory Wi
 **[English](#english) · [Türkçe](#türkçe)**
 
 <p align="center">
-  <img src="docs/screenshot.png" width="70%" alt="StandbyAndTimer main window" />
+  <img src="docs/screenshot.png" width="49%" alt="StandbyAndTimer: status page with the timer, standby memory, purge options and Game Mode list" />
+  <img src="docs/screenshot-settings.png" width="49%" alt="StandbyAndTimer: settings page with startup, notifications, appearance, hotkeys and backup" />
 </p>
 
 [![Latest release](https://img.shields.io/github/v/release/Layellie/StandbyAndTimer?label=latest)](https://github.com/Layellie/StandbyAndTimer/releases/latest)

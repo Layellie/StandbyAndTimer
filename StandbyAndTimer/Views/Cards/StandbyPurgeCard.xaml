@@ -134,6 +134,18 @@
                                    TextWrapping="Wrap"
                                    Foreground="{DynamicResource AppFgDim}"
                                    Margin="23,2,0,0"/>
+                        <!-- Deep purge: modified list + system cache first.
+                             Excludes light purge (the view model clears it). -->
+                        <CheckBox Content="{DynamicResource Str_Purge_DeepLabel}"
+                                  IsChecked="{Binding DeepPurge}"
+                                  ToolTip="{DynamicResource Str_Purge_DeepTip}"
+                                  Style="{StaticResource DarkCheckBoxStyle}"
+                                  Margin="0,8,0,0"/>
+                        <TextBlock Text="{DynamicResource Str_Purge_DeepDesc}"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource AppFgDim}"
+                                   Margin="23,2,0,0"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

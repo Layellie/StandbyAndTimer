@@ -67,6 +67,17 @@ public sealed class FakeLoc : ILocalizationService
     public event EventHandler? LanguageChanged { add { } remove { } }
 }
 
+// Windows 11 that already has the switch on, changed after the last boot:
+// the System settings panel renders its "restart pending" state. Writes
+// are accepted and go nowhere.
+public sealed class FakeGlobalTimer : IGlobalTimerSetting
+{
+    public bool IsSupported => true;
+    public bool IsEnabled { get; private set; } = true;
+    public bool TrySetEnabled(bool enabled) { IsEnabled = enabled; return true; }
+    public DateTime LastBootUtc => DateTime.UtcNow.AddHours(-1);
+}
+
 public static class Program
 {
     static T Null<T>() where T : class => DispatchProxy.Create<T, NullProxy>();
@@ -189,6 +200,42 @@ public static class Program
         return issues;
     }
 
+    // Vertical centre of the visible ink of an element, in relativeTo's
+    // coordinates; null when blank. relativeTo is rendered at 4x on its
+    // background (AppBg) and the element's rectangle is scanned for pixels
+    // that differ from it, so a quarter-pixel offset shows.
+    static double? InkCentreY(FrameworkElement el, FrameworkElement relativeTo)
+    {
+        const double k = 4;
+        int w = (int)Math.Ceiling(relativeTo.ActualWidth * k), h = (int)Math.Ceiling(relativeTo.ActualHeight * k);
+        var bgBrush = (SolidColorBrush)Application.Current.Resources["AppBg"];
+        var area = new Rect(0, 0, relativeTo.ActualWidth, relativeTo.ActualHeight);
+        var dv = new DrawingVisual();
+        using (var dc = dv.RenderOpen())
+        {
+            dc.DrawRectangle(bgBrush, null, area);
+            dc.DrawRectangle(new VisualBrush(relativeTo) { Stretch = Stretch.None, AlignmentX = AlignmentX.Left, AlignmentY = AlignmentY.Top }, null, area);
+        }
+        var bmp = new RenderTargetBitmap(w, h, 96 * k, 96 * k, PixelFormats.Pbgra32);
+        bmp.Render(dv);
+        var px = new byte[w * h * 4];
+        bmp.CopyPixels(px, w * 4, 0);
+
+        var o = el.TranslatePoint(new Point(0, 0), relativeTo);
+        int x0 = (int)(o.X * k), x1 = Math.Min(w, (int)((o.X + el.ActualWidth) * k));
+        int y0 = (int)(o.Y * k), y1 = Math.Min(h, (int)((o.Y + el.ActualHeight) * k));
+        var bg = bgBrush.Color;
+        int top = -1, bottom = -1;
+        for (int y = y0; y < y1; y++)
+            for (int x = x0; x < x1; x++)
+            {
+                int i = (y * w + x) * 4;   // BGRA
+                int d = Math.Abs(px[i] - bg.B) + Math.Abs(px[i + 1] - bg.G) + Math.Abs(px[i + 2] - bg.R);
+                if (d > 60) { if (top < 0) top = y; bottom = y; break; }
+            }
+        return top < 0 ? null : (top + bottom + 1) / 2.0 / k;
+    }
+
     // Content of a ScrollViewer is allowed to be larger than its viewport.
     static bool IsInsideScrollContent(DependencyObject d)
     {
@@ -234,6 +281,9 @@ public static class Program
     {
         string outDir = args.Length > 0 && !args[0].StartsWith("--") ? args[0] : "ui-render-out";
         Directory.CreateDirectory(outDir);
+        // The views drive real view models: their log lines (hotkeys rebound,
+        // games added...) go next to the renders, not into the user's app log.
+        Environment.SetEnvironmentVariable("STANDBYANDTIMER_LOG_DIR", Path.GetFullPath(Path.Combine(outDir, "log")));
         int failures = 0;
 
         // Root-relative pack URIs ("/app_icon.ico") resolve against the
@@ -252,9 +302,11 @@ public static class Program
         var loc = new FakeLoc();
         var settingsVm = new SettingsViewModel(Null<IAutoStartService>(), loc, Null<ISettingsService>(),
                                                Null<IUpdateService>(), Null<IThemeService>(), Null<ILogTailReader>());
+        var systemVm = new SystemViewModel(new FakeGlobalTimer());
+        systemVm.Initialize(promptAnswered: true, setByApp: true, changedUtc: DateTime.UtcNow, bootValue: false);
         var vm = new MainViewModel(Null<ITimerResolutionService>(), Null<IStandbyPurgeService>(),
                                    Null<IMemoryMonitorService>(), Null<ISettingsService>(), loc,
-                                   Null<IGameDetectionService>(), settingsVm);
+                                   Null<IGameDetectionService>(), settingsVm, systemVm);
 
         // Sample data written straight to the backing fields: no OnXChanged
         // partials run, so nothing tries to persist.
@@ -519,8 +571,23 @@ public static class Program
             // Real on-screen capture (hardware render path, through DWM): the
             // offscreen RenderTargetBitmap path is software-only and cannot
             // show GPU edge/opacity-layer artifacts.
-            if (args.Contains("--screen") && tag == "Dark-tr-TR")
+            // --docs: the same capture in Dark / English with tidy sample
+            // data, written to docs/ for the README.
+            bool docs = args.Contains("--docs") && tag == "Dark-en-US";
+            if ((args.Contains("--screen") && tag == "Dark-tr-TR") || docs)
             {
+                var keepGame = vm.Games[2];
+                var keepLock = vm.TimerLock;
+                if (docs)
+                {
+                    vm.Games[2] = new GameEntry { DisplayName = "eldenring", ExecutablePath = keepGame.ExecutablePath, AutoAdded = true };
+                    SetField(vm, "_timerLock", TimerLockMode.Locked);
+                    vm.GetType().GetMethod("OnPropertyChanged", BindingFlags.Instance | BindingFlags.NonPublic, [typeof(string)])!
+                        .Invoke(vm, [nameof(MainViewModel.TimerLock)]);
+                }
+                string Shot(string page) => docs
+                    ? Path.Combine("docs", page == "window" ? "screenshot.png" : "screenshot-settings.png")
+                    : Path.Combine(outDir, $"screen-{tag}-{page}.png");
                 vm.SelectedGame = vm.Games[0];
                 w.Topmost = true; w.Left = 40; w.Top = 40; w.Activate();
                 // Wait with a running dispatcher (DispatcherFrame), so layout,
@@ -537,7 +604,7 @@ public static class Program
                 {
                     using (var g = System.Drawing.Graphics.FromImage(shot))
                         g.CopyFromScreen((int)tl.X, (int)tl.Y, 0, 0, new System.Drawing.Size(cw, ch));
-                    shot.Save(Path.Combine(outDir, $"screen-{tag}-window.png"), System.Drawing.Imaging.ImageFormat.Png);
+                    shot.Save(Shot("window"), System.Drawing.Imaging.ImageFormat.Png);
                 }
                 // Same capture for the Settings tab (log viewer, combos).
                 settingsVm.IsOpen = true;
@@ -549,9 +616,15 @@ public static class Program
                 {
                     using (var g2 = System.Drawing.Graphics.FromImage(shot2))
                         g2.CopyFromScreen((int)tl.X, (int)tl.Y, 0, 0, new System.Drawing.Size(cw, ch));
-                    shot2.Save(Path.Combine(outDir, $"screen-{tag}-settings.png"), System.Drawing.Imaging.ImageFormat.Png);
+                    shot2.Save(Shot("settings"), System.Drawing.Imaging.ImageFormat.Png);
                 }
                 settingsVm.IsOpen = false; Pump();
+                if (docs)
+                {
+                    vm.Games[2] = keepGame;
+                    SetField(vm, "_timerLock", keepLock);
+                    Log($"  saved docs/screenshot.png and docs/screenshot-settings.png");
+                }
 
                 w.Left = -30000; w.Top = -30000; w.Topmost = false;
                 Pump();
@@ -606,6 +679,14 @@ public static class Program
                 failures += CheckLayout(root, $"{tag} {name}");
                 SetField(vm, flag, false); raise.Invoke(vm, [prop]); Pump();
             }
+            // System settings panel (restart pending) and the start-up question.
+            foreach (var (show, name) in new (Action<bool>, string)[] { (v => systemVm.IsOpen = v, "system"), (v => systemVm.IsPromptVisible = v, "prompt") })
+            {
+                show(true); Pump();
+                Save(root, Path.Combine(outDir, $"{tag}-4-{name}.png"));
+                failures += CheckLayout(root, $"{tag} {name}");
+                show(false); Pump();
+            }
             {
                 var purge = Walk(root).OfType<StandbyAndTimer.Views.Cards.StandbyPurgeCard>().Single();
                 var cb = Walk(purge).OfType<CheckBox>().First(c => c.Style == (Style)Application.Current.Resources["DarkCheckBoxStyle"]);
@@ -621,11 +702,37 @@ public static class Program
                 bool dimmed = !cb.IsEnabled && texts.All(x => x.Foreground is SolidColorBrush s && s.Color == muted.Color);
                 if (!cb.IsEnabled && !dimmed) { failures++; Log("  FAIL disabled idle checkbox label is not AppFgMuted"); }
             }
+            SaveZoomed(Walk(root).OfType<StandbyAndTimer.Views.Cards.TitleBar>().Single(), Path.Combine(outDir, $"{tag}-titlebar-x4.png"));
             SaveZoomed(Walk(root).OfType<StandbyAndTimer.Views.Cards.StandbyPurgeCard>().Single(),
                        Path.Combine(outDir, $"{tag}-purge-x4.png"));
             SaveZoomed(Walk(root).OfType<StandbyAndTimer.Views.Cards.StandbyPurgeCard>().Single(),
                        Path.Combine(outDir, $"{tag}-purge-x1.png"), 1);
             failures += CheckLayout(root, tag + " status");
+            {
+                // Title bar: the admin badge text and the ?, — and ✕ glyphs
+                // must sit on one line, the bar's centre (within 1 px).
+                // Measured on the ink: layout centres a glyph's em box, not
+                // its visible strokes (they sat ~2 px low next to the badge).
+                var bar = Walk(root).OfType<StandbyAndTimer.Views.Cards.TitleBar>().Single();
+                var centres = new List<(string what, double y)>();
+                var badgeText = Walk(bar).OfType<TextBlock>().Single(t => t.Text == loc.GetString("Str_TitleBar_Admin"));
+                centres.Add(("badge", InkCentreY(badgeText, bar) ?? double.NaN));
+                foreach (var b in Walk(bar).OfType<Button>().Where(b => b.Width == 36))
+                    centres.Add(($"\"{b.Content}\"", InkCentreY(b, bar) ?? double.NaN));
+                double barMid = bar.ActualHeight / 2;
+                bool ok = centres.Count == 4 && centres.All(c => Math.Abs(c.y - barMid) <= 1.0);
+                if (!ok) failures++;
+                Log($"  {(ok ? "OK  " : "FAIL")} [{tag}] title bar on one line (bar centre {barMid:F1}): " +
+                    string.Join(", ", centres.Select(c => $"{c.what}={c.y:F1}")));
+            }
+            {
+                // Left column: the Timer and Standby memory cards are the same height.
+                double th = Walk(root).OfType<StandbyAndTimer.Views.Cards.TimerCard>().Single().ActualHeight;
+                double mh = Walk(root).OfType<StandbyAndTimer.Views.Cards.MemoryStatsCard>().Single().ActualHeight;
+                bool ok = Math.Abs(th - mh) < 0.5;
+                if (!ok) failures++;
+                Log($"  {(ok ? "OK  " : "FAIL")} [{tag}] timer / memory cards same height: {th:F0} / {mh:F0}");
+            }
 
             // VM → View: IsOpen=true must select the Settings tab.
             settingsVm.IsOpen = true;

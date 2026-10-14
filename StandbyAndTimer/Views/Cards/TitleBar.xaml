@@ -43,22 +43,40 @@
                         VerticalAlignment="Center"
                         shell:WindowChrome.IsHitTestVisibleInChrome="True">
 
-                <Border Style="{StaticResource SuccessBadgeStyle}" Margin="0,0,8,0">
-                    <StackPanel Orientation="Horizontal">
-                        <Path Data="M5,0 L5,3 L9,3 L9,8 L1,8 L1,3 L5,3 M3,3 L3,1.5 A2,2 0 0 1 7,1.5 L7,3"
-                              Stroke="{DynamicResource AccentText}"
-                              StrokeThickness="1"
-                              Width="10" Height="9"
-                              Stretch="Uniform"
-                              VerticalAlignment="Center"
-                              Margin="0,0,5,0"/>
-                        <TextBlock Text="{DynamicResource Str_TitleBar_Admin}"
-                                   FontSize="10"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource AccentText}"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Border>
+                <!-- Administrator badge = button: opens System settings
+                     (SystemOverlay), where settings that change Windows go. -->
+                <Button Command="{Binding SystemSettings.OpenCommand}"
+                        ToolTip="{DynamicResource Str_TitleBar_AdminTip}"
+                        Cursor="Hand"
+                        Focusable="False"
+                        VerticalAlignment="Center"
+                        Margin="0,0,8,0">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="badge" Style="{StaticResource SuccessBadgeStyle}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="M5,0 L5,3 L9,3 L9,8 L1,8 L1,3 L5,3 M3,3 L3,1.5 A2,2 0 0 1 7,1.5 L7,3"
+                                          Stroke="{DynamicResource AccentText}"
+                                          StrokeThickness="1"
+                                          Width="10" Height="9"
+                                          Stretch="Uniform"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,5,0"/>
+                                    <TextBlock Text="{DynamicResource Str_TitleBar_Admin}"
+                                               FontSize="10"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource AccentText}"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="badge" Property="Background" Value="{DynamicResource AccentSubtle}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
 
                 <Button Style="{StaticResource TitleBarIconButtonStyle}"
                         Content="?"

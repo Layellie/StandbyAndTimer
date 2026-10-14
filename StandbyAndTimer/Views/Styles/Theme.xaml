@@ -488,6 +488,10 @@
         <Setter Property="Width"            Value="36"/>
         <Setter Property="Height"           Value="28"/>
         <Setter Property="FontSize"         Value="13"/>
+        <!-- Glyph offset: layout centres the em box, and these glyphs
+             (?, —, ✕) sit low in it. Bottom padding lifts their ink to the
+             bar centre, level with the admin badge (UiRender checks it). -->
+        <Setter Property="Padding"          Value="0,0,0,3"/>
         <Setter Property="Cursor"           Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Template">
@@ -497,7 +501,8 @@
                             Background="{TemplateBinding Background}"
                             CornerRadius="{StaticResource RadiusSmall}"
                             SnapsToDevicePixels="True">
-                        <ContentPresenter HorizontalAlignment="Center"
+                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="Center"
                                           VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -519,7 +524,8 @@
                             Background="{TemplateBinding Background}"
                             CornerRadius="{StaticResource RadiusSmall}"
                             SnapsToDevicePixels="True">
-                        <ContentPresenter HorizontalAlignment="Center"
+                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="Center"
                                           VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
