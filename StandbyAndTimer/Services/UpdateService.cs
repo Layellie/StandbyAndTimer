@@ -131,6 +131,34 @@ internal sealed partial class UpdateService : IUpdateService
         Logger.Info($"Update download finished: {downloaded:N0} bytes -> {targetPath}");
     }
 
+    /// <summary>File name prefix of the installers DownloadAsync callers save to %TEMP%.</summary>
+    internal const string DownloadedInstallerPrefix = "StandbyAndTimer_Setup_";
+
+    /// <summary>
+    /// Deletes installers left in <paramref name="dir"/> by earlier in-app
+    /// updates (~72 MB each; nothing else removed them). One still running,
+    /// i.e. locked, is skipped and goes on a later start. Returns the count.
+    /// </summary>
+    internal static int DeleteDownloadedInstallers(string dir)
+    {
+        if (!Directory.Exists(dir)) return 0;
+        int deleted = 0;
+        foreach (string path in Directory.EnumerateFiles(dir, DownloadedInstallerPrefix + "*.exe"))
+        {
+            try
+            {
+                File.Delete(path);
+                deleted++;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Logger.Info($"Left downloaded installer in place (in use?): {Path.GetFileName(path)}");
+            }
+        }
+        if (deleted > 0) Logger.Info($"Deleted {deleted} downloaded installer(s) from {dir}");
+        return deleted;
+    }
+
     // InformationalVersion keeps a "-beta1" suffix (the assembly version
     // drops it), so a beta build sees its own final release as newer.
     private static string CurrentVersion()

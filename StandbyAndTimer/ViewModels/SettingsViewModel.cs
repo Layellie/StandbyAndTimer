@@ -506,7 +506,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         {
             string targetPath = Path.Combine(
                 Path.GetTempPath(),
-                $"StandbyAndTimer_Setup_{_pendingVersion ?? "latest"}.exe");
+                $"{UpdateService.DownloadedInstallerPrefix}{_pendingVersion ?? "latest"}.exe");
 
             var progress = new Progress<double>(p =>
                 UpdateStatus = string.Format(

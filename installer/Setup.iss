@@ -14,6 +14,9 @@
 #ifndef AppVersion
   #define AppVersion   "2.1.0"
 #endif
+; Numeric part of AppVersion ("2.4.0-beta1" -> "2.4.0") for the file version
+; resource, which cannot carry a pre-release suffix (left empty otherwise).
+#define NumericVersion Copy(AppVersion, 1, Pos("-", AppVersion + "-") - 1)
 #define AppPublisher   "LAYE77IE"
 #define AppExeName     "StandbyAndTimer.exe"
 #define AutoStartTask  "StandbyAndTimer_AutoStart"
@@ -23,6 +26,7 @@
 AppId={{A8F3D2B4-1E5C-4A6F-9D2B-8E7C3F5D1A20}
 AppName={#AppName}
 AppVersion={#AppVersion}
+VersionInfoVersion={#NumericVersion}
 AppPublisher={#AppPublisher}
 AppPublisherURL=https://github.com/Layellie/StandbyAndTimer
 AppSupportURL=https://github.com/Layellie/StandbyAndTimer/issues
@@ -31,6 +35,11 @@ DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
+; The per-user areas below (HKCU settings, %APPDATA% log, %TEMP% installers)
+; belong to the account that elevates. The app itself requires elevation
+; (app.manifest: requireAdministrator), so it runs as that same account and
+; writes exactly there: install, app and uninstall agree on the user.
+UsedUserAreasWarning=no
 OutputDir=dist
 OutputBaseFilename=StandbyAndTimer_Setup_{#AppVersion}
 Compression=lzma2
@@ -74,6 +83,12 @@ Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#AppName}}"; F
 Filename: "{sys}\schtasks.exe"; \
   Parameters: "/Create /F /SC ONLOGON /RL HIGHEST /TN ""{#AutoStartTask}"" /TR ""\""{app}\{#AppExeName}\"" -hidden"""; \
   Flags: runhidden; Tasks: autostart
+
+[UninstallDelete]
+; Log folder (Logger.cs) and installers left in %TEMP% by in-app updates
+; (the app deletes old ones at start; this catches the last one).
+Type: filesandordirs; Name: "{userappdata}\{#AppName}"
+Type: files;          Name: "{localappdata}\Temp\{#AppName}_Setup_*.exe"
 
 [UninstallRun]
 ; Stop the running app (tray icon) before removing files. /T includes any child
