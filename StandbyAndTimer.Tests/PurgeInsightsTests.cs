@@ -33,6 +33,7 @@ public class PurgeInsightsTests
     public void A_purge_is_counted_shown_and_kept_newest_first()
     {
         var h = new Harness();
+        h.Main.Now = () => new DateTime(2026, 10, 14, 22, 0, 0);   // the purges below ran "today"
         PurgeNotice? notice = null;
         h.Main.PurgeNotification += (_, n) => notice = n;
 

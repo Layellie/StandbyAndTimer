@@ -4,6 +4,7 @@ using StandbyAndTimer.Core.Interfaces;
 using StandbyAndTimer.Core.Models;
 using StandbyAndTimer.Services;
 using StandbyAndTimer.Services.Tray;
+using StandbyAndTimer.ViewModels;
 using WinForms = System.Windows.Forms;
 
 namespace StandbyAndTimer.Tests;
@@ -99,6 +100,43 @@ public class PurgeHistoryViewModelTests
         Assert.Equal("512 MB", second.Main.StatsTodayFreed);
         Assert.Equal("1.5 GB", second.Main.StatsWeekFreed.Replace(',', '.'));
         Assert.Equal(0, second.Main.PurgeCount);   // the card counts this session only
+    }
+
+    [Fact]
+    public void The_week_chart_has_seven_days_scaled_to_the_busiest()
+    {
+        var h = new Harness();
+        var today = new DateTime(2026, 10, 14, 22, 0, 0);
+        h.Main.Now = () => today;
+        h.Main.RecordPurge(R(today.AddDays(-9), 9000));   // older than 7 days: not shown
+        h.Main.RecordPurge(R(today.AddDays(-6), 2000));
+        h.Main.RecordPurge(R(today.AddDays(-2), 4000));
+        h.Main.RecordPurge(R(today.AddDays(-2).AddHours(-1), 4000));
+        h.Main.RecordPurge(R(today, 10));
+
+        var bars = h.Main.WeekBars;
+
+        Assert.Equal(7, bars.Count);
+        Assert.True(bars[^1].IsToday);
+        Assert.Single(bars, b => b.IsToday);
+        Assert.Equal(MainViewModel.WeekBarMaxHeight, bars[4].Height);       // 8000 MB, the busiest
+        Assert.Equal(MainViewModel.WeekBarMaxHeight / 4, bars[0].Height);   // 2000 MB
+        Assert.Equal(0, bars[1].Height);                                    // no purge
+        Assert.Equal(3, bars[6].Height);                                    // 10 MB: still visible
+    }
+
+    [Theory]
+    [InlineData(Language.English, "Wed", "13 Oct 20:00")]
+    [InlineData(Language.Turkish, "Çar", "13 Eki 20:00")]
+    public void Dates_follow_the_app_language_not_windows(Language lang, string today, string row)
+    {
+        var h = new Harness();
+        h.Loc.CurrentLanguage = lang;
+        h.Main.Now = () => new DateTime(2026, 10, 14, 22, 0, 0);   // a Wednesday
+        h.Main.RecordPurge(R(new DateTime(2026, 10, 13, 20, 0, 0), 100));
+
+        Assert.Equal(today, h.Main.WeekBars[^1].Day);
+        Assert.Equal(row, h.Main.PurgeHistory[0].Time);
     }
 
     [Fact]

@@ -154,8 +154,9 @@ public partial class App : Application
         _tray.TimerLockCycleRequested  += async (_, _) => { await _viewModel.ToggleTimerLockCommand.ExecuteAsync(null); RefreshTray(); };
 
         // ── 5. Build window and tray ──────────────────────────────────────────
-        _iconBase   = AppIconLoader.LoadAppIcon();
-        _iconActive = AppIconLoader.BuildActiveIcon(_iconBase);
+        // Tray: grey while the timer is off, the lime app icon while it is on.
+        _iconActive = AppIconLoader.LoadAppIcon();
+        _iconBase   = AppIconLoader.BuildIdleIcon(_iconActive);
         // Started hidden (auto-start): no GPU until the window is first
         // shown (MainWindow.ShowFromOffscreen switches back). Otherwise WPF
         // sets up Direct3D at start-up and the graphics driver keeps its
@@ -164,7 +165,8 @@ public partial class App : Application
         bool startHidden = e.Args.Contains("-hidden");
         if (startHidden)
             System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
-        _mainWindow = new MainWindow(_viewModel) { Icon = AppIconLoader.IconToImageSource(_iconBase) };
+        // Window / taskbar icon: Icon="/app_icon.ico" in MainWindow.xaml, every size of the .ico.
+        _mainWindow = new MainWindow(_viewModel);
         _tray.Initialize(_iconBase, _iconActive);
         // The saved theme was applied in step 4, before ThemeChanged was
         // subscribed, so hand the tray its starting palette explicitly.

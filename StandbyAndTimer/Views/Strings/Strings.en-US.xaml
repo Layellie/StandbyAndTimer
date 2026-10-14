@@ -155,6 +155,7 @@
     <sys:String x:Key="Str_History_Count">{0} purges</sys:String>
     <sys:String x:Key="Str_History_ByKind">Normal {0} · Light {1} · Deep {2}</sys:String>
     <sys:String x:Key="Str_History_Since">Recorded since {0}</sys:String>
+    <sys:String x:Key="Str_History_DayTip">{0}: {1} · {2}</sys:String>
     <sys:String x:Key="Str_History_Recent">LAST 20 PURGES</sys:String>
     <sys:String x:Key="Str_History_Reset">Reset history</sys:String>
     <sys:String x:Key="Str_History_ResetConfirm">Sure? Press again</sys:String>

@@ -123,11 +123,6 @@ internal static class NativeMethods
 
     // ── user32.dll ───────────────────────────────────────────────────────────
 
-    /// <summary>Releases an HICON returned by Bitmap.GetHicon / CreateIcon.</summary>
-    [DllImport("user32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    internal static extern bool DestroyIcon(IntPtr hIcon);
-
     /// <summary>Window the user is currently interacting with — used by game auto-detect.</summary>
     [DllImport("user32.dll")]
     internal static extern IntPtr GetForegroundWindow();

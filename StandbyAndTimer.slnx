@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="StandbyAndTimer/StandbyAndTimer.csproj" />
   <Project Path="StandbyAndTimer.Tests/StandbyAndTimer.Tests.csproj" />
+  <Project Path="tools/IconGen/IconGen.csproj" />
   <Project Path="tools/UiRender/UiRender.csproj" />
 </Solution>
