@@ -167,7 +167,11 @@
                               IsChecked="{Binding NotifyOnTimerToggle}"
                               Style="{StaticResource ToggleSwitchStyle}"/>
                 </Grid>
-                <Grid Margin="0,3,0,2">
+                <!-- Covers both game balloons: a game auto-added to the list,
+                     and a listed game starting. -->
+                <Grid Margin="0,3,0,2"
+                      Background="Transparent"
+                      ToolTip="{DynamicResource Str_Settings_NotifyOnGameTip}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
