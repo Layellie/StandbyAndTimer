@@ -36,47 +36,56 @@ The solution file uses the `.slnx` format (`StandbyAndTimer.slnx`).
 
 ## Architecture
 
-The project follows a layered MVVM architecture. **All Windows API calls are isolated in `Services/Native/NativeMethods.cs`** — nothing else in the codebase calls P/Invoke directly.
+Layered MVVM. **All P/Invoke lives in `Services/Native/NativeMethods.cs`**; nothing else declares `DllImport`. Registry access (HKCU settings, the HKLM GlobalTimer switch) goes through `Microsoft.Win32` in the services.
 
 ```
-Core/                     ← Pure contracts; zero platform dependencies
-  Interfaces/             ← ITimerResolutionService, IStandbyPurgeService,
-                            IMemoryMonitorService, IProcessOptimizationService,
-                            IAutoStartService, ISettingsService
-  Models/                 ← MemorySnapshot (record), AppSettings, GameEntry
+Core/                       ← contracts, no platform code
+  Interfaces/               ← one interface per service (ITimerResolutionService, IStandbyPurgeService,
+                              IMemoryMonitorService, IProcessOptimizationService, IGameDetectionService,
+                              ISettingsService, IUpdateService, IThemeService, ILocalizationService,
+                              IHotkeyService, ITrayIconService, IIdleMonitor, IGlobalTimerSetting, ...)
+  Models/                   ← AppSettings, GameEntry, MemorySnapshot (record), Theme, TimerLockMode, ...
 
-Services/                 ← Concrete implementations; only layer that touches Win32
-  Native/NativeMethods.cs ← ALL DllImport declarations (ntdll, kernel32, avrt, advapi32)
-  TimerResolutionService  ← Activate/Deactivate; IDisposable restores timer on exit
-  StandbyPurgeService     ← PurgeAsync + PurgeSucceeded event
-  MemoryMonitorService    ← PeriodicTimer loop (1 s); owns PerformanceCounter lifecycle
-  ProcessOptimizationService ← Tracks PIDs as HashSet<int>; disposes Process handles inline
-  AutoStartService        ← schtasks.exe wrapper
-  SettingsService         ← HKCU\SOFTWARE\StandbyAndTimer registry R/W
+Services/                   ← implementations; the only layer that touches Win32
+  Native/NativeMethods.cs   ← every DllImport (ntdll, kernel32, user32, avrt, advapi32)
+  TimerResolutionService    ← NtSetTimerResolution + 50 ms watchdog thread (MMCSS) that re-asserts it
+  MemoryMonitorService      ← 1 s PeriodicTimer loop: snapshot, running listed games, idle time,
+                              auto purge, game boost; a failing tick is logged, the loop goes on
+  StandbyPurgeService       ← NtSetSystemInformation(80), full or light (low-priority) purge
+  ProcessOptimizationService← High priority / all cores / EcoQoS opt-out for running boost games
+  GameDetectionService      ← 3 s poll: fullscreen foreground exe → auto-added game
+  SettingsService           ← HKCU\SOFTWARE\StandbyAndTimer R/W; never saves after a failed load
+  GlobalTimerSetting        ← HKLM ...\kernel\GlobalTimerResolutionRequests (Windows 11, read at boot)
+  UpdateService             ← GitHub releases/latest, SHA-256 verified download to {app}\updates
+  Tray/                     ← WinForms NotifyIcon + themed ContextMenuStrip (TrayMenuPalette)
+  ThemeService / LocalizationService ← swap ResourceDictionary slot 1 (palette) / slot 2 (strings)
 
-Infrastructure/
-  AppBootstrapper.cs      ← Microsoft.Extensions.DependencyInjection wiring (all singletons)
+Infrastructure/AppBootstrapper.cs ← Microsoft.Extensions.DependencyInjection, all singletons
 
 ViewModels/
-  MainViewModel.cs        ← CommunityToolkit.Mvvm [ObservableProperty]/[RelayCommand];
-                            orchestrates all services; dispatches snapshot events to UI thread
+  MainViewModel             ← status page, timer lock / idle-off logic, game list; owns persistence
+  SettingsViewModel         ← Settings tab (also export / import, updates, hotkey rebinding)
+  SystemViewModel           ← System settings panel behind the Administrator badge (settings that
+                              change Windows) + the one-time GlobalTimer question
 
 Views/
-  Styles/Theme.xaml       ← Black/yellow palette + all Control styles
-  MainWindow.xaml         ← Pure data-binding; zero code-behind logic
-  MainWindow.xaml.cs      ← Only: DataContext = viewModel; OnClosing → Hide() (tray)
+  Styles/Theme.xaml         ← control styles; Palette.{Dark,Black,Light,White}.xaml hold the colours
+  Strings/Strings.{en-US,tr-TR}.xaml ← every UI string, both languages
+  Cards/, Overlays/         ← status-page cards, title bar, modal dialogs (About guide, wizard,
+                              System settings, close confirmation)
 
-App.xaml / App.xaml.cs   ← ShutdownMode=OnExplicitShutdown; builds DI container;
-                            creates H.NotifyIcon tray icon programmatically
+App.xaml.cs                 ← single instance, DI, tray, hotkeys, notifications, startup cleanup
 ```
 
 ## Key Design Decisions
 
-- **`PeriodicTimer`** (not `Thread.Sleep`) drives the 1-second monitor loop — cleanly cancelled via `CancellationToken`.
-- **`IMemoryMonitorService`** exposes `StandbyLimitMb`, `FreeLimitMb`, `GameModeEnabled`, `GamePaths` as writable properties — the ViewModel updates these live without restarting the loop.
-- **`IStandbyPurgeService.PurgeSucceeded`** event lets the ViewModel increment `PurgeCount` for both manual and automatic purges without polling.
-- Settings are persisted to the registry in `OnExit` **and** after each user action — not on every keystroke. The `_isInitializing` guard prevents spurious saves during `ApplySettings`.
-- `Process` objects in `ProcessOptimizationService` are disposed immediately with `using` — only PIDs (`HashSet<int>`) are retained between ticks.
+- Settings persist to the registry after each user action (TextBoxes debounced) and in `OnExit`. `InitScope` sets the `_isInitializing` guard so applying loaded settings never saves.
+- **User settings must survive updates.** New settings default to the old behaviour; existing registry value names and stored enum names are never renamed (new enum members go at the end). `SettingsServiceTests` include a value-for-value 2.4.0 key that must load and save back unchanged; extend it when the format changes.
+- Machine-specific state (System settings) is not taken from a settings import.
+- `PerformanceCounter`s are created lazily on the monitor thread (their constructor blocked start-up for seconds on the UI thread).
+- Game processes are matched by exe name; only PIDs are kept, `Process` objects are disposed at once.
+- The single-file bundle is **not compressed**: a compressed bundle is unpacked into private memory at every start (220 vs 143 MB measured). Inno Setup compresses the installer.
+- Settings-page layout is fixed (760x520, no ScrollViewer): run UiRender after any XAML change; it fails on anything clipped or outside its card.
 
 ## NuGet Packages
 
@@ -84,10 +93,12 @@ App.xaml / App.xaml.cs   ← ShutdownMode=OnExplicitShutdown; builds DI containe
 |---|---|
 | `CommunityToolkit.Mvvm 8.x` | Source-generated `[ObservableProperty]` / `[RelayCommand]` |
 | `Microsoft.Extensions.DependencyInjection 10.x` | DI container (no hosting overhead) |
-| `H.NotifyIcon.Wpf 2.x` | WPF-native system tray (no WinForms dependency) |
+
+The tray uses WinForms' `NotifyIcon` (`UseWindowsForms`, aliased as `WinForms` in the one file that needs it); there is no tray package.
 
 ## Platform Notes
 
-- All native calls require Administrator; running without UAC elevation will silently return failure codes.
-- `NtSetTimerResolution` should be called once (`Activate`) and restored on exit (`Deactivate` / `Dispose`) — not on every loop tick as in the original WinForms version.
-- `PerformanceCounter("Memory", "Standby Cache Reserve Bytes")` is expensive to construct; it is created once in `MemoryMonitorService` and disposed with the service.
+- Everything needs Administrator (`app.manifest`); without elevation the native calls fail silently.
+- Since Windows 10 2004 a timer resolution request reaches only processes that request one themselves; games that never ask stay at 15.6 ms unless GlobalTimerResolutionRequests is on (Windows 11, takes effect after a restart). Windows 11 can also ignore requests of hidden windows: the app opts itself and boosted games out of that throttling.
+- An active timer keeps Windows from sleeping (`SetThreadExecutionState`); "Turn the timer off when idle" exists for that.
+- Release flow: pre-release beta first, then the final release; see the release notes of earlier versions for the format (SHA256 line + `.sha256` asset).

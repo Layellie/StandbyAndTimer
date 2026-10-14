@@ -164,6 +164,7 @@
     <sys:String x:Key="Str_Help_Timer2">The lock next to the TIMER title: UNLOCKED turns the timer on only when you press TIMER. LOCKED turns it on every time the app starts. IN GAME turns it on when a listed game starts and off when the last one exits. Each click moves to the next.</sys:String>
     <sys:String x:Key="Str_Help_Timer3">While the timer is on, Windows does not go to sleep by itself. With Settings → General → "Turn the timer off when idle", the timer goes off after the chosen time without input, so the PC can sleep; your next input turns it back on.</sys:String>
     <sys:String x:Key="Str_Help_Timer4">When the app closes, the timer goes back to the Windows default.</sys:String>
+    <sys:String x:Key="Str_Help_Timer5">Games that ask for a timer themselves (most shooters) get 0.5 ms; games that never ask (some story games) stay at 15.6 ms on Windows 11. For those: Administrator badge at the top right → System settings → "Apply the timer to all games" (needs one restart).</sys:String>
     <sys:String x:Key="Str_Help_StandbyTitle">STANDBY MEMORY</sys:String>
     <sys:String x:Key="Str_Help_Standby1">Windows keeps files you used recently in RAM as "standby". That is normal and usually helps, but when free memory runs very low it can cause stutter in some games. "Clearable" is the current size of that list.</sys:String>
     <sys:String x:Key="Str_Help_Standby2">The Purge Standby button, the tray menu or the hotkey empties the list right away.</sys:String>

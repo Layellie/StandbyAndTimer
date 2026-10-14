@@ -127,6 +127,7 @@
                         <ContentControl Content="{DynamicResource Str_Help_Timer2}" Style="{StaticResource HelpBulletStyle}"/>
                         <ContentControl Content="{DynamicResource Str_Help_Timer3}" Style="{StaticResource HelpBulletStyle}"/>
                         <ContentControl Content="{DynamicResource Str_Help_Timer4}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Timer5}" Style="{StaticResource HelpBulletStyle}"/>
 
                         <TextBlock Text="{DynamicResource Str_Help_StandbyTitle}" Style="{StaticResource HelpSectionStyle}"/>
                         <ContentControl Content="{DynamicResource Str_Help_Standby1}" Style="{StaticResource HelpBulletStyle}"/>

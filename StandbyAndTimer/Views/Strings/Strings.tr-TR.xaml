@@ -164,6 +164,7 @@
     <sys:String x:Key="Str_Help_Timer2">TIMER başlığının yanındaki kilit: KİLİTSİZ iken timer sadece TIMER'a basınca açılır. KİLİTLİ iken uygulama her açıldığında açılır. OYUNDA iken listedeki bir oyun açılınca açılır, son oyun kapanınca kapanır. Tıkladıkça bu sırayla değişir.</sys:String>
     <sys:String x:Key="Str_Help_Timer3">Timer açıkken Windows kendiliğinden uykuya geçmez. Ayarlar → Genel → "Boştayken timer'ı kapat" ile PC seçtiğin süre kullanılmazsa timer kapanır ve PC uyuyabilir; ilk dokunuşta timer geri açılır.</sys:String>
     <sys:String x:Key="Str_Help_Timer4">Uygulama kapanınca timer Windows'un varsayılanına döner.</sys:String>
+    <sys:String x:Key="Str_Help_Timer5">Timer'ı kendisi isteyen oyunlar (FPS oyunlarının çoğu) 0,5 ms'yi alır; hiç istemeyenler (bazı hikâye oyunları) Windows 11'de 15,6 ms'de kalır. Onlar için: sağ üstteki Yönetici rozeti → Sistem ayarları → "Timer'ı tüm oyunlara uygula" (bir kez yeniden başlatma gerekir).</sys:String>
     <sys:String x:Key="Str_Help_StandbyTitle">STANDBY BELLEK</sys:String>
     <sys:String x:Key="Str_Help_Standby1">Windows son kullandığın dosyaları RAM'de "standby" olarak tutar. Bu normaldir ve çoğu zaman işe yarar; ama boş bellek çok azalınca bazı oyunlarda takılmaya yol açabilir. "Temizlenebilir" bu listenin şu anki boyutudur.</sys:String>
     <sys:String x:Key="Str_Help_Standby2">Standby Temizle butonu, tepsi menüsü ya da kısayol listeyi hemen boşaltır.</sys:String>
