@@ -148,6 +148,10 @@ public partial class App : Application
         _tray.ExitRequested        += (_, _) => Shutdown();
         _tray.TimerToggleRequested += (_, _) => _viewModel.ToggleTimerResolutionCommand.Execute(null);
         _tray.PurgeRequested       += (_, _) => _viewModel.ManualPurgeCommand.Execute(null);
+        // Tray quick settings: the same setters as the window, then refresh the labels now.
+        _tray.DeepPurgeToggleRequested += (_, _) => { _viewModel.DeepPurge = !_viewModel.DeepPurge; RefreshTray(); };
+        _tray.GameModeToggleRequested  += (_, _) => { _viewModel.GameModeEnabled = !_viewModel.GameModeEnabled; RefreshTray(); };
+        _tray.TimerLockCycleRequested  += async (_, _) => { await _viewModel.ToggleTimerLockCommand.ExecuteAsync(null); RefreshTray(); };
 
         // ── 5. Build window and tray ──────────────────────────────────────────
         _iconBase   = AppIconLoader.LoadAppIcon();
@@ -432,7 +436,8 @@ public partial class App : Application
     private void RefreshTray()
     {
         if (_tray is null || _viewModel is null) return;
-        _tray.Refresh(_viewModel.TimerActive, _viewModel.PurgeCount);
+        _tray.Refresh(new TrayState(_viewModel.TimerActive, _viewModel.PurgeCount,
+            _viewModel.DeepPurge, _viewModel.GameModeEnabled, _viewModel.TimerLock));
     }
 
     // `_localization!`: these handlers are only subscribed AFTER _localization

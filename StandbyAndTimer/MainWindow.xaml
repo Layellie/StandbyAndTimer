@@ -94,7 +94,7 @@
                         </Grid>
 
                         <cards:StandbyPurgeCard Grid.Column="2"/>
-                        <cards:GameModeCard Grid.Column="4" GameDropped="OnGameDropped"/>
+                        <cards:GameModeCard Grid.Column="4" GameDropped="OnGameDropped" GameLaunchRequested="OnGameLaunchRequested"/>
                     </Grid>
                 </TabItem>
 

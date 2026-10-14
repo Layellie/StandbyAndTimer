@@ -191,10 +191,12 @@
                         <ContentControl Content="{DynamicResource Str_Help_Game2}" Style="{StaticResource HelpBulletStyle}"/>
                         <ContentControl Content="{DynamicResource Str_Help_Game3}" Style="{StaticResource HelpBulletStyle}"/>
                         <ContentControl Content="{DynamicResource Str_Help_Game4}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Game5}" Style="{StaticResource HelpBulletStyle}"/>
 
                         <TextBlock Text="{DynamicResource Str_Help_KeysTitle}" Style="{StaticResource HelpSectionStyle}"/>
                         <ContentControl Content="{DynamicResource Str_Help_Keys1}" Style="{StaticResource HelpBulletStyle}"/>
                         <ContentControl Content="{DynamicResource Str_Help_Keys2}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Keys3}" Style="{StaticResource HelpBulletStyle}"/>
 
                         <TextBlock Text="{DynamicResource Str_Help_MoreTitle}" Style="{StaticResource HelpSectionStyle}"/>
                         <ContentControl Content="{DynamicResource Str_Help_More1}" Style="{StaticResource HelpBulletStyle}"/>

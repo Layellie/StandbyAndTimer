@@ -24,6 +24,11 @@ public interface ITrayIconService : IDisposable
     /// <summary>Invoked when the user picks "Enable/Disable Timer" from the tray menu.</summary>
     event EventHandler? TimerToggleRequested;
 
+    /// <summary>Quick settings in the menu: flip deep purge, flip Game Mode, cycle the timer lock.</summary>
+    event EventHandler? DeepPurgeToggleRequested;
+    event EventHandler? GameModeToggleRequested;
+    event EventHandler? TimerLockCycleRequested;
+
     /// <summary>Invoked when the user picks "Purge Standby Now" from the tray menu.</summary>
     event EventHandler? PurgeRequested;
 
@@ -31,7 +36,7 @@ public interface ITrayIconService : IDisposable
     void Initialize(System.Drawing.Icon baseIcon, System.Drawing.Icon? activeIcon);
 
     /// <summary>Re-renders the menu labels + tooltip + active/idle icon. Cheap; safe to call on every tick.</summary>
-    void Refresh(bool timerActive, int purgeCount);
+    void Refresh(TrayState state);
 
     /// <summary>Re-renders just the menu labels — call when language changes.</summary>
     void RefreshLabels();

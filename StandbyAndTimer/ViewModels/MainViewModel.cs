@@ -111,7 +111,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         ILocalizationService        localization,
         IGameDetectionService       gameDetection,
         SettingsViewModel           settingsViewModel,
-        SystemViewModel?            systemViewModel = null)
+        SystemViewModel?            systemViewModel = null,
+        IPurgeStatsStore?           purgeStats      = null)
     {
         _timerService    = timerService;
         _purgeService    = purgeService;
@@ -136,6 +137,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         Settings.SnapshotProvider  = BuildCurrentSettings;
 
         SystemSettings = systemViewModel ?? SystemViewModel.Inert();
+
+        _purgeStore = purgeStats ?? new InMemoryPurgeStatsStore();
+        _purgeStats = _purgeStore.Load();
+        foreach (var r in _purgeStats.Recent) PurgeHistory.Add(RowFor(r));
         SystemSettings.SettingsChanged += (_, _) => PersistSettings();
 
         _memoryService.SnapshotUpdated     += OnSnapshotUpdated;
@@ -516,35 +521,104 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         Application.Current.Dispatcher.InvokeAsync(() => RecordPurge(result));
 
     /// <summary>Newest first, this session only (PurgeHistoryMax entries).</summary>
+    /// <summary>The last purges (kept across restarts), newest first.</summary>
     public ObservableCollection<PurgeHistoryRow> PurgeHistory { get; } = [];
-    internal const int PurgeHistoryMax = 20;
+    internal const int PurgeHistoryMax = PurgeStats.RecentMax;
+
+    private readonly IPurgeStatsStore _purgeStore;
+    private PurgeStats _purgeStats;
+    // Today's date for the totals; tests set a fixed one.
+    internal Func<DateTime> Now { get; set; } = () => DateTime.Now;
 
     [ObservableProperty] private bool _isPurgeHistoryVisible;
+    // "Reset history" needs a second press while armed.
+    [ObservableProperty] private bool _isResetArmed;
 
-    [RelayCommand] private void ShowPurgeHistory()  => IsPurgeHistoryVisible = true;
-    [RelayCommand] private void ClosePurgeHistory() => IsPurgeHistoryVisible = false;
+    [RelayCommand] private void ShowPurgeHistory()
+    {
+        RefreshPurgeStats();
+        IsPurgeHistoryVisible = true;
+    }
+
+    [RelayCommand] private void ClosePurgeHistory()
+    {
+        IsPurgeHistoryVisible = false;
+        IsResetArmed = false;
+    }
+
+    [RelayCommand]
+    private void ResetPurgeHistory()
+    {
+        if (!IsResetArmed) { IsResetArmed = true; return; }
+        IsResetArmed = false;
+        _purgeStats = new PurgeStats();
+        _purgeStore.Save(_purgeStats);
+        RelabelPurgeHistory();
+        Logger.Info("Purge history reset");
+    }
 
     // One finished purge: count, history, status line ("1.8 GB freed"),
     // then the tray balloon (App, if purge notifications are on).
     internal void RecordPurge(PurgeResult result)
     {
         PurgeCount++;
+        _purgeStats.Add(result);
+        _purgeStore.Save(_purgeStats);   // a few KB, once per purge
         PurgeHistory.Insert(0, RowFor(result));
         while (PurgeHistory.Count > PurgeHistoryMax) PurgeHistory.RemoveAt(PurgeHistory.Count - 1);
+        RefreshPurgeStats();
         StatusMessage = string.Format(CultureInfo.CurrentCulture,
             _localization.GetString("Str_Status_PurgeFreed"), FormatSize(result.FreedMb));
         PurgeNotification?.Invoke(this, new PurgeNotice(result, PurgeCount));
     }
 
+    // Today: "21:05:09"; earlier: "13 Oct 21:05" (current culture).
     private PurgeHistoryRow RowFor(PurgeResult r) =>
-        new(r, r.At.ToString("HH:mm:ss", CultureInfo.CurrentCulture), DescribePurge(r), FormatSize(r.FreedMb));
+        new(r,
+            r.At.Date == Now().Date
+                ? r.At.ToString("HH:mm:ss", CultureInfo.CurrentCulture)
+                : r.At.ToString("d MMM HH:mm", CultureInfo.CurrentCulture),
+            DescribePurge(r), FormatSize(r.FreedMb));
 
-    // The rows carry text: rebuild them in the new language.
+    // The rows carry text: rebuild them (new language, loaded, reset).
     private void RelabelPurgeHistory()
     {
-        var results = PurgeHistory.Select(h => h.Result).ToList();
         PurgeHistory.Clear();
-        foreach (var r in results) PurgeHistory.Add(RowFor(r));
+        foreach (var r in _purgeStats.Recent) PurgeHistory.Add(RowFor(r));
+        RefreshPurgeStats();
+    }
+
+    // ── Totals shown above the list ──────────────────────────────────────
+
+    public string StatsTodayFreed => FormatSize(_purgeStats.LastDays(1, Now()).FreedMb);
+    public string StatsTodayCount => CountText(_purgeStats.LastDays(1, Now()).Count);
+    public string StatsWeekFreed  => FormatSize(_purgeStats.LastDays(7, Now()).FreedMb);
+    public string StatsWeekCount  => CountText(_purgeStats.LastDays(7, Now()).Count);
+    public string StatsAllFreed   => FormatSize(_purgeStats.AllTime.FreedMb);
+    public string StatsAllCount   => CountText(_purgeStats.AllTime.Count);
+
+    /// <summary>"Normal 31.2 GB (40) · Light 12 MB (3) · Deep 9.4 GB (6)".</summary>
+    public string StatsByKind => string.Format(CultureInfo.CurrentCulture, _localization.GetString("Str_History_ByKind"),
+        KindText(PurgeKind.Normal), KindText(PurgeKind.Light), KindText(PurgeKind.Deep));
+
+    public string StatsSince => _purgeStats.Since is { } since
+        ? string.Format(CultureInfo.CurrentCulture, _localization.GetString("Str_History_Since"), since.ToString("d MMMM yyyy", CultureInfo.CurrentCulture))
+        : string.Empty;
+
+    private string CountText(int count) =>
+        string.Format(CultureInfo.CurrentCulture, _localization.GetString("Str_History_Count"), count);
+
+    private string KindText(PurgeKind kind)
+    {
+        var t = _purgeStats.Of(kind);
+        return $"{FormatSize(t.FreedMb)} ({t.Count})";
+    }
+
+    private void RefreshPurgeStats()
+    {
+        foreach (var p in new[] { nameof(StatsTodayFreed), nameof(StatsTodayCount), nameof(StatsWeekFreed), nameof(StatsWeekCount),
+                                  nameof(StatsAllFreed), nameof(StatsAllCount), nameof(StatsByKind), nameof(StatsSince) })
+            OnPropertyChanged(p);
     }
 
     /// <summary>"Deep", "Light, automatic", "Normal, at game start": kind, plus the trigger unless it was a button / hotkey / tray press.</summary>
@@ -839,6 +913,23 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         };
         if (dlg.ShowDialog() != true) return;
         AddGameFromPath(dlg.FileName);
+    }
+
+    // Tests swap in a fake; the app starts games through the shell.
+    internal Func<string, bool> StartGame { get; set; } = GameLauncher.StartUnelevated;
+
+    /// <summary>Double-click on a listed game: start it, not elevated (see GameLauncher).</summary>
+    public void LaunchGame(GameEntry game)
+    {
+        if (!File.Exists(game.ExecutablePath))
+        {
+            StatusMessage = string.Format(CultureInfo.CurrentCulture,
+                _localization.GetString("Str_Status_GameMissing"), game.DisplayName);
+            return;
+        }
+        bool ok = StartGame(game.ExecutablePath);
+        StatusMessage = string.Format(CultureInfo.CurrentCulture,
+            _localization.GetString(ok ? "Str_Status_GameLaunching" : "Str_Status_GameLaunchFailed"), game.DisplayName);
     }
 
     public void AddGameFromPath(string path)

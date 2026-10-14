@@ -66,7 +66,8 @@ public sealed class Harness
     public MainViewModel Main { get; }
 
     public Harness(AppSettings? toLoad = null, IStandbyPurgeService? purge = null,
-                   IMemoryMonitorService? memory = null, IGameDetectionService? detection = null)
+                   IMemoryMonitorService? memory = null, IGameDetectionService? detection = null,
+                   IPurgeStatsStore? purgeStats = null)
     {
         Store    = new FakeSettingsStore(toLoad);
         Settings = new SettingsViewModel(NullProxy.Of<IAutoStartService>(), Loc, Store,
@@ -74,7 +75,8 @@ public sealed class Harness
                                          NullProxy.Of<ILogTailReader>());
         Main     = new MainViewModel(Timer, purge ?? NullProxy.Of<IStandbyPurgeService>(),
                                      memory ?? NullProxy.Of<IMemoryMonitorService>(), Store, Loc,
-                                     detection ?? NullProxy.Of<IGameDetectionService>(), Settings);
+                                     detection ?? NullProxy.Of<IGameDetectionService>(), Settings,
+                                     purgeStats: purgeStats);
     }
 
     public AppSettings LastSaved => Store.Saved[^1];

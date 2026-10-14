@@ -1,5 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using StandbyAndTimer.Core.Models;
 
 namespace StandbyAndTimer.Views.Cards;
 
@@ -10,6 +12,9 @@ namespace StandbyAndTimer.Views.Cards;
 public partial class GameModeCard : UserControl
 {
     public event EventHandler<string>? GameDropped;
+
+    // Double-click on a row (not the empty list area) = launch that game.
+    public event EventHandler<GameEntry>? GameLaunchRequested;
 
     public GameModeCard() => InitializeComponent();
 
@@ -28,5 +33,15 @@ public partial class GameModeCard : UserControl
         foreach (var f in files)
             GameDropped?.Invoke(this, f);
         e.Handled = true;
+    }
+
+    private void GamesList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton != MouseButton.Left) return;
+        if (ItemsControl.ContainerFromElement(GamesList, (DependencyObject)e.OriginalSource) is ListBoxItem { DataContext: GameEntry game })
+        {
+            GameLaunchRequested?.Invoke(this, game);
+            e.Handled = true;
+        }
     }
 }

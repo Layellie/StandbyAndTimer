@@ -313,16 +313,19 @@ public static class Program
         SetField(vm, "_totalRamMb", 16087L);
         SetField(vm, "_freeRamMb", 753L);
         SetField(vm, "_standbyRamMb", 2867L);
-        SetField(vm, "_purgeCount", 3);
-        // Purge history sample (newest first), and the per-mode estimate.
+        // Purge history sample (oldest first; RecordPurge puts each on top),
+        // spread over days so the totals and the date column show.
+        typeof(MainViewModel).GetProperty("Now", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(vm, (Func<DateTime>)(() => new DateTime(2026, 10, 14, 22, 0, 0)));
         foreach (var (at, kind, trigger, mb) in new[] {
-            (new DateTime(2026, 10, 14, 21, 42, 5), PurgeKind.Deep, PurgeTrigger.GameStart, 3124L),
-            (new DateTime(2026, 10, 14, 20, 15, 48), PurgeKind.Normal, PurgeTrigger.Auto, 1843L),
-            (new DateTime(2026, 10, 14, 19, 2, 31), PurgeKind.Light, PurgeTrigger.Manual, 12L) })
-        {
-            var r = new PurgeResult(at, kind, trigger, mb);
-            vm.PurgeHistory.Add(new PurgeHistoryRow(r, at.ToString("HH:mm:ss"), vm.DescribePurge(r), $"{(mb >= 1024 ? (mb / 1024.0).ToString("0.0") + " GB" : mb + " MB")}"));
-        }
+            (new DateTime(2026, 10, 2, 18, 30, 0),  PurgeKind.Normal, PurgeTrigger.Auto,      2210L),
+            (new DateTime(2026, 10, 11, 23, 4, 12), PurgeKind.Deep,   PurgeTrigger.Manual,    3550L),
+            (new DateTime(2026, 10, 14, 19, 2, 31), PurgeKind.Light,  PurgeTrigger.Manual,      12L),
+            (new DateTime(2026, 10, 14, 20, 15, 48), PurgeKind.Normal, PurgeTrigger.Auto,     1843L),
+            (new DateTime(2026, 10, 14, 21, 42, 5), PurgeKind.Deep,   PurgeTrigger.GameStart, 3124L) })
+            typeof(MainViewModel).GetMethod("RecordPurge", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .Invoke(vm, [new PurgeResult(at, kind, trigger, mb)]);
+        SetField(vm, "_purgeCount", 3);
         SetField(vm, "_clearableMb", 2867L);
         SetField(vm, "_standbyLimitMb", 60);
         SetField(vm, "_freeLimitMb", 60);
@@ -847,7 +850,7 @@ public static class Program
                 var trayType = typeof(MainWindow).Assembly.GetType("StandbyAndTimer.Services.Tray.TrayIconService")!;
                 var tray = Activator.CreateInstance(trayType, [loc])!;
                 var menu = (WinForms.ContextMenuStrip)trayType.GetMethod("BuildMenu", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(tray, null)!;
-                trayType.GetMethod("RefreshLabels", BindingFlags.Instance | BindingFlags.NonPublic, [typeof(bool)])!.Invoke(tray, [true]);
+                ((ITrayIconService)tray).Refresh(new TrayState(true, 3, DeepPurge: true, GameMode: true, TimerLock: TimerLockMode.Locked));
                 // Same call path as App: public interface, after the menu exists.
                 ((ITrayIconService)tray).ApplyTheme(themeEnum);
                 _ = menu.Handle;
