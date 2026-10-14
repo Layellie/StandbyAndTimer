@@ -281,6 +281,9 @@ public static class Program
     {
         string outDir = args.Length > 0 && !args[0].StartsWith("--") ? args[0] : "ui-render-out";
         Directory.CreateDirectory(outDir);
+        // The views drive real view models: their log lines (hotkeys rebound,
+        // games added...) go next to the renders, not into the user's app log.
+        Environment.SetEnvironmentVariable("STANDBYANDTIMER_LOG_DIR", Path.GetFullPath(Path.Combine(outDir, "log")));
         int failures = 0;
 
         // Root-relative pack URIs ("/app_icon.ico") resolve against the
@@ -568,8 +571,23 @@ public static class Program
             // Real on-screen capture (hardware render path, through DWM): the
             // offscreen RenderTargetBitmap path is software-only and cannot
             // show GPU edge/opacity-layer artifacts.
-            if (args.Contains("--screen") && tag == "Dark-tr-TR")
+            // --docs: the same capture in Dark / English with tidy sample
+            // data, written to docs/ for the README.
+            bool docs = args.Contains("--docs") && tag == "Dark-en-US";
+            if ((args.Contains("--screen") && tag == "Dark-tr-TR") || docs)
             {
+                var keepGame = vm.Games[2];
+                var keepLock = vm.TimerLock;
+                if (docs)
+                {
+                    vm.Games[2] = new GameEntry { DisplayName = "eldenring", ExecutablePath = keepGame.ExecutablePath, AutoAdded = true };
+                    SetField(vm, "_timerLock", TimerLockMode.Locked);
+                    vm.GetType().GetMethod("OnPropertyChanged", BindingFlags.Instance | BindingFlags.NonPublic, [typeof(string)])!
+                        .Invoke(vm, [nameof(MainViewModel.TimerLock)]);
+                }
+                string Shot(string page) => docs
+                    ? Path.Combine("docs", page == "window" ? "screenshot.png" : "screenshot-settings.png")
+                    : Path.Combine(outDir, $"screen-{tag}-{page}.png");
                 vm.SelectedGame = vm.Games[0];
                 w.Topmost = true; w.Left = 40; w.Top = 40; w.Activate();
                 // Wait with a running dispatcher (DispatcherFrame), so layout,
@@ -586,7 +604,7 @@ public static class Program
                 {
                     using (var g = System.Drawing.Graphics.FromImage(shot))
                         g.CopyFromScreen((int)tl.X, (int)tl.Y, 0, 0, new System.Drawing.Size(cw, ch));
-                    shot.Save(Path.Combine(outDir, $"screen-{tag}-window.png"), System.Drawing.Imaging.ImageFormat.Png);
+                    shot.Save(Shot("window"), System.Drawing.Imaging.ImageFormat.Png);
                 }
                 // Same capture for the Settings tab (log viewer, combos).
                 settingsVm.IsOpen = true;
@@ -598,9 +616,15 @@ public static class Program
                 {
                     using (var g2 = System.Drawing.Graphics.FromImage(shot2))
                         g2.CopyFromScreen((int)tl.X, (int)tl.Y, 0, 0, new System.Drawing.Size(cw, ch));
-                    shot2.Save(Path.Combine(outDir, $"screen-{tag}-settings.png"), System.Drawing.Imaging.ImageFormat.Png);
+                    shot2.Save(Shot("settings"), System.Drawing.Imaging.ImageFormat.Png);
                 }
                 settingsVm.IsOpen = false; Pump();
+                if (docs)
+                {
+                    vm.Games[2] = keepGame;
+                    SetField(vm, "_timerLock", keepLock);
+                    Log($"  saved docs/screenshot.png and docs/screenshot-settings.png");
+                }
 
                 w.Left = -30000; w.Top = -30000; w.Topmost = false;
                 Pump();

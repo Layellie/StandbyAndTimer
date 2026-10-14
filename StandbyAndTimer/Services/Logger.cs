@@ -12,9 +12,16 @@ internal static class Logger
     private static readonly object _gate = new();
     private const long MaxBytes = 1_048_576;
 
+    // STANDBYANDTIMER_LOG_DIR: the unit tests and UiRender point it at a
+    // temp folder, so their simulated actions ("hotkey rebound", "game
+    // added", ...) never land in the user's real log.
+    internal const string LogDirVariable = "STANDBYANDTIMER_LOG_DIR";
+
     private static readonly string _logDir =
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                     "StandbyAndTimer");
+        Environment.GetEnvironmentVariable(LogDirVariable) is { Length: > 0 } custom
+            ? custom
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                           "StandbyAndTimer");
 
     private static readonly string _logFile = Path.Combine(_logDir, "log.txt");
 

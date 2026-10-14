@@ -8,16 +8,24 @@ public class ProcessSnapshotTests
     [Fact]
     public void The_snapshot_reader_sees_the_same_processes_as_Process_GetProcesses()
     {
-        var expected = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var p in Process.GetProcesses()) using (p) expected.Add(p.ProcessName);
-        expected.Remove("Idle");   // Process names PID 0; the snapshot leaves it unnamed
+        static HashSet<string> Managed()
+        {
+            var s = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var p in Process.GetProcesses()) using (p) s.Add(p.ProcessName);
+            s.Remove("Idle");   // Process names PID 0; the snapshot leaves it unnamed
+            return s;
+        }
 
-        var names = RunningGames.Take().Names;
+        // Processes start and exit all the time (a test run once overlapped
+        // a script launching short-lived ones), so only names present both
+        // before and after the snapshot must be in it.
+        var before = Managed();
+        var names  = RunningGames.Take().Names;
+        var stable = Managed();
+        stable.IntersectWith(before);
 
-        // Processes start and exit between the two snapshots, so compare the
-        // stable part: everything but a handful of names must agree.
-        int missing = expected.Count(n => !names.Contains(n));
-        Assert.True(missing <= 3, $"missing {missing}: {string.Join(", ", expected.Where(n => !names.Contains(n)).Take(5))}");
+        var missing = stable.Where(n => !names.Contains(n)).ToList();
+        Assert.True(missing.Count == 0, $"missing: {string.Join(", ", missing.Take(5))}");
         Assert.Contains(Process.GetCurrentProcess().ProcessName, names);
     }
 

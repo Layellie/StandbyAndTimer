@@ -46,6 +46,7 @@ internal static class NativeMethods
         out int ReturnLength);
 
     internal const int SystemProcessInformation    = 5;
+    internal const int SystemMemoryListInformation = 80;   // query: SYSTEM_MEMORY_LIST_INFORMATION
     internal const int STATUS_INFO_LENGTH_MISMATCH = unchecked((int)0xC0000004);
 
     // ── kernel32.dll ─────────────────────────────────────────────────────────
