@@ -1,13 +1,8 @@
 <UserControl x:Class="StandbyAndTimer.Views.Cards.MemoryStatsCard"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:conv="clr-namespace:StandbyAndTimer.Views.Converters"
              FontFamily="{StaticResource AppFont}" FontSize="13">
-    <UserControl.Resources>
-        <conv:MbToGbConverter x:Key="MbToGbConv"/>
-    </UserControl.Resources>
-
-    <!-- Standby memory KPI + total / free split below. Binds to StandbyRamMb /
+    <!-- Standby memory KPI + total / free split below. Binds to ClearableValue /
          TotalRamMb / FreeRamMb on MainViewModel.
 
          Three-row Grid (Auto / * / Auto): title pinned top, KPI vertically
@@ -29,18 +24,22 @@
                        Text="{DynamicResource Str_Card_StandbyTitle}"
                        Style="{StaticResource SectionLabelStyle}"/>
 
-            <StackPanel Grid.Row="1" VerticalAlignment="Center">
+            <!-- What a purge in the selected mode would free now (MainViewModel
+                 .ClearableMb); the tooltip compares all three modes. -->
+            <StackPanel Grid.Row="1" VerticalAlignment="Center"
+                        Background="Transparent"
+                        ToolTip="{Binding ClearableTip}">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="{Binding StandbyRamMb, Converter={StaticResource MbToGbConv}}"
+                    <TextBlock Text="{Binding ClearableValue}"
                                Style="{StaticResource KpiValueStyle}"/>
-                    <TextBlock Text="GB"
+                    <TextBlock Text="{Binding ClearableUnit}"
                                FontSize="13"
                                VerticalAlignment="Bottom"
                                Margin="5,0,0,5"
                                Foreground="{DynamicResource AppFgDim}"/>
                 </StackPanel>
 
-                <TextBlock Text="{DynamicResource Str_Card_StandbyClearable}"
+                <TextBlock Text="{Binding ClearableLabel}"
                            FontSize="14"
                            Foreground="{DynamicResource AppFgDim}"
                            Margin="0,4,0,0"/>
@@ -85,18 +84,39 @@
                                    HorizontalAlignment="Center"
                                    Foreground="{DynamicResource AccentText}"/>
                     </StackPanel>
-                    <StackPanel Grid.Column="2" HorizontalAlignment="Right">
-                        <TextBlock Text="{DynamicResource Str_Memory_PurgesShort}"
-                                   FontSize="10"
-                                   Foreground="{DynamicResource AppFgDim}"
-                                   HorizontalAlignment="Right"
-                                   Margin="0,0,0,2"/>
-                        <TextBlock Text="{Binding PurgeCount}"
-                                   FontSize="13"
-                                   FontWeight="SemiBold"
-                                   HorizontalAlignment="Right"
-                                   Foreground="{DynamicResource AppFg}"/>
-                    </StackPanel>
+                    <!-- Purges: a button that opens the purge history
+                         (PurgeHistoryOverlay); looks like the other cells,
+                         with an accent underline on hover. -->
+                    <Button Grid.Column="2"
+                            HorizontalAlignment="Right"
+                            Command="{Binding ShowPurgeHistoryCommand}"
+                            ToolTip="{DynamicResource Str_Card_PurgesTip}"
+                            Cursor="Hand"
+                            Focusable="False">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <StackPanel Background="Transparent">
+                                    <TextBlock Text="{DynamicResource Str_Memory_PurgesShort}"
+                                               FontSize="10"
+                                               Foreground="{DynamicResource AppFgDim}"
+                                               HorizontalAlignment="Right"
+                                               Margin="0,0,0,2"/>
+                                    <TextBlock x:Name="count"
+                                               Text="{Binding PurgeCount}"
+                                               FontSize="13"
+                                               FontWeight="SemiBold"
+                                               HorizontalAlignment="Right"
+                                               Foreground="{DynamicResource AppFg}"/>
+                                </StackPanel>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="count" Property="Foreground" Value="{DynamicResource AccentText}"/>
+                                        <Setter TargetName="count" Property="TextDecorations" Value="Underline"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
                 </Grid>
             </Border>
         </Grid>

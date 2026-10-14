@@ -1,9 +1,14 @@
+using StandbyAndTimer.Core.Models;
+
 namespace StandbyAndTimer.Core.Interfaces;
 
 public interface IStandbyPurgeService
 {
-    /// <summary>Fired on the thread-pool each time a purge completes successfully.</summary>
-    event EventHandler? PurgeSucceeded;
+    /// <summary>
+    /// Fired on the thread-pool each time a purge completes successfully,
+    /// with what ran, what asked for it and how much memory it freed.
+    /// </summary>
+    event EventHandler<PurgeResult>? PurgeSucceeded;
 
     /// <summary>
     /// False = purge the whole standby list; true = purge only its low-priority
@@ -24,5 +29,5 @@ public interface IStandbyPurgeService
     /// Requires SeProfileSingleProcessPrivilege (granted by requireAdministrator manifest).
     /// Returns true if the kernel call succeeded.
     /// </summary>
-    Task<bool> PurgeAsync();
+    Task<bool> PurgeAsync(PurgeTrigger trigger = PurgeTrigger.Manual);
 }

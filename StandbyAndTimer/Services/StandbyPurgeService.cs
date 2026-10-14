@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using StandbyAndTimer.Core.Interfaces;
+using StandbyAndTimer.Core.Models;
 using StandbyAndTimer.Services.Native;
 
 namespace StandbyAndTimer.Services;
@@ -25,7 +26,7 @@ internal sealed class StandbyPurgeService : IStandbyPurgeService
         PurgeLowPriorityStandby // priority-0 standby -> free
     }
 
-    public event EventHandler? PurgeSucceeded;
+    public event EventHandler<PurgeResult>? PurgeSucceeded;
 
     public bool LightMode { get; set; }
     public bool DeepMode  { get; set; }
@@ -44,14 +45,28 @@ internal sealed class StandbyPurgeService : IStandbyPurgeService
       : lightMode ? [Step.PurgeLowPriorityStandby]
       :             [Step.PurgeStandby];
 
-    public Task<bool> PurgeAsync()
+    internal static PurgeKind KindFor(bool lightMode, bool deepMode) =>
+        deepMode ? PurgeKind.Deep : lightMode ? PurgeKind.Light : PurgeKind.Normal;
+
+    /// <summary>Freed = free + zeroed memory after minus before; other processes allocating meanwhile can only lower it, so it is clamped at 0.</summary>
+    internal static long FreedMb(MemoryListInfo? before, MemoryListInfo? after) =>
+        before is null || after is null ? 0 : Math.Max(0, after.FreeAndZeroMb - before.FreeAndZeroMb);
+
+    public Task<bool> PurgeAsync(PurgeTrigger trigger = PurgeTrigger.Manual)
     {
-        var plan = PlanFor(LightMode, DeepMode);   // read once, on the caller's thread
+        bool light = LightMode, deep = DeepMode;   // read once, on the caller's thread
+        var plan = PlanFor(light, deep);
         return Task.Run(() =>
         {
+            MemoryLists.TryRead(out var before);
             bool success = Purge(plan);
             if (success)
-                PurgeSucceeded?.Invoke(this, EventArgs.Empty);
+            {
+                MemoryLists.TryRead(out var after);
+                var result = new PurgeResult(DateTime.Now, KindFor(light, deep), trigger, FreedMb(before, after));
+                Logger.Info($"Purge ({result.Kind}, {result.Trigger}): freed {result.FreedMb} MB");
+                PurgeSucceeded?.Invoke(this, result);
+            }
             return success;
         });
     }

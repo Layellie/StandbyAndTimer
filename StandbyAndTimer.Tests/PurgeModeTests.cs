@@ -10,8 +10,9 @@ public sealed class FakePurge : IStandbyPurgeService
     public bool LightMode { get; set; }
     public bool DeepMode  { get; set; }
     public int Purges { get; private set; }
-    public event EventHandler? PurgeSucceeded { add { } remove { } }
-    public Task<bool> PurgeAsync() { Purges++; return Task.FromResult(true); }
+    public List<PurgeTrigger> Triggers { get; } = [];
+    public event EventHandler<PurgeResult>? PurgeSucceeded { add { } remove { } }
+    public Task<bool> PurgeAsync(PurgeTrigger trigger = PurgeTrigger.Manual) { Purges++; Triggers.Add(trigger); return Task.FromResult(true); }
 }
 
 public class PurgeModeTests

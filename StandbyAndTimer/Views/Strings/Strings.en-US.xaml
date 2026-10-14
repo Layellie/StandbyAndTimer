@@ -65,7 +65,7 @@
     <sys:String x:Key="Str_Game_DropHint">Drag &amp; drop .exe files here</sys:String>
     <sys:String x:Key="Str_Game_AutoTag">AUTO</sys:String>
     <sys:String x:Key="Str_Game_AutoTagTip">Detected fullscreen and added automatically. Remove it and it will not be added again.</sys:String>
-    <sys:String x:Key="Str_Game_CustomTagTip">Priority boost or auto purge is turned off for this game.</sys:String>
+    <sys:String x:Key="Str_Game_CustomTagTip">This game has its own rules: priority boost or auto purge off, or purge at start on.</sys:String>
     <sys:String x:Key="Str_Game_BoostLabel">Give high priority</sys:String>
     <sys:String x:Key="Str_Game_BoostTip">When off, the app never touches this game (priority, cores, EcoQoS). Turn it off if a tool like Process Lasso manages it. Takes effect the next time the game starts.</sys:String>
     <sys:String x:Key="Str_Game_AutoPurgeLabel">Auto purge while it runs</sys:String>
@@ -122,7 +122,26 @@
     <sys:String x:Key="Str_Tray_TimerStateOn">ON</sys:String>
     <sys:String x:Key="Str_Tray_TimerStateOff">OFF</sys:String>
     <sys:String x:Key="Str_Tray_NotifyPurgeTitle">Standby cache purged</sys:String>
-    <sys:String x:Key="Str_Tray_NotifyPurgeBody">Total purges: {0}</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyPurgeBody">{0} freed · {1} · {2} in total</sys:String>
+
+    <!-- Purge result, history, live estimate, purge at game start -->
+    <sys:String x:Key="Str_Status_PurgeFreed">Standby purged: {0} freed</sys:String>
+    <sys:String x:Key="Str_PurgeKind_Normal">Normal</sys:String>
+    <sys:String x:Key="Str_PurgeKind_Light">Light</sys:String>
+    <sys:String x:Key="Str_PurgeKind_Deep">Deep</sys:String>
+    <sys:String x:Key="Str_PurgeTrigger_Auto">automatic</sys:String>
+    <sys:String x:Key="Str_PurgeTrigger_GameStart">at game start</sys:String>
+    <sys:String x:Key="Str_Card_ClearableLight">With light purge</sys:String>
+    <sys:String x:Key="Str_Card_ClearableDeep">With deep purge</sys:String>
+    <sys:String x:Key="Str_Card_ClearableTip">A purge would free now: normal {0} · light {1} · deep {2} and a little more (system cache). The big number shows the selected purge.</sys:String>
+    <sys:String x:Key="Str_Card_PurgesTip">Click to see the purge history</sys:String>
+    <sys:String x:Key="Str_Game_PurgeOnStartLabel">Purge once when it starts</sys:String>
+    <sys:String x:Key="Str_Game_PurgeOnStartTip">When this game starts, the standby list is purged once, before the game fills RAM (in the selected mode: normal, light or deep). Works with AUTO PURGE off too.</sys:String>
+    <sys:String x:Key="Str_GameNotify_PurgeAtStart">Purge at start</sys:String>
+    <sys:String x:Key="Str_History_Title">Purge history</sys:String>
+    <sys:String x:Key="Str_History_Subtitle">The last 20 purges of this session</sys:String>
+    <sys:String x:Key="Str_History_Empty">No purges yet.</sys:String>
+    <sys:String x:Key="Str_History_Close">Close</sys:String>
     <sys:String x:Key="Str_Tray_NotifyTimerOnTitle">Timer activated</sys:String>
     <sys:String x:Key="Str_Tray_NotifyTimerOnBody">System clock locked to {0:F3} ms</sys:String>
     <sys:String x:Key="Str_Tray_NotifyTimerOffTitle">Timer disabled</sys:String>

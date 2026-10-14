@@ -313,7 +313,17 @@ public static class Program
         SetField(vm, "_totalRamMb", 16087L);
         SetField(vm, "_freeRamMb", 753L);
         SetField(vm, "_standbyRamMb", 2867L);
-        SetField(vm, "_purgeCount", 1);
+        SetField(vm, "_purgeCount", 3);
+        // Purge history sample (newest first), and the per-mode estimate.
+        foreach (var (at, kind, trigger, mb) in new[] {
+            (new DateTime(2026, 10, 14, 21, 42, 5), PurgeKind.Deep, PurgeTrigger.GameStart, 3124L),
+            (new DateTime(2026, 10, 14, 20, 15, 48), PurgeKind.Normal, PurgeTrigger.Auto, 1843L),
+            (new DateTime(2026, 10, 14, 19, 2, 31), PurgeKind.Light, PurgeTrigger.Manual, 12L) })
+        {
+            var r = new PurgeResult(at, kind, trigger, mb);
+            vm.PurgeHistory.Add(new PurgeHistoryRow(r, at.ToString("HH:mm:ss"), vm.DescribePurge(r), $"{(mb >= 1024 ? (mb / 1024.0).ToString("0.0") + " GB" : mb + " MB")}"));
+        }
+        SetField(vm, "_clearableMb", 2867L);
         SetField(vm, "_standbyLimitMb", 60);
         SetField(vm, "_freeLimitMb", 60);
         SetField(vm, "_autoPurgeEnabled", false);
@@ -329,6 +339,7 @@ public static class Program
         foreach (var lang in new[] { "en-US", "tr-TR" })
         {
             md[2] = new ResourceDictionary { Source = Pack($"Views/Strings/Strings.{lang}.xaml") };
+            vm.GetType().GetMethod("RelabelPurgeHistory", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(vm, null);   // history rows in this language
             foreach (var key in new[] { "Str_Wizard_Body", "Str_Tray_TooltipFormat" })
             {
                 string v = loc.GetString(key);
@@ -680,7 +691,7 @@ public static class Program
                 SetField(vm, flag, false); raise.Invoke(vm, [prop]); Pump();
             }
             // System settings panel (restart pending) and the start-up question.
-            foreach (var (show, name) in new (Action<bool>, string)[] { (v => systemVm.IsOpen = v, "system"), (v => systemVm.IsPromptVisible = v, "prompt") })
+            foreach (var (show, name) in new (Action<bool>, string)[] { (v => systemVm.IsOpen = v, "system"), (v => systemVm.IsPromptVisible = v, "prompt"), (v => vm.IsPurgeHistoryVisible = v, "history") })
             {
                 show(true); Pump();
                 Save(root, Path.Combine(outDir, $"{tag}-4-{name}.png"));

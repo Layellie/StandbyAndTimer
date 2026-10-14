@@ -81,6 +81,7 @@ internal sealed class SettingsService : ISettingsService
             // so games saved by older versions keep the old behaviour.
             var noBoost   = new HashSet<string>(SplitPaths(key.GetValue("NoBoostGamePaths")), StringComparer.OrdinalIgnoreCase);
             var noPurge   = new HashSet<string>(SplitPaths(key.GetValue("NoAutoPurgeGamePaths")), StringComparer.OrdinalIgnoreCase);
+            var purgeOnStart = new HashSet<string>(SplitPaths(key.GetValue("PurgeOnStartGamePaths")), StringComparer.OrdinalIgnoreCase);
             settings.Games = SplitPaths(key.GetValue("GamePaths"))
                 .Where(File.Exists)
                 .Select(p => new GameEntry
@@ -89,7 +90,8 @@ internal sealed class SettingsService : ISettingsService
                     ExecutablePath = p,
                     AutoAdded      = autoPaths.Contains(p),
                     BoostPriority  = !noBoost.Contains(p),
-                    AllowAutoPurge = !noPurge.Contains(p)
+                    AllowAutoPurge = !noPurge.Contains(p),
+                    PurgeOnStart   = purgeOnStart.Contains(p)
                 })
                 .ToList();
             settings.IgnoredGamePaths = SplitPaths(key.GetValue("IgnoredGamePaths")).ToList();
@@ -161,6 +163,7 @@ internal sealed class SettingsService : ISettingsService
             SetPaths(key, "IgnoredGamePaths", settings.IgnoredGamePaths ?? []);
             SetPaths(key, "NoBoostGamePaths",     settings.Games.Where(g => !g.BoostPriority).Select(g => g.ExecutablePath));
             SetPaths(key, "NoAutoPurgeGamePaths", settings.Games.Where(g => !g.AllowAutoPurge).Select(g => g.ExecutablePath));
+            SetPaths(key, "PurgeOnStartGamePaths", settings.Games.Where(g => g.PurgeOnStart).Select(g => g.ExecutablePath));
         }
         catch (Exception ex)
         {
