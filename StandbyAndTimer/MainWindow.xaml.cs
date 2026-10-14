@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Threading;
 using StandbyAndTimer.Services.Native;
 using StandbyAndTimer.ViewModels;
@@ -118,6 +119,10 @@ public partial class MainWindow : Window
     {
         _offscreen = false;
 
+        // A hidden start runs the whole process in software (App.OnStartup);
+        // the first show brings the GPU back for good.
+        if (RenderOptions.ProcessRenderMode == RenderMode.SoftwareOnly)
+            RenderOptions.ProcessRenderMode = RenderMode.Default;
         SetRenderMode(RenderMode.Default);
         Opacity       = 1;
         ShowInTaskbar = true;
