@@ -1,21 +1,23 @@
 using System.IO;
 using System.Windows;
-using System.Windows.Media.Imaging;
-using StandbyAndTimer.Services.Native;
 
 namespace StandbyAndTimer.Services.Tray;
 
 // Centralizes app-icon construction: loads the bundled .ico, falls back to
-// a programmatic icon if missing, and builds the "active" variant with a
-// green dot overlay used to signal "timer locked" in the tray. Kept static
+// a programmatic icon if missing, and builds the grey "idle" variant the
+// tray shows while the timer is off (lime = on). Kept static
 // because it has no state and is called exactly once at startup — making
 // it a DI service would only add ceremony.
 internal static class AppIconLoader
 {
-    // Loads the bundled app_icon.ico from the WPF resource stream. Returns
-    // a fallback bitmap-built icon if the resource is missing so the app
-    // can still show *some* icon in the tray.
-    internal static System.Drawing.Icon LoadAppIcon()
+    // Loads the bundled app_icon.ico at the tray size (16 px at 100 %, more
+    // at higher scaling). The .ico holds 16-256 px images; asking for the
+    // size picks the matching one instead of the default 32 px shrunk by the
+    // shell. Returns a fallback bitmap-built icon if the resource is missing.
+    internal static System.Drawing.Icon LoadAppIcon() =>
+        LoadAppIcon(System.Windows.Forms.SystemInformation.SmallIconSize);
+
+    internal static System.Drawing.Icon LoadAppIcon(System.Drawing.Size size)
     {
         try
         {
@@ -23,7 +25,7 @@ internal static class AppIconLoader
             if (resource is not null)
             {
                 using var stream = resource.Stream;
-                return new System.Drawing.Icon(stream);
+                return new System.Drawing.Icon(stream, size);
             }
         }
         catch (Exception ex) { Logger.Warn($"LoadAppIcon: {ex.Message}"); }
@@ -31,43 +33,40 @@ internal static class AppIconLoader
         return CreateFallbackIcon();
     }
 
-    // Draws a green dot in the bottom-right corner of the base icon. Used
-    // as the tray icon when the high-resolution timer is locked, so the
-    // user has a glance-able "active" indicator without opening the window.
-    internal static System.Drawing.Icon BuildActiveIcon(System.Drawing.Icon baseIcon)
+    // The tray icon while the timer is off: the app icon in grey. Lime (the
+    // normal icon) then means "timer on" at a glance, even at 16 px where a
+    // corner dot would cover the ring.
+    internal static System.Drawing.Icon BuildIdleIcon(System.Drawing.Icon appIcon)
     {
         try
         {
-            using var bmp = baseIcon.ToBitmap();
+            using var src = appIcon.ToBitmap();
+            using var bmp = new System.Drawing.Bitmap(src.Width, src.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            // Luma, scaled down a little so the grey ring stays calm.
+            const float k = 0.8f;
+            var gray = new System.Drawing.Imaging.ColorMatrix(
+            [
+                [0.299f * k, 0.299f * k, 0.299f * k, 0, 0],
+                [0.587f * k, 0.587f * k, 0.587f * k, 0, 0],
+                [0.114f * k, 0.114f * k, 0.114f * k, 0, 0],
+                [0,          0,          0,          1, 0],
+                [0,          0,          0,          0, 1],
+            ]);
+            using (var attrs = new System.Drawing.Imaging.ImageAttributes())
             using (var g = System.Drawing.Graphics.FromImage(bmp))
             {
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                int size = Math.Max(8, bmp.Width / 3);
-                int x    = bmp.Width  - size - 1;
-                int y    = bmp.Height - size - 1;
-                using var dot    = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 40, 220, 90));
-                using var border = new System.Drawing.Pen(System.Drawing.Color.Black, 1.5f);
-                g.FillEllipse(dot, x, y, size, size);
-                g.DrawEllipse(border, x, y, size, size);
+                attrs.SetColorMatrix(gray);
+                g.DrawImage(src, new System.Drawing.Rectangle(0, 0, src.Width, src.Height),
+                            0, 0, src.Width, src.Height, System.Drawing.GraphicsUnit.Pixel, attrs);
             }
             return BitmapToIcon(bmp);
         }
         catch (Exception ex)
         {
-            Logger.Warn($"BuildActiveIcon: {ex.Message}");
-            return (System.Drawing.Icon)baseIcon.Clone();
+            Logger.Warn($"BuildIdleIcon: {ex.Message}");
+            return (System.Drawing.Icon)appIcon.Clone();
         }
     }
-
-    // Converts a System.Drawing.Icon into a WPF BitmapSource so it can be
-    // used as Window.Icon. CreateBitmapSourceFromHIcon borrows the HICON
-    // without taking ownership, so the source Icon must outlive the source
-    // BitmapSource — App.OnExit handles that ordering.
-    internal static BitmapSource IconToImageSource(System.Drawing.Icon icon) =>
-        System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(
-            icon.Handle,
-            System.Windows.Int32Rect.Empty,
-            BitmapSizeOptions.FromEmptyOptions());
 
     internal static void DisposeIcon(ref System.Drawing.Icon? icon)
     {
@@ -108,22 +107,28 @@ internal static class AppIconLoader
         return BitmapToIcon(bmp);
     }
 
-    // Bitmap → HICON → Icon via GetHicon, but we destroy the temporary HICON
-    // immediately after cloning it through a memory stream — no leak.
+    // Bitmap -> Icon through an in-memory .ico holding the bitmap as PNG.
+    // Keeps the full alpha channel; the GetHicon + Icon.Save path dropped
+    // most of the semi-transparent edge (anti-aliasing) and needed a
+    // DestroyIcon.
     private static System.Drawing.Icon BitmapToIcon(System.Drawing.Bitmap bmp)
     {
-        IntPtr hicon = bmp.GetHicon();
-        try
+        using var png = new MemoryStream();
+        bmp.Save(png, System.Drawing.Imaging.ImageFormat.Png);
+
+        using var ico = new MemoryStream();
+        using (var w = new BinaryWriter(ico, System.Text.Encoding.UTF8, leaveOpen: true))
         {
-            using var temp = System.Drawing.Icon.FromHandle(hicon);
-            using var ms   = new MemoryStream();
-            temp.Save(ms);
-            ms.Position = 0;
-            return new System.Drawing.Icon(ms);
+            w.Write((ushort)0); w.Write((ushort)1); w.Write((ushort)1);       // ICONDIR, one image
+            w.Write((byte)(bmp.Width  >= 256 ? 0 : bmp.Width));
+            w.Write((byte)(bmp.Height >= 256 ? 0 : bmp.Height));
+            w.Write((byte)0); w.Write((byte)0);                               // no palette
+            w.Write((ushort)1); w.Write((ushort)32);                          // planes, bpp
+            w.Write((int)png.Length); w.Write(6 + 16);                        // size, offset
+            png.Position = 0;
+            png.CopyTo(ico);
         }
-        finally
-        {
-            NativeMethods.DestroyIcon(hicon);
-        }
+        ico.Position = 0;
+        return new System.Drawing.Icon(ico);
     }
 }

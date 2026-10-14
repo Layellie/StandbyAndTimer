@@ -29,8 +29,8 @@ public class NullProxy : DispatchProxy
 // Returns the key itself, so tests compare against resource keys.
 public sealed class FakeLocalization : ILocalizationService
 {
-    public Language CurrentLanguage => Language.English;
-    public void SetLanguage(Language lang) { }
+    public Language CurrentLanguage { get; set; } = Language.English;
+    public void SetLanguage(Language lang) => CurrentLanguage = lang;
     public string GetString(string key) => key;
     public event EventHandler? LanguageChanged { add { } remove { } }
 }

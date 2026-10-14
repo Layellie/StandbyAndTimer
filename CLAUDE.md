@@ -30,6 +30,9 @@ dotnet test StandbyAndTimer.Tests/StandbyAndTimer.Tests.csproj -c Release
 
 # UI renders + view checks after XAML/style/string changes (PNGs in ui-render-out/)
 dotnet run --project tools/UiRender -c Release
+
+# Redraw the app icon (every size 16-256 px, vector) into StandbyAndTimer/app_icon.ico
+dotnet run --project tools/IconGen -c Release -- square StandbyAndTimer/app_icon.ico ui-render-out
 ```
 
 The solution file uses the `.slnx` format (`StandbyAndTimer.slnx`).

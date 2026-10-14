@@ -572,12 +572,18 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         PurgeNotification?.Invoke(this, new PurgeNotice(result, PurgeCount));
     }
 
-    // Today: "21:05:09"; earlier: "13 Oct 21:05" (current culture).
+    // Month and day names follow the app language, not the Windows one: an
+    // English UI on a Turkish Windows showed "11 Eki" and "Per". Numbers keep
+    // the Windows format (FormatSize).
+    private CultureInfo DateCulture => CultureInfo.GetCultureInfo(
+        _localization.CurrentLanguage == Language.Turkish ? "tr-TR" : "en-US");
+
+    // Today: "21:05:09"; earlier: "13 Oct 21:05".
     private PurgeHistoryRow RowFor(PurgeResult r) =>
         new(r,
             r.At.Date == Now().Date
-                ? r.At.ToString("HH:mm:ss", CultureInfo.CurrentCulture)
-                : r.At.ToString("d MMM HH:mm", CultureInfo.CurrentCulture),
+                ? r.At.ToString("HH:mm:ss", DateCulture)
+                : r.At.ToString("d MMM HH:mm", DateCulture),
             DescribePurge(r), FormatSize(r.FreedMb));
 
     // The rows carry text: rebuild them (new language, loaded, reset).
@@ -602,7 +608,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         KindText(PurgeKind.Normal), KindText(PurgeKind.Light), KindText(PurgeKind.Deep));
 
     public string StatsSince => _purgeStats.Since is { } since
-        ? string.Format(CultureInfo.CurrentCulture, _localization.GetString("Str_History_Since"), since.ToString("d MMMM yyyy", CultureInfo.CurrentCulture))
+        ? string.Format(CultureInfo.CurrentCulture, _localization.GetString("Str_History_Since"), since.ToString("d MMMM yyyy", DateCulture))
         : string.Empty;
 
     private string CountText(int count) =>
@@ -614,10 +620,32 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         return $"{FormatSize(t.FreedMb)} ({t.Count})";
     }
 
+    internal const double WeekBarMaxHeight = 40;
+
+    /// <summary>The last 7 days, oldest first, for the bar chart: height relative to the busiest day.</summary>
+    public IReadOnlyList<DayBar> WeekBars
+    {
+        get
+        {
+            DateTime today = Now().Date;
+            var days = Enumerable.Range(0, 7).Select(i => today.AddDays(i - 6))
+                                 .Select(d => (Day: d, Total: _purgeStats.LastDays(1, d))).ToList();
+            long max = days.Max(d => d.Total.FreedMb);
+            return days.Select(d => new DayBar(
+                d.Day.ToString("ddd", DateCulture),
+                // A day with purges never gets a bar too thin to see.
+                max <= 0 || d.Total.Count == 0 ? 0 : Math.Max(3, Math.Round(WeekBarMaxHeight * d.Total.FreedMb / max)),
+                d.Day == today,
+                string.Format(CultureInfo.CurrentCulture, _localization.GetString("Str_History_DayTip"),
+                    d.Day.ToString("d MMMM", DateCulture), FormatSize(d.Total.FreedMb), CountText(d.Total.Count))))
+                .ToList();
+        }
+    }
+
     private void RefreshPurgeStats()
     {
         foreach (var p in new[] { nameof(StatsTodayFreed), nameof(StatsTodayCount), nameof(StatsWeekFreed), nameof(StatsWeekCount),
-                                  nameof(StatsAllFreed), nameof(StatsAllCount), nameof(StatsByKind), nameof(StatsSince) })
+                                  nameof(StatsAllFreed), nameof(StatsAllCount), nameof(StatsByKind), nameof(StatsSince), nameof(WeekBars) })
             OnPropertyChanged(p);
     }
 
@@ -1063,3 +1091,6 @@ public sealed record PurgeNotice(PurgeResult Result, int TotalPurges);
 
 /// <summary>One line of the purge history: the result and its text in the current language.</summary>
 public sealed record PurgeHistoryRow(PurgeResult Result, string Time, string What, string Freed);
+
+/// <summary>One day in the history bar chart; <see cref="Height"/> is in pixels.</summary>
+public sealed record DayBar(string Day, double Height, bool IsToday, string Tip);

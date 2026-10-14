@@ -44,7 +44,7 @@
                 CornerRadius="{StaticResource RadiusLarge}"
                 Padding="22,18"
                 Width="560"
-                MaxHeight="476"
+                MaxHeight="490"
                 MouseLeftButtonDown="DialogMouseDown">
             <Grid>
                 <Grid.RowDefinitions>
@@ -104,12 +104,49 @@
                     </Border>
                 </Grid>
 
-                <StackPanel Grid.Row="2" Margin="2,8,0,0">
-                    <TextBlock Text="{Binding StatsByKind}" FontSize="11"
-                               Foreground="{DynamicResource AppFgDim}" TextWrapping="Wrap"/>
-                    <TextBlock Text="{Binding StatsSince}" FontSize="11"
-                               Foreground="{DynamicResource AppFgDim}" Margin="0,2,0,0"/>
-                </StackPanel>
+                <!-- Per-kind totals + since on the left, the last 7 days as bars on the right. -->
+                <Grid Grid.Row="2" Margin="2,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                        <TextBlock Text="{Binding StatsByKind}" FontSize="11"
+                                   Foreground="{DynamicResource AppFgDim}" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding StatsSince}" FontSize="11"
+                                   Foreground="{DynamicResource AppFgDim}" Margin="0,3,0,0"/>
+                    </StackPanel>
+                    <ItemsControl x:Name="WeekChart" Grid.Column="1" ItemsSource="{Binding WeekBars}" VerticalAlignment="Bottom">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <!-- Transparent background: the whole column shows the tooltip. -->
+                                <StackPanel Width="30" Background="Transparent" ToolTip="{Binding Tip}">
+                                    <Grid Height="40">
+                                        <!-- baseline, so an empty day still shows its slot -->
+                                        <Border Height="2" VerticalAlignment="Bottom" Margin="5,0"
+                                                CornerRadius="1" Background="{DynamicResource BorderColor}"/>
+                                        <Border x:Name="Bar" Height="{Binding Height}" VerticalAlignment="Bottom" Margin="5,0"
+                                                CornerRadius="3,3,1,1" Background="{DynamicResource AccentPrimary}" Opacity="0.55"/>
+                                    </Grid>
+                                    <TextBlock x:Name="DayLabel" Text="{Binding Day}" FontSize="10" Margin="0,4,0,0"
+                                               HorizontalAlignment="Center" Foreground="{DynamicResource AppFgMuted}"/>
+                                </StackPanel>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsToday}" Value="True">
+                                        <Setter TargetName="Bar" Property="Opacity" Value="1"/>
+                                        <Setter TargetName="DayLabel" Property="Foreground" Value="{DynamicResource AccentText}"/>
+                                        <Setter TargetName="DayLabel" Property="FontWeight" Value="SemiBold"/>
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
 
                 <TextBlock Grid.Row="3" Text="{DynamicResource Str_History_Recent}"
                            Style="{StaticResource PageSectionLabelStyle}" Margin="2,12,0,6"/>

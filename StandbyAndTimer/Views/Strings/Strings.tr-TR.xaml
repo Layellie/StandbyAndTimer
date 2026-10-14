@@ -155,6 +155,7 @@
     <sys:String x:Key="Str_History_Count">{0} temizlik</sys:String>
     <sys:String x:Key="Str_History_ByKind">Normal {0} · Hafif {1} · Derin {2}</sys:String>
     <sys:String x:Key="Str_History_Since">Kayıt başlangıcı: {0}</sys:String>
+    <sys:String x:Key="Str_History_DayTip">{0}: {1} · {2}</sys:String>
     <sys:String x:Key="Str_History_Recent">SON 20 TEMİZLİK</sys:String>
     <sys:String x:Key="Str_History_Reset">Geçmişi sıfırla</sys:String>
     <sys:String x:Key="Str_History_ResetConfirm">Emin misin? Tekrar bas</sys:String>

@@ -61,8 +61,8 @@ public sealed class RecordingSettings(List<AppSettings> saved) : ISettingsServic
 
 public sealed class FakeLoc : ILocalizationService
 {
-    public Language CurrentLanguage => Language.English;
-    public void SetLanguage(Language lang) { }
+    public Language CurrentLanguage { get; set; } = Language.English;
+    public void SetLanguage(Language lang) => CurrentLanguage = lang;
     public string GetString(string key) => Application.Current.Resources[key] as string ?? key;
     public event EventHandler? LanguageChanged { add { } remove { } }
 }
@@ -563,6 +563,8 @@ public static class Program
             vm.SelectedGame = theme is "Dark" or "White" ? vm.Games[1] : null;   // both strip states
             md[1] = new ResourceDictionary { Source = Pack($"Views/Styles/Palette.{theme}.xaml") };
             md[2] = new ResourceDictionary { Source = Pack($"Views/Strings/Strings.{lang}.xaml") };
+            loc.SetLanguage(langEnum);
+            vm.GetType().GetMethod("RelabelPurgeHistory", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(vm, null);   // rows + dates in this language
             SetField(settingsVm, "_selectedTheme", themeEnum);
             SetField(settingsVm, "_selectedLanguage", langEnum);
             // Idle-off picker: Custom (minutes box shown) in two themes, Off in the others.
