@@ -119,6 +119,8 @@
     <sys:String x:Key="Str_Status_TimerLockedOn">Timer locked — it turns on at every start</sys:String>
     <sys:String x:Key="Str_Status_TimerLockedOff">Timer unlocked — it starts off next time</sys:String>
     <sys:String x:Key="Str_Status_TimerLockedInGame">Timer follows your games: it turns on when a listed game starts</sys:String>
+    <sys:String x:Key="Str_Status_TimerIdleOff">No input for {0} min: timer off, the PC can sleep</sys:String>
+    <sys:String x:Key="Str_Status_TimerIdleBack">Welcome back: timer on again ({0:F2} ms)</sys:String>
     <sys:String x:Key="Str_Status_TimerGameOn">Game started, timer on</sys:String>
     <sys:String x:Key="Str_Status_TimerGameOff">Game exited, timer off</sys:String>
     <sys:String x:Key="Str_Status_AutoPurgeOn">Auto purge on</sys:String>
@@ -204,10 +206,17 @@
     <!-- Tabs + Settings page (landscape layout) -->
     <sys:String x:Key="Str_Tab_Status">Status</sys:String>
     <sys:String x:Key="Str_Tab_Settings">Settings</sys:String>
-    <sys:String x:Key="Str_Settings_StartupSection">STARTUP</sys:String>
+    <sys:String x:Key="Str_Settings_StartupSection">GENERAL</sys:String>
     <sys:String x:Key="Str_Settings_AppearanceSection">APPEARANCE</sys:String>
     <sys:String x:Key="Str_Settings_LaunchOnStartupDesc">Starts at sign-in via Task Scheduler</sys:String>
     <sys:String x:Key="Str_Settings_CheckUpdateOnStartup">Check for updates on launch</sys:String>
     <sys:String x:Key="Str_Settings_CheckUpdateOnStartupDesc">Shows a tray notification when a new version is out</sys:String>
+    <sys:String x:Key="Str_Settings_TimerIdleOff">Turn the timer off when idle</sys:String>
+    <sys:String x:Key="Str_Settings_TimerIdleOffDesc">Lets the PC sleep; back on when you return</sys:String>
+    <sys:String x:Key="Str_Settings_TimerIdleOffTip">While the timer is on, Windows does not go to sleep by itself. With this on, no mouse or keyboard input for the chosen time turns the timer off (the PC can sleep again), and your next input turns it back on. Never while a Game Mode game runs: gamepad input does not count.</sys:String>
+    <sys:String x:Key="Str_IdleOff_Off">Off</sys:String>
+    <sys:String x:Key="Str_IdleOff_Minutes">{0} min</sys:String>
+    <sys:String x:Key="Str_IdleOff_Custom">Custom</sys:String>
+    <sys:String x:Key="Str_IdleOff_CustomTip">Minutes (1-240)</sys:String>
 
 </ResourceDictionary>

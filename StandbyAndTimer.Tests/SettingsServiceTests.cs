@@ -59,6 +59,7 @@ public sealed class SettingsServiceTests : IDisposable
             AutoPurgeOnlyInGames = true, LightPurge = true, IdleThresholdMinutes = 7,
             Language = Language.Turkish, Theme = Theme.Light,
             PurgeHotkey = "Ctrl+Shift+F9", NotifyOnPurge = false,
+            TimerIdleOffEnabled = true, TimerIdleOffMinutes = 25,
             Games =
             [
                 new GameEntry { DisplayName = "cs2", ExecutablePath = cs2 },
@@ -81,6 +82,8 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal(Theme.Light, s.Theme);
         Assert.Equal("Ctrl+Shift+F9", s.PurgeHotkey);
         Assert.False(s.NotifyOnPurge);
+        Assert.True(s.TimerIdleOffEnabled);
+        Assert.Equal(25, s.TimerIdleOffMinutes);
 
         Assert.Equal([cs2, val], s.Games.Select(g => g.ExecutablePath));
         Assert.True(s.Games[0].BoostPriority);
