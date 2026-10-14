@@ -189,6 +189,42 @@ public static class Program
         return issues;
     }
 
+    // Vertical centre of the visible ink of an element, in relativeTo's
+    // coordinates; null when blank. relativeTo is rendered at 4x on its
+    // background (AppBg) and the element's rectangle is scanned for pixels
+    // that differ from it, so a quarter-pixel offset shows.
+    static double? InkCentreY(FrameworkElement el, FrameworkElement relativeTo)
+    {
+        const double k = 4;
+        int w = (int)Math.Ceiling(relativeTo.ActualWidth * k), h = (int)Math.Ceiling(relativeTo.ActualHeight * k);
+        var bgBrush = (SolidColorBrush)Application.Current.Resources["AppBg"];
+        var area = new Rect(0, 0, relativeTo.ActualWidth, relativeTo.ActualHeight);
+        var dv = new DrawingVisual();
+        using (var dc = dv.RenderOpen())
+        {
+            dc.DrawRectangle(bgBrush, null, area);
+            dc.DrawRectangle(new VisualBrush(relativeTo) { Stretch = Stretch.None, AlignmentX = AlignmentX.Left, AlignmentY = AlignmentY.Top }, null, area);
+        }
+        var bmp = new RenderTargetBitmap(w, h, 96 * k, 96 * k, PixelFormats.Pbgra32);
+        bmp.Render(dv);
+        var px = new byte[w * h * 4];
+        bmp.CopyPixels(px, w * 4, 0);
+
+        var o = el.TranslatePoint(new Point(0, 0), relativeTo);
+        int x0 = (int)(o.X * k), x1 = Math.Min(w, (int)((o.X + el.ActualWidth) * k));
+        int y0 = (int)(o.Y * k), y1 = Math.Min(h, (int)((o.Y + el.ActualHeight) * k));
+        var bg = bgBrush.Color;
+        int top = -1, bottom = -1;
+        for (int y = y0; y < y1; y++)
+            for (int x = x0; x < x1; x++)
+            {
+                int i = (y * w + x) * 4;   // BGRA
+                int d = Math.Abs(px[i] - bg.B) + Math.Abs(px[i + 1] - bg.G) + Math.Abs(px[i + 2] - bg.R);
+                if (d > 60) { if (top < 0) top = y; bottom = y; break; }
+            }
+        return top < 0 ? null : (top + bottom + 1) / 2.0 / k;
+    }
+
     // Content of a ScrollViewer is allowed to be larger than its viewport.
     static bool IsInsideScrollContent(DependencyObject d)
     {
@@ -621,11 +657,37 @@ public static class Program
                 bool dimmed = !cb.IsEnabled && texts.All(x => x.Foreground is SolidColorBrush s && s.Color == muted.Color);
                 if (!cb.IsEnabled && !dimmed) { failures++; Log("  FAIL disabled idle checkbox label is not AppFgMuted"); }
             }
+            SaveZoomed(Walk(root).OfType<StandbyAndTimer.Views.Cards.TitleBar>().Single(), Path.Combine(outDir, $"{tag}-titlebar-x4.png"));
             SaveZoomed(Walk(root).OfType<StandbyAndTimer.Views.Cards.StandbyPurgeCard>().Single(),
                        Path.Combine(outDir, $"{tag}-purge-x4.png"));
             SaveZoomed(Walk(root).OfType<StandbyAndTimer.Views.Cards.StandbyPurgeCard>().Single(),
                        Path.Combine(outDir, $"{tag}-purge-x1.png"), 1);
             failures += CheckLayout(root, tag + " status");
+            {
+                // Title bar: the admin badge text and the ?, — and ✕ glyphs
+                // must sit on one line, the bar's centre (within 1 px).
+                // Measured on the ink: layout centres a glyph's em box, not
+                // its visible strokes (they sat ~2 px low next to the badge).
+                var bar = Walk(root).OfType<StandbyAndTimer.Views.Cards.TitleBar>().Single();
+                var centres = new List<(string what, double y)>();
+                var badgeText = Walk(bar).OfType<TextBlock>().Single(t => t.Text == loc.GetString("Str_TitleBar_Admin"));
+                centres.Add(("badge", InkCentreY(badgeText, bar) ?? double.NaN));
+                foreach (var b in Walk(bar).OfType<Button>().Where(b => b.Width == 36))
+                    centres.Add(($"\"{b.Content}\"", InkCentreY(b, bar) ?? double.NaN));
+                double barMid = bar.ActualHeight / 2;
+                bool ok = centres.Count == 4 && centres.All(c => Math.Abs(c.y - barMid) <= 1.0);
+                if (!ok) failures++;
+                Log($"  {(ok ? "OK  " : "FAIL")} [{tag}] title bar on one line (bar centre {barMid:F1}): " +
+                    string.Join(", ", centres.Select(c => $"{c.what}={c.y:F1}")));
+            }
+            {
+                // Left column: the Timer and Standby memory cards are the same height.
+                double th = Walk(root).OfType<StandbyAndTimer.Views.Cards.TimerCard>().Single().ActualHeight;
+                double mh = Walk(root).OfType<StandbyAndTimer.Views.Cards.MemoryStatsCard>().Single().ActualHeight;
+                bool ok = Math.Abs(th - mh) < 0.5;
+                if (!ok) failures++;
+                Log($"  {(ok ? "OK  " : "FAIL")} [{tag}] timer / memory cards same height: {th:F0} / {mh:F0}");
+            }
 
             // VM → View: IsOpen=true must select the Settings tab.
             settingsVm.IsOpen = true;
