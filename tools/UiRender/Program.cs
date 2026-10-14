@@ -623,58 +623,66 @@ public static class Program
             // offscreen RenderTargetBitmap path is software-only and cannot
             // show GPU edge/opacity-layer artifacts.
             // --docs: the same capture in Dark / English with tidy sample
-            // data, written to docs/ for the README.
-            bool docs = args.Contains("--docs") && tag == "Dark-en-US";
+            // data and an empty game list, written to docs/ for the README:
+            // every page and dialog, plus the status page in Light.
+            bool docs = args.Contains("--docs") && tag is "Dark-en-US" or "Light-en-US";
             if ((args.Contains("--screen") && tag == "Dark-tr-TR") || docs)
             {
-                var keepGame = vm.Games[2];
+                var keepGames = vm.Games.ToList();
                 var keepLock = vm.TimerLock;
                 if (docs)
                 {
-                    vm.Games[2] = new GameEntry { DisplayName = "eldenring", ExecutablePath = keepGame.ExecutablePath, AutoAdded = true };
+                    vm.Games.Clear();
                     SetField(vm, "_timerLock", TimerLockMode.Locked);
                     vm.GetType().GetMethod("OnPropertyChanged", BindingFlags.Instance | BindingFlags.NonPublic, [typeof(string)])!
                         .Invoke(vm, [nameof(MainViewModel.TimerLock)]);
                 }
-                string Shot(string page) => docs
-                    ? Path.Combine("docs", page == "window" ? "screenshot.png" : "screenshot-settings.png")
-                    : Path.Combine(outDir, $"screen-{tag}-{page}.png");
-                vm.SelectedGame = vm.Games[0];
+                vm.SelectedGame = vm.Games.FirstOrDefault();
                 w.Topmost = true; w.Left = 40; w.Top = 40; w.Activate();
+
                 // Wait with a running dispatcher (DispatcherFrame), so layout,
                 // render and DWM composition really happen before capturing.
-                var frame = new DispatcherFrame();
-                var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1500) };
-                timer.Tick += (_, _) => { timer.Stop(); frame.Continue = false; };
-                timer.Start();
-                Dispatcher.PushFrame(frame);
-                var tl = root.PointToScreen(new Point(0, 0));
-                var br = root.PointToScreen(new Point(root.ActualWidth, root.ActualHeight));
-                int cw = (int)(br.X - tl.X), ch = (int)(br.Y - tl.Y);
-                using (var shot = new System.Drawing.Bitmap(cw, ch))
+                void Grab(string path, int waitMs)
                 {
+                    var frame = new DispatcherFrame();
+                    var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(waitMs) };
+                    timer.Tick += (_, _) => { timer.Stop(); frame.Continue = false; };
+                    timer.Start();
+                    Dispatcher.PushFrame(frame);
+                    var tl = root.PointToScreen(new Point(0, 0));
+                    var br = root.PointToScreen(new Point(root.ActualWidth, root.ActualHeight));
+                    int cw = (int)(br.X - tl.X), ch = (int)(br.Y - tl.Y);
+                    using var shot = new System.Drawing.Bitmap(cw, ch);
                     using (var g = System.Drawing.Graphics.FromImage(shot))
                         g.CopyFromScreen((int)tl.X, (int)tl.Y, 0, 0, new System.Drawing.Size(cw, ch));
-                    shot.Save(Shot("window"), System.Drawing.Imaging.ImageFormat.Png);
+                    shot.Save(path, System.Drawing.Imaging.ImageFormat.Png);
                 }
-                // Same capture for the Settings tab (log viewer, combos).
-                settingsVm.IsOpen = true;
-                var frame2 = new DispatcherFrame();
-                var timer2 = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1200) };
-                timer2.Tick += (_, _) => { timer2.Stop(); frame2.Continue = false; };
-                timer2.Start(); Dispatcher.PushFrame(frame2);
-                using (var shot2 = new System.Drawing.Bitmap(cw, ch))
+                string Shot(string page) => docs
+                    ? Path.Combine("docs", page == "window" ? (tag == "Light-en-US" ? "screenshot-light.png" : "screenshot.png") : $"screenshot-{page}.png")
+                    : Path.Combine(outDir, $"screen-{tag}-{page}.png");
+
+                Grab(Shot("window"), 1500);
+                if (!docs || tag == "Dark-en-US")
                 {
-                    using (var g2 = System.Drawing.Graphics.FromImage(shot2))
-                        g2.CopyFromScreen((int)tl.X, (int)tl.Y, 0, 0, new System.Drawing.Size(cw, ch));
-                    shot2.Save(Shot("settings"), System.Drawing.Imaging.ImageFormat.Png);
+                    // Settings tab (log viewer, combos), then each dialog.
+                    foreach (var (page, show) in new (string, Action<bool>)[] {
+                        ("settings", v => settingsVm.IsOpen = v),
+                        ("history",  v => vm.IsPurgeHistoryVisible = v),
+                        ("system",   v => systemVm.IsOpen = v),
+                        ("guide",    v => vm.IsAboutVisible = v) })
+                    {
+                        if (!docs && page != "settings") continue;
+                        show(true);
+                        Grab(Shot(page), 1200);
+                        show(false); Pump();
+                    }
                 }
-                settingsVm.IsOpen = false; Pump();
                 if (docs)
                 {
-                    vm.Games[2] = keepGame;
+                    vm.Games.Clear();
+                    foreach (var game in keepGames) vm.Games.Add(game);
                     SetField(vm, "_timerLock", keepLock);
-                    Log($"  saved docs/screenshot.png and docs/screenshot-settings.png");
+                    Log($"  saved the {tag} README screenshots in docs/");
                 }
 
                 w.Left = -30000; w.Top = -30000; w.Topmost = false;
@@ -901,6 +909,8 @@ public static class Program
                 string theme = themeEnum.ToString();
                 string p = Path.Combine(outDir, $"tray-{theme}-{lang}.png");
                 bmp.Save(p, System.Drawing.Imaging.ImageFormat.Png);
+                if (args.Contains("--docs") && theme == "Dark" && lang == "en-US")
+                    bmp.Save(Path.Combine("docs", "screenshot-tray.png"), System.Drawing.Imaging.ImageFormat.Png);
 
                 // Sample the plain background and the hovered row: they must
                 // be the palette colours, not the system accent.

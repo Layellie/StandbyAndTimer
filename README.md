@@ -11,6 +11,20 @@ A small Windows app for gamers: it makes the system timer finer, frees memory Wi
   <img src="docs/screenshot-settings.png" width="49%" alt="StandbyAndTimer: settings page with startup, notifications, appearance, hotkeys and backup" />
 </p>
 
+<details>
+<summary><b>More screenshots · Daha fazla ekran görüntüsü</b></summary>
+
+| | |
+|:---:|:---:|
+| <img src="docs/screenshot-history.png" alt="Purge history: freed today, in the last 7 days and in all, a 7-day bar chart and the last 20 purges" /> | <img src="docs/screenshot-system.png" alt="System settings: apply the timer to all games" /> |
+| Purge history · Temizlik geçmişi | System settings · Sistem ayarları |
+| <img src="docs/screenshot-guide.png" alt="The usage guide behind the ? button" /> | <img src="docs/screenshot-light.png" alt="Status page in the Light theme" /> |
+| Usage guide (**?**) · Kullanım kılavuzu | Light theme · Açık tema |
+| <img src="docs/screenshot-tray.png" alt="Tray menu with quick settings: deep purge, Game Mode and timer lock" /> | |
+| Tray menu · Tepsi menüsü | |
+
+</details>
+
 [![Latest release](https://img.shields.io/github/v/release/Layellie/StandbyAndTimer?label=latest)](https://github.com/Layellie/StandbyAndTimer/releases/latest)
 
 ---
