@@ -33,6 +33,21 @@ internal static class NativeMethods
         IntPtr SystemInformation,
         int    SystemInformationLength);
 
+    /// <summary>
+    /// SystemInformationClass 5 = SystemProcessInformation: a chain of
+    /// SYSTEM_PROCESS_INFORMATION entries (winternl.h). Returns
+    /// STATUS_INFO_LENGTH_MISMATCH when the buffer is too small.
+    /// </summary>
+    [DllImport("ntdll.dll")]
+    internal static extern int NtQuerySystemInformation(
+        int     SystemInformationClass,
+        IntPtr  SystemInformation,
+        int     SystemInformationLength,
+        out int ReturnLength);
+
+    internal const int SystemProcessInformation    = 5;
+    internal const int STATUS_INFO_LENGTH_MISMATCH = unchecked((int)0xC0000004);
+
     // ── kernel32.dll ─────────────────────────────────────────────────────────
 
     [DllImport("kernel32.dll")]

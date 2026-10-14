@@ -13,10 +13,13 @@ internal sealed class ProcessOptimizationService : IProcessOptimizationService
     // the set. Only PIDs are stored — no Process handles kept alive between calls.
     private readonly ConcurrentDictionary<int, byte> _optimizedPids = new();
 
-    public Task CheckAndOptimizeAsync(IReadOnlyList<string> executablePaths) =>
-        Task.Run(() => CheckAndOptimize(executablePaths));
+    public Task CheckAndOptimizeAsync(IReadOnlyList<string> executablePaths,
+                                      Func<string, IReadOnlyList<int>>? pidsOf = null,
+                                      Func<int, bool>? isRunning = null) =>
+        Task.Run(() => CheckAndOptimize(executablePaths, pidsOf, isRunning));
 
-    private void CheckAndOptimize(IReadOnlyList<string> executablePaths)
+    private void CheckAndOptimize(IReadOnlyList<string> executablePaths,
+                                  Func<string, IReadOnlyList<int>>? pidsOf, Func<int, bool>? isRunning)
     {
         int  cpuCount     = Environment.ProcessorCount;
         long affinityMask = (1L << cpuCount) - 1;
@@ -24,13 +27,10 @@ internal sealed class ProcessOptimizationService : IProcessOptimizationService
         foreach (string path in executablePaths)
         {
             string procName = Path.GetFileNameWithoutExtension(path);
-            Process[] found = Process.GetProcessesByName(procName);
-
-            foreach (Process p in found)
+            foreach (Process p in Find(procName, pidsOf))
             {
                 using (p) // dispose handle immediately after use — no leaks
                 {
-                    if (_optimizedPids.ContainsKey(p.Id)) continue;
                     try
                     {
                         p.PriorityClass = ProcessPriorityClass.High;
@@ -51,13 +51,42 @@ internal sealed class ProcessOptimizationService : IProcessOptimizationService
             }
         }
 
-        // Prune PIDs whose processes have since exited.
+        // Prune PIDs whose processes have since exited (the caller's snapshot
+        // answers that without opening a handle).
         foreach (int pid in _optimizedPids.Keys)
         {
             bool exited;
-            try   { using var p = Process.GetProcessById(pid); exited = p.HasExited; }
-            catch { exited = true; }
+            if (isRunning is not null) exited = !isRunning(pid);
+            else
+            {
+                try   { using var p = Process.GetProcessById(pid); exited = p.HasExited; }
+                catch { exited = true; }
+            }
             if (exited) _optimizedPids.TryRemove(pid, out _);
+        }
+    }
+
+    // Processes to optimize for one exe name, skipping PIDs already done.
+    // With the caller's snapshot only new PIDs get a Process object; the
+    // fallback snapshot (GetProcessesByName) returns all of them.
+    private IEnumerable<Process> Find(string procName, Func<string, IReadOnlyList<int>>? pidsOf)
+    {
+        if (pidsOf is null)
+        {
+            foreach (var p in Process.GetProcessesByName(procName))
+            {
+                if (_optimizedPids.ContainsKey(p.Id)) { p.Dispose(); continue; }
+                yield return p;
+            }
+            yield break;
+        }
+        foreach (int pid in pidsOf(procName))
+        {
+            if (_optimizedPids.ContainsKey(pid)) continue;
+            Process? p = null;
+            try { p = Process.GetProcessById(pid); }
+            catch { /* exited since the snapshot */ }
+            if (p is not null) yield return p;
         }
     }
 

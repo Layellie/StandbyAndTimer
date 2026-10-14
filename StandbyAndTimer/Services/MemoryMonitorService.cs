@@ -130,12 +130,11 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
 
     private async Task TickAsync()
     {
-        // Which listed games run right now: one process enumeration
-        // per tick, and only when there is a list to check.
+        // Which listed games run right now: one process snapshot per tick,
+        // and only when there is a list to check. Game boost reuses it.
         var watched = WatchedGamePaths;
-        List<string> running = watched.Count > 0
-            ? RunningGames.Match(watched, RunningGames.CurrentProcessNames())
-            : [];
+        ProcessSnapshot? processes = watched.Count > 0 ? RunningGames.Take() : null;
+        List<string> running = processes is not null ? RunningGames.Match(watched, processes.Names) : [];
 
         TimeSpan idleFor = _idleMonitor.TimeSinceLastInput;   // idle gate below + timer idle-off (view model)
         var snapshot = ReadSnapshot() with { RunningGamePaths = running, IdleFor = idleFor };
@@ -157,7 +156,10 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
             await _purgeService.PurgeAsync().ConfigureAwait(false);
 
         if (GameModeEnabled && GamePaths.Count > 0)
-            await _processService.CheckAndOptimizeAsync(BoostTargets(GamePaths, running)).ConfigureAwait(false);
+            await _processService.CheckAndOptimizeAsync(BoostTargets(GamePaths, running),
+                                                        processes is null ? null : processes.PidsOf,
+                                                        processes is null ? null : processes.Contains)
+                                 .ConfigureAwait(false);
     }
 
     /// <summary>
