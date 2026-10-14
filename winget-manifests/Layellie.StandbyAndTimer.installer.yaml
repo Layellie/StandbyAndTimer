@@ -1,5 +1,4 @@
-# Created with komac. See https://github.com/russellbanks/Komac
-# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.12.0.schema.json
 
 PackageIdentifier: Layellie.StandbyAndTimer
 PackageVersion: 2.3.1
@@ -23,4 +22,4 @@ Installers:
     # Inno Setup registers the uninstall entry as "<AppId>_is1" (Setup.iss AppId).
     ProductCode: '{A8F3D2B4-1E5C-4A6F-9D2B-8E7C3F5D1A20}_is1'
 ManifestType: installer
-ManifestVersion: 1.6.0
+ManifestVersion: 1.12.0
