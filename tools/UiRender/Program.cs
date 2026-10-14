@@ -98,6 +98,41 @@ public static class Program
             Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.ContextIdle, () => { });
     }
 
+    // Opens every visible text tooltip on this page (as the tooltip service
+    // does for a string) and checks the text against the tooltip's
+    // background: the app-wide TextBlock style once drew near-white text on
+    // the light system tooltip (an empty white box in the dark themes).
+    static int CheckToolTips(FrameworkElement root, string where)
+    {
+        static double Lum(Color c)
+        {
+            static double Ch(byte v) { double x = v / 255.0; return x <= 0.03928 ? x / 12.92 : Math.Pow((x + 0.055) / 1.055, 2.4); }
+            return 0.2126 * Ch(c.R) + 0.7152 * Ch(c.G) + 0.0722 * Ch(c.B);
+        }
+        var owners = Walk(root).OfType<FrameworkElement>()
+            .Where(f => f.IsVisible && f.ToolTip is string s && s.Length > 0).ToList();
+        int bad = 0;
+        double worst = double.MaxValue;
+        foreach (var owner in owners)
+        {
+            var tip = new ToolTip { Content = owner.ToolTip, PlacementTarget = owner };
+            tip.IsOpen = true;
+            Pump();
+            var text = Walk(tip).OfType<TextBlock>().FirstOrDefault();
+            var fg = (text?.Foreground as SolidColorBrush)?.Color;
+            var bg = (tip.Background as SolidColorBrush)?.Color;
+            tip.IsOpen = false;
+            if (fg is null || bg is null) { bad++; Log($"  FAIL [{where}] tooltip \"{owner.ToolTip}\": no text or background"); continue; }
+            double l1 = Lum(fg.Value), l2 = Lum(bg.Value);
+            double ratio = (Math.Max(l1, l2) + 0.05) / (Math.Min(l1, l2) + 0.05);
+            worst = Math.Min(worst, ratio);
+            if (ratio < 4.5) { bad++; Log($"  FAIL [{where}] tooltip \"{owner.ToolTip}\": contrast {ratio:0.0} ({fg} on {bg})"); }
+        }
+        Pump();
+        Log($"  {(bad == 0 ? "OK  " : "FAIL")} [{where}] {owners.Count} tooltip(s) readable" + (owners.Count > 0 ? $", lowest contrast {worst:0.0}" : ""));
+        return bad > 0 ? 1 : 0;
+    }
+
     static IEnumerable<DependencyObject> Walk(DependencyObject root)
     {
         yield return root;
@@ -663,6 +698,7 @@ public static class Program
                     (bad.Count == 0 ? "" : ": " + string.Join(", ", bad.Select(x => $"\"{x.t.Text}\"={(x.t.Foreground as SolidColorBrush)?.Color}"))));
             }
             CheckAccentButtons("status");
+            failures += CheckToolTips(root, tag + " status");
 
             // Close confirmation ("Run in background") over the status page.
             {
@@ -701,6 +737,7 @@ public static class Program
                 show(true); Pump();
                 Save(root, Path.Combine(outDir, $"{tag}-4-{name}.png"));
                 failures += CheckLayout(root, $"{tag} {name}");
+                failures += CheckToolTips(root, $"{tag} {name}");
                 show(false); Pump();
             }
             {

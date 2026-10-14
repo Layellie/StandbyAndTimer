@@ -27,6 +27,32 @@
         <Setter Property="FontSize"   Value="13"/>
     </Style>
 
+    <!-- Tooltips in the theme colours. Without this the system tooltip (light
+         background) showed the text above in AppFg, which is near-white in the
+         dark themes: an empty white box. -->
+    <Style TargetType="ToolTip">
+        <Setter Property="Background"      Value="{DynamicResource Surface2Bg}"/>
+        <Setter Property="Foreground"      Value="{DynamicResource AppFg}"/>
+        <Setter Property="BorderBrush"     Value="{DynamicResource InputBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding"         Value="9,5"/>
+        <Setter Property="FontFamily"      Value="{StaticResource AppFont}"/>
+        <Setter Property="HasDropShadow"   Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToolTip">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Padding="{TemplateBinding Padding}"
+                            CornerRadius="6">
+                        <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!--  PRIMARY BUTTON (accent fill + smooth color animation)                 -->
     <!--  Hardcoded hover/exit colors mirror the lime AccentPrimary / Hover     -->
