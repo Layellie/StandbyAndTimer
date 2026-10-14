@@ -212,8 +212,10 @@ public partial class App : Application
 
         // Installers downloaded by in-app updates; off the UI thread. The one
         // that just started us is still running for a few seconds, so retry.
-        _ = Task.Run(() => UpdateService.DeleteDownloadedInstallersAsync(
-            Path.GetTempPath(), TimeSpan.FromSeconds(10), maxAttempts: 6));
+        // %TEMP% held them up to 2.4.0-beta3; DownloadDirectory since.
+        foreach (string dir in new[] { UpdateService.DownloadDirectory, Path.GetTempPath() })
+            _ = Task.Run(() => UpdateService.DeleteDownloadedInstallersAsync(
+                dir, TimeSpan.FromSeconds(10), maxAttempts: 6));
     }
 
     private async Task InitializeViewModelAsync(Stopwatch sw)

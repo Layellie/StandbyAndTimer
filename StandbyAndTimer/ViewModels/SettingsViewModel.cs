@@ -542,11 +542,21 @@ public sealed partial class SettingsViewModel : ObservableObject
     {
         if (string.IsNullOrWhiteSpace(_pendingAssetUrl)) return;
 
+        // Nothing to verify against: never run it. The release page stays
+        // one click away (Str_Settings_UpdateNoHash says where).
+        if (string.IsNullOrWhiteSpace(_pendingSha256))
+        {
+            UpdateStatus = _localization.GetString("Str_Settings_UpdateNoHash");
+            Logger.Warn("Update: release has no SHA-256, in-app install refused");
+            return;
+        }
+
         IsDownloading = true;
         try
         {
+            Directory.CreateDirectory(UpdateService.DownloadDirectory);
             string targetPath = Path.Combine(
-                Path.GetTempPath(),
+                UpdateService.DownloadDirectory,
                 $"{UpdateService.DownloadedInstallerPrefix}{_pendingVersion ?? "latest"}.exe");
 
             var progress = new Progress<double>(p =>
@@ -556,16 +566,22 @@ public sealed partial class SettingsViewModel : ObservableObject
                     (int)p));
 
             await _updateService
-                .DownloadAsync(_pendingAssetUrl!, targetPath, _pendingSha256 ?? string.Empty, progress)
+                .DownloadAsync(_pendingAssetUrl!, targetPath, _pendingSha256!, progress)
                 .ConfigureAwait(true);
 
             UpdateStatus = _localization.GetString("Str_Settings_LaunchingInstaller");
 
-            Process.Start(new ProcessStartInfo
+            // Verified again from a handle that blocks writes, renames and
+            // deletes, and started while it is held: what ran is what was
+            // checked.
+            using (UpdateService.OpenVerifiedInstaller(targetPath, _pendingSha256!))
             {
-                FileName        = targetPath,
-                UseShellExecute = true
-            });
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName        = targetPath,
+                    UseShellExecute = true
+                });
+            }
 
             // Give the user a beat to read the status, then exit so the installer
             // can overwrite the running executable.

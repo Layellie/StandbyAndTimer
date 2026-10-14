@@ -85,9 +85,11 @@ Filename: "{sys}\schtasks.exe"; \
   Flags: runhidden; Tasks: autostart
 
 [UninstallDelete]
-; Log folder (Logger.cs) and installers left in %TEMP% by in-app updates
-; (the app deletes old ones at start; this catches the last one).
+; Log folder (Logger.cs) and installers left by in-app updates (the app
+; deletes old ones at start; this catches the last one): {app}\updates
+; since 2.4.0, %TEMP% before.
 Type: filesandordirs; Name: "{userappdata}\{#AppName}"
+Type: filesandordirs; Name: "{app}\updates"
 Type: files;          Name: "{localappdata}\Temp\{#AppName}_Setup_*.exe"
 
 [UninstallRun]
