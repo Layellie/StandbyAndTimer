@@ -16,6 +16,8 @@ public sealed class ThemeDisplayConverter : IValueConverter
         {
             Theme.Dark   => "Str_Theme_Dark",
             Theme.Light  => "Str_Theme_Light",
+            Theme.Black  => "Str_Theme_Black",
+            Theme.White  => "Str_Theme_White",
             Theme.System => "Str_Theme_System",
             _            => string.Empty
         };

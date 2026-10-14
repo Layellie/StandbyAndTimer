@@ -1,0 +1,41 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- White palette — the Light palette with every surface (page, cards,
+         dialogs, inputs) on Light's card colour #F5F6F8. Cards are told apart
+         by their borders only, so BorderColor/InputBorder are a step
+         darker than in Light. WCAG contrast on #F5F6F8: AppFg 16.4:1,
+         AppFgDim 6.9:1, AccentText 5.4:1. -->
+    <SolidColorBrush x:Key="AppBg"            Color="#F5F6F8"/>
+    <SolidColorBrush x:Key="SurfaceBg"        Color="#F5F6F8"/>
+    <SolidColorBrush x:Key="Surface2Bg"       Color="#F5F6F8"/>
+    <SolidColorBrush x:Key="AppFg"            Color="#16181C"/>
+    <SolidColorBrush x:Key="AppFgDim"         Color="#4F5660"/>
+    <!-- Non-text only (scrollbar thumb, toggle-off track) -->
+    <SolidColorBrush x:Key="AppFgMuted"       Color="#9AA1AB"/>
+    <SolidColorBrush x:Key="AccentPrimary"    Color="#7AB320"/>
+    <SolidColorBrush x:Key="AccentHover"      Color="#8FC92F"/>
+    <SolidColorBrush x:Key="AccentPressed"    Color="#5F8E18"/>
+    <SolidColorBrush x:Key="AccentSubtle"     Color="#E1F3D8"/>
+    <SolidColorBrush x:Key="AccentOnText"     Color="#1A1F0F"/>
+    <!-- Accent as TEXT / thin strokes (AccentPrimary is ~2.3:1 as text) -->
+    <SolidColorBrush x:Key="AccentText"       Color="#45700F"/>
+    <SolidColorBrush x:Key="InputBg"          Color="#F5F6F8"/>
+    <SolidColorBrush x:Key="InputFg"          Color="#1E2126"/>
+    <SolidColorBrush x:Key="InputBorder"      Color="#B4BAC3"/>
+    <SolidColorBrush x:Key="InputFocusBorder" Color="#7AB320"/>
+    <SolidColorBrush x:Key="BorderColor"      Color="#C9CED6"/>
+    <SolidColorBrush x:Key="SeparatorBrush"   Color="#DCDFE4"/>
+    <SolidColorBrush x:Key="SelectionBg"      Color="#D4ECC9"/>
+    <SolidColorBrush x:Key="SelectionFg"      Color="#16181C"/>
+    <SolidColorBrush x:Key="HoverBg"          Color="#E8EBEF"/>
+    <SolidColorBrush x:Key="SuccessColor"     Color="#7AB320"/>
+    <SolidColorBrush x:Key="DangerColor"      Color="#C62828"/>
+
+    <SolidColorBrush x:Key="ModalOverlayBrush" Color="#C0F5F6F8"/>
+
+    <!-- Title bar DWM mode hint: 1 = dark, 0 = light -->
+    <sys:Int32 x:Key="DwmDarkMode" xmlns:sys="clr-namespace:System;assembly=System.Runtime">0</sys:Int32>
+
+</ResourceDictionary>

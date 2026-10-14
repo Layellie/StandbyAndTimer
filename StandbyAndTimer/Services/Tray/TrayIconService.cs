@@ -1,5 +1,6 @@
 using System.Globalization;
 using StandbyAndTimer.Core.Interfaces;
+using StandbyAndTimer.Core.Models;
 using WinForms = System.Windows.Forms;
 
 namespace StandbyAndTimer.Services.Tray;
@@ -107,9 +108,9 @@ internal sealed class TrayIconService : ITrayIconService
         return menu;
     }
 
-    public void ApplyTheme(bool isDark)
+    public void ApplyTheme(Theme effectiveTheme)
     {
-        _palette = isDark ? TrayMenuPalette.Dark : TrayMenuPalette.Light;
+        _palette = TrayMenuPalette.For(effectiveTheme);
         if (_menu is not null) ApplyPalette(_menu, _palette);
     }
 

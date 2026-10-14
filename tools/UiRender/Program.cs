@@ -457,19 +457,19 @@ public static class Program
             SetField(settingsVm, "_hotkeyError", string.Empty);
         }
 
-        foreach (var (theme, themeEnum) in new[] { ("Dark", Theme.Dark), ("Light", Theme.Light) })
+        foreach (var (theme, themeEnum) in new[] { ("Dark", Theme.Dark), ("Black", Theme.Black), ("Light", Theme.Light), ("White", Theme.White) })
         foreach (var (lang, langEnum) in new[] { ("en-US", Language.English), ("tr-TR", Language.Turkish) })
         {
             string tag = $"{theme}-{lang}";
             Log($"== {tag}");
-            vm.SelectedGame = theme == "Dark" ? vm.Games[1] : null;   // both strip states
+            vm.SelectedGame = theme is "Dark" or "White" ? vm.Games[1] : null;   // both strip states
             md[1] = new ResourceDictionary { Source = Pack($"Views/Styles/Palette.{theme}.xaml") };
             md[2] = new ResourceDictionary { Source = Pack($"Views/Strings/Strings.{lang}.xaml") };
             SetField(settingsVm, "_selectedTheme", themeEnum);
             SetField(settingsVm, "_selectedLanguage", langEnum);
             SetField(settingsVm, "_isOpen", false);
             SetField(vm, "_statusMessage", loc.GetString("Str_Status_Ready"));
-            SetField(vm, "_timerLock", theme == "Light" ? TimerLockMode.InGame : TimerLockMode.Unlocked);   // show two lock states
+            SetField(vm, "_timerLock", theme is "Light" or "Black" ? TimerLockMode.InGame : TimerLockMode.Unlocked);   // show two lock states
 
             var w = new MainWindow(vm)
             {
@@ -669,7 +669,7 @@ public static class Program
             w.Close();
         }
 
-        // Tray context menu (always dark), with the 'purge' row in hover state.
+        // Tray context menu in every theme, with the "Settings" row in hover state.
         foreach (var lang in new[] { "en-US", "tr-TR" })
         {
             md[2] = new ResourceDictionary { Source = Pack($"Views/Strings/Strings.{lang}.xaml") };
@@ -679,21 +679,21 @@ public static class Program
             try { Log($"  [{lang}] update balloon: \"{loc.GetString("Str_Tray_NotifyUpdateTitle")}\" / \"{string.Format(CultureInfo.CurrentCulture, loc.GetString("Str_Tray_NotifyUpdateBody"), "2.2.0")}\""); }
             catch (FormatException ex) { failures++; Log($"  FAIL [{lang}] update body format: {ex.Message}"); }
 
-            foreach (var dark in new[] { true, false })
+            foreach (var themeEnum in new[] { Theme.Dark, Theme.Black, Theme.Light, Theme.White })
             {
                 var trayType = typeof(MainWindow).Assembly.GetType("StandbyAndTimer.Services.Tray.TrayIconService")!;
                 var tray = Activator.CreateInstance(trayType, [loc])!;
                 var menu = (WinForms.ContextMenuStrip)trayType.GetMethod("BuildMenu", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(tray, null)!;
                 trayType.GetMethod("RefreshLabels", BindingFlags.Instance | BindingFlags.NonPublic, [typeof(bool)])!.Invoke(tray, [true]);
                 // Same call path as App: public interface, after the menu exists.
-                ((ITrayIconService)tray).ApplyTheme(dark);
+                ((ITrayIconService)tray).ApplyTheme(themeEnum);
                 _ = menu.Handle;
                 menu.Size = menu.GetPreferredSize(System.Drawing.Size.Empty);
                 menu.PerformLayout();
                 menu.Items[1].Select();   // hover on the "Settings" item
                 using var bmp = new System.Drawing.Bitmap(menu.Width, menu.Height);
                 menu.DrawToBitmap(bmp, new System.Drawing.Rectangle(0, 0, menu.Width, menu.Height));
-                string theme = dark ? "Dark" : "Light";
+                string theme = themeEnum.ToString();
                 string p = Path.Combine(outDir, $"tray-{theme}-{lang}.png");
                 bmp.Save(p, System.Drawing.Imaging.ImageFormat.Png);
 
@@ -701,7 +701,10 @@ public static class Program
                 // be the palette colours, not the system accent.
                 var bg = bmp.GetPixel(menu.Width / 2, menu.Height - 4);
                 var hover = bmp.GetPixel(menu.Width - 12, menu.Items[1].Bounds.Top + menu.Items[1].Height / 2);
-                string expectBg = dark ? "16181B" : "F5F6F8", expectHover = dark ? "1F2226" : "E6E9ED";
+                // Expected = the WPF palette of the same theme (TrayMenuPalette duplicates it).
+                var pal = new ResourceDictionary { Source = Pack($"Views/Styles/Palette.{theme}.xaml") };
+                string Hex(string key) { var c = ((SolidColorBrush)pal[key]).Color; return $"{c.R:X2}{c.G:X2}{c.B:X2}"; }
+                string expectBg = Hex("SurfaceBg"), expectHover = Hex("HoverBg");
                 string gotBg = $"{bg.R:X2}{bg.G:X2}{bg.B:X2}", gotHover = $"{hover.R:X2}{hover.G:X2}{hover.B:X2}";
                 bool ok = gotBg == expectBg && gotHover == expectHover;
                 if (!ok) failures++;
