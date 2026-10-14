@@ -46,6 +46,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool    _autoPurgeIdleOnly;
     // Light purge: only the low-priority standby pages (see IStandbyPurgeService.LightMode).
     [ObservableProperty] private bool    _lightPurge;
+    // Deep purge: modified list + system file cache onto standby first (see
+    // IStandbyPurgeService.DeepMode). Light and deep exclude each other.
+    [ObservableProperty] private bool    _deepPurge;
     [ObservableProperty] private int     _idleThresholdMinutes = 5;
     [ObservableProperty] private bool    _gameModeEnabled;
     [ObservableProperty] private bool    _timerActive;
@@ -186,7 +189,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             AutoPurgeEnabled     = s.AutoPurgeEnabled;
             AutoPurgeIdleOnly    = s.AutoPurgeIdleOnly;
             AutoPurgeOnlyInGames = s.AutoPurgeOnlyInGames && !s.AutoPurgeIdleOnly;
-            LightPurge           = s.LightPurge;
+            LightPurge           = s.LightPurge && !s.DeepPurge;
+            DeepPurge            = s.DeepPurge;
             IdleThresholdMinutes = s.IdleThresholdMinutes > 0 ? s.IdleThresholdMinutes : 5;
             GameModeEnabled      = s.GameModeEnabled;
             // TimerActive is NOT taken from settings: it mirrors the timer
@@ -301,6 +305,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         AutoPurgeIdleOnly     = AutoPurgeIdleOnly,
         AutoPurgeOnlyInGames  = AutoPurgeOnlyInGames,
         LightPurge            = LightPurge,
+        DeepPurge             = DeepPurge,
         IdleThresholdMinutes  = IdleThresholdMinutes,
         GameModeEnabled       = GameModeEnabled,
         AutoStartEnabled      = Settings.AutoStartEnabled,
@@ -529,7 +534,17 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnLightPurgeChanged(bool value)
     {
+        // Light keeps the cache, deep empties more than a normal purge: one
+        // or the other.
+        if (value) DeepPurge = false;
         _purgeService.LightMode = value;
+        PersistSettings();
+    }
+
+    partial void OnDeepPurgeChanged(bool value)
+    {
+        if (value) LightPurge = false;
+        _purgeService.DeepMode = value;
         PersistSettings();
     }
 

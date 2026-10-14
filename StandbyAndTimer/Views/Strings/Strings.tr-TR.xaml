@@ -50,8 +50,11 @@
     <sys:String x:Key="Str_Purge_FreeLimitLabel">Serbest bellek altında (MB):</sys:String>
     <sys:String x:Key="Str_Purge_Button">Standby Temizle</sys:String>
     <sys:String x:Key="Str_Purge_LightLabel">Hafif temizlik</sys:String>
-    <sys:String x:Key="Str_Purge_LightDesc">Sadece düşük öncelikli önbelleği siler; sık kullanılan dosyalar bellekte kalır.</sys:String>
+    <sys:String x:Key="Str_Purge_LightDesc">Sadece düşük öncelikli önbelleği siler; sık kullanılanlar kalır.</sys:String>
     <sys:String x:Key="Str_Purge_LightTip">Butonla, otomatik ya da kısayolla yapılan her temizlikte geçerlidir.</sys:String>
+    <sys:String x:Key="Str_Purge_DeepLabel">Derin temizlik</sys:String>
+    <sys:String x:Key="Str_Purge_DeepDesc">Değiştirilmiş sayfaları ve sistem önbelleğini de temizler.</sys:String>
+    <sys:String x:Key="Str_Purge_DeepTip">Her temizlikte (buton, otomatik, kısayol, tepsi) önce değiştirilmiş sayfa listesi diske yazılır ve sistem dosya önbelleği kırpılır, sonra tüm standby listesi temizlenir. Kısa bir disk yazımı olabilir. Hafif temizlikle birlikte seçilemez.</sys:String>
 
     <!-- Oyun modu -->
     <sys:String x:Key="Str_Game_Mode">OYUN MODU</sys:String>
@@ -171,6 +174,7 @@
     <sys:String x:Key="Str_Help_Standby3">OTO TEMİZLE açıksa uygulama her saniye bakar: liste "Liste boyutu en az" değerini geçmiş ve boş bellek "Serbest bellek altında" değerinin altına inmişse temizler. İki değerden biri 0 ise otomatik temizlik yapılmaz.</sys:String>
     <sys:String x:Key="Str_Help_Standby4">"Sadece boştayken": belirttiğin dakika boyunca fare ve klavye kullanılmadıysa temizler. "Sadece oyun açıkken": yalnızca Oyun Modu listesindeki bir oyun çalışırken temizler. İkisi birlikte seçilemez.</sys:String>
     <sys:String x:Key="Str_Help_Standby5">Hafif temizlik: sadece Windows'un en az tekrar kullanılacak dediği kısmı siler. Daha yumuşaktır ama çoğu sistemde az yer açar.</sys:String>
+    <sys:String x:Key="Str_Help_Standby6">Derin temizlik: temizlikten önce diske yazılmayı bekleyen (değiştirilmiş) sayfaları yazar ve Windows'un sistem önbelleğini boşaltır; bunlar da standby'a iner ve birlikte temizlenir. Normal temizlikten daha çok yer açar, kısa bir disk yazımı olabilir. Hafif temizlikle birlikte seçilemez.</sys:String>
     <sys:String x:Key="Str_Help_GameTitle">OYUN MODU</sys:String>
     <sys:String x:Key="Str_Help_Game1">Oyun Modu açıkken listedeki bir oyun çalışınca ona Yüksek öncelik ve tüm CPU çekirdekleri verilir, Windows'un arka plan kısıtlaması (EcoQoS) kapatılır.</sys:String>
     <sys:String x:Key="Str_Help_Game2">Oyun eklemek için EKLE'ye bas ya da .exe dosyasını listeye sürükle. Tam ekran çalışan bir oyunu uygulama kendisi de bulup OTO etiketiyle ekler; OTO bir oyunu silersen bir daha eklenmez. Oyunlar .exe adına göre tanınır.</sys:String>

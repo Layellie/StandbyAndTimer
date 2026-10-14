@@ -52,6 +52,9 @@
     <sys:String x:Key="Str_Purge_LightLabel">Light purge</sys:String>
     <sys:String x:Key="Str_Purge_LightDesc">Clears only the low-priority cache; often used files stay in memory.</sys:String>
     <sys:String x:Key="Str_Purge_LightTip">Applies to every purge: the button, auto purge and the hotkey.</sys:String>
+    <sys:String x:Key="Str_Purge_DeepLabel">Deep purge</sys:String>
+    <sys:String x:Key="Str_Purge_DeepDesc">Also clears modified pages and the system cache.</sys:String>
+    <sys:String x:Key="Str_Purge_DeepTip">On every purge (button, auto, hotkey, tray) the modified page list is written out and the system file cache is trimmed first, then the whole standby list is purged. Can cause a short burst of disk writes. Cannot be combined with light purge.</sys:String>
 
     <!-- Game mode -->
     <sys:String x:Key="Str_Game_Mode">GAME MODE</sys:String>
@@ -171,6 +174,7 @@
     <sys:String x:Key="Str_Help_Standby3">With AUTO PURGE on, the app checks every second: it purges when the list is above "List size at least" and free memory is below "Free memory lower than". If either value is 0, it never purges automatically.</sys:String>
     <sys:String x:Key="Str_Help_Standby4">"Only when idle": purges only after the given minutes without mouse or keyboard input. "Only while a game runs": purges only while a game from the Game Mode list runs. You can pick one of the two.</sys:String>
     <sys:String x:Key="Str_Help_Standby5">Light purge clears only the part Windows rates least likely to be used again. It is gentler but frees little on most systems.</sys:String>
+    <sys:String x:Key="Str_Help_Standby6">Deep purge: before purging, writes out the pages waiting to be written (the modified list) and empties Windows' system cache; those land on the standby list and are purged with it. Frees more than a normal purge; can cause a short burst of disk writes. Cannot be combined with light purge.</sys:String>
     <sys:String x:Key="Str_Help_GameTitle">GAME MODE</sys:String>
     <sys:String x:Key="Str_Help_Game1">With Game Mode on, a listed game that runs gets High priority and all CPU cores, and Windows' background throttling (EcoQoS) is switched off for it.</sys:String>
     <sys:String x:Key="Str_Help_Game2">To add a game, press ADD or drag its .exe onto the list. The app also finds games running fullscreen and adds them with an AUTO tag; delete an AUTO game and it is never added again. Games are recognised by their .exe name.</sys:String>

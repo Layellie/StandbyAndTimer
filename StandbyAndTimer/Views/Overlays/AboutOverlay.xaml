@@ -135,6 +135,7 @@
                         <ContentControl Content="{DynamicResource Str_Help_Standby3}" Style="{StaticResource HelpBulletStyle}"/>
                         <ContentControl Content="{DynamicResource Str_Help_Standby4}" Style="{StaticResource HelpBulletStyle}"/>
                         <ContentControl Content="{DynamicResource Str_Help_Standby5}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Standby6}" Style="{StaticResource HelpBulletStyle}"/>
 
                         <!-- Recommended thresholds -->
                         <TextBlock Text="{DynamicResource Str_About_ThresholdsTitle}"

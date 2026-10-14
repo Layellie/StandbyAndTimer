@@ -78,6 +78,14 @@ internal static class NativeMethods
     [DllImport("kernel32.dll")]
     internal static extern IntPtr GetCurrentProcess();
 
+    /// <summary>
+    /// (SIZE_T)-1 for both sizes empties the system file cache's working set
+    /// (its pages move to the standby list). Needs SeIncreaseQuotaPrivilege.
+    /// </summary>
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool SetSystemFileCacheSize(nint MinimumFileCacheSize, nint MaximumFileCacheSize, uint Flags);
+
     /// <summary>Prevents the system from sleeping while the app is running.</summary>
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     internal static extern uint SetThreadExecutionState(uint esFlags);

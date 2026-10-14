@@ -229,6 +229,7 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal("Ctrl+Shift+T", first.TimerHotkey);
         Assert.False(first.NotifyOnGameDetected);
         Assert.True(first.LightPurge);
+        Assert.False(first.DeepPurge);   // not in a 2.4.0 key: off
         Assert.Equal(TimerLockMode.Locked, first.TimerLock);
         Assert.Equal(25, first.TimerIdleOffMinutes);
         Assert.False(Assert.Single(first.Games).BoostPriority);

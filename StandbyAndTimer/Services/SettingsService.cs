@@ -59,6 +59,7 @@ internal sealed class SettingsService : ISettingsService
 
                 AutoPurgeIdleOnly     = GetBool(key,     "AutoPurgeIdleOnly"),
                 LightPurge            = GetBool(key,     "LightPurge"),
+                DeepPurge             = GetBool(key,     "DeepPurge"),
                 IdleThresholdMinutes  = GetInt (key,     "IdleThresholdMinutes", 5),
                 TimerIdleOffEnabled   = GetBool(key,     "TimerIdleOffEnabled"),
                 TimerIdleOffMinutes   = GetInt (key,     "TimerIdleOffMinutes", 10),
@@ -137,6 +138,7 @@ internal sealed class SettingsService : ISettingsService
             key.SetValue("NotifyOnGameDetected",   settings.NotifyOnGameDetected   ? "1" : "0");
             key.SetValue("AutoPurgeIdleOnly",      settings.AutoPurgeIdleOnly      ? "1" : "0");
             key.SetValue("LightPurge",             settings.LightPurge             ? "1" : "0");
+            key.SetValue("DeepPurge",              settings.DeepPurge              ? "1" : "0");
             key.SetValue("IdleThresholdMinutes",   settings.IdleThresholdMinutes,  RegistryValueKind.DWord);
             key.SetValue("TimerIdleOffEnabled",    settings.TimerIdleOffEnabled    ? "1" : "0");
             key.SetValue("TimerIdleOffMinutes",    settings.TimerIdleOffMinutes,   RegistryValueKind.DWord);
