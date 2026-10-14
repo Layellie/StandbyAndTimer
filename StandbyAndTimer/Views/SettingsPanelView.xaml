@@ -9,6 +9,7 @@
     <UserControl.Resources>
         <conv:LanguageDisplayConverter x:Key="LangConv"/>
         <conv:ThemeDisplayConverter    x:Key="ThemeConv"/>
+        <conv:IdleOffDisplayConverter  x:Key="IdleOffConv"/>
         <BooleanToVisibilityConverter  x:Key="BoolToVis"/>
 
         <!-- Hotkey pill: shows the combo; while its row is recording (Tag =
@@ -96,42 +97,79 @@
             <RowDefinition Height="*"/>     <!-- 5 Hotkeys | Recent logs (fill) -->
         </Grid.RowDefinitions>
 
-        <!-- ═══════════════════ ROW 0-1: STARTUP | NOTIFICATIONS ═══════════════════ -->
+        <!-- ═══════════════════ ROW 0-1: GENERAL | NOTIFICATIONS ═══════════════════ -->
         <TextBlock Grid.Row="0" Grid.Column="0"
                    Text="{DynamicResource Str_Settings_StartupSection}"
                    Style="{StaticResource PageSectionLabelStyle}"/>
+        <!-- Title-only rows like the Notifications card, descriptions in the
+             tooltips: a third row with descriptions pushed the Hotkeys card
+             past the bottom of the fixed window. Transparent backgrounds
+             make the whole row hit-testable for the tooltip. -->
         <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource SettingsGroupStyle}">
-            <StackPanel>
-                <Grid Margin="0,2,0,6">
+            <StackPanel VerticalAlignment="Center">
+                <Grid Margin="0,2,0,3"
+                      Background="Transparent"
+                      ToolTip="{DynamicResource Str_Settings_LaunchOnStartupDesc}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                        <TextBlock Text="{DynamicResource Str_Settings_LaunchOnStartup}"
-                                   Style="{StaticResource SettingTitleStyle}"/>
-                        <TextBlock Text="{DynamicResource Str_Settings_LaunchOnStartupDesc}"
-                                   Style="{StaticResource SettingDescStyle}"/>
-                    </StackPanel>
+                    <TextBlock Text="{DynamicResource Str_Settings_LaunchOnStartup}"
+                               Style="{StaticResource SettingTitleStyle}"
+                               VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <CheckBox Grid.Column="1"
                               IsChecked="{Binding AutoStartEnabled}"
                               Style="{StaticResource ToggleSwitchStyle}"/>
                 </Grid>
 
-                <Grid Margin="0,6,0,2">
+                <Grid Margin="0,3"
+                      Background="Transparent"
+                      ToolTip="{DynamicResource Str_Settings_CheckUpdateOnStartupDesc}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                        <TextBlock Text="{DynamicResource Str_Settings_CheckUpdateOnStartup}"
-                                   Style="{StaticResource SettingTitleStyle}"/>
-                        <TextBlock Text="{DynamicResource Str_Settings_CheckUpdateOnStartupDesc}"
-                                   Style="{StaticResource SettingDescStyle}"/>
-                    </StackPanel>
+                    <TextBlock Text="{DynamicResource Str_Settings_CheckUpdateOnStartup}"
+                               Style="{StaticResource SettingTitleStyle}"
+                               VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <CheckBox Grid.Column="1"
                               IsChecked="{Binding UpdateCheckEnabled}"
                               Style="{StaticResource ToggleSwitchStyle}"/>
+                </Grid>
+
+                <!-- Turn the timer off when idle: Off / 5 / 10 / 15 / Custom;
+                     Custom shows a minutes box left of the picker. -->
+                <Grid Margin="0,3,0,2"
+                      Background="Transparent"
+                      ToolTip="{DynamicResource Str_Settings_TimerIdleOffTip}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{DynamicResource Str_Settings_TimerIdleOff}"
+                               Style="{StaticResource SettingTitleStyle}"
+                               VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBox Grid.Column="1"
+                             Text="{Binding TimerIdleOffMinutes, UpdateSourceTrigger=LostFocus}"
+                             ToolTip="{DynamicResource Str_IdleOff_CustomTip}"
+                             Style="{StaticResource InputTextBoxStyle}"
+                             Width="46" Height="26" FontSize="12" Margin="0,0,6,0"
+                             VerticalAlignment="Center"
+                             Visibility="{Binding IsIdleOffCustom, Converter={StaticResource BoolToVis}}"/>
+                    <ComboBox Grid.Column="2"
+                              Width="92" Height="26"
+                              VerticalAlignment="Center"
+                              ItemsSource="{Binding IdleOffOptions}"
+                              SelectedItem="{Binding SelectedIdleOffOption}"
+                              Style="{StaticResource SettingsComboBoxStyle}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource IdleOffConv}}"
+                                           Foreground="{DynamicResource InputFg}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                 </Grid>
             </StackPanel>
         </Border>
@@ -140,7 +178,7 @@
                    Text="{DynamicResource Str_Settings_NotificationsSection}"
                    Style="{StaticResource PageSectionLabelStyle}"/>
         <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource SettingsGroupStyle}">
-            <!-- Rows centred in the card: it is stretched to the Startup card
+            <!-- Rows centred in the card: it is stretched to the General card
                  height, so top-aligned rows would leave a gap underneath. -->
             <StackPanel VerticalAlignment="Center">
                 <Grid Margin="0,2,0,3">

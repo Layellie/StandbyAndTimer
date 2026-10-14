@@ -102,16 +102,19 @@ public static class Program
         return $"{fe.GetType().Name}{(string.IsNullOrEmpty(fe.Name) ? "" : "#" + fe.Name)} in {string.Join("/", parts)}";
     }
 
-    // Text that does not fit its box (NoWrap → clipped or "…"-trimmed) and
-    // panels whose content wants more height than they got (= clipped rows).
-    static void CheckLayout(FrameworkElement root, string tag)
+    // Text that does not fit its box (NoWrap → clipped; "…"-trimming is set
+    // on purpose and not counted), panels whose content wants more height
+    // than they got, and anything drawn outside its card. Returns the count,
+    // which goes into the exit code.
+    static int CheckLayout(FrameworkElement root, string tag)
     {
         int issues = 0;
         double dpi = VisualTreeHelper.GetDpi(root).PixelsPerDip;
         foreach (var d in Walk(root))
         {
             if (d is TextBlock tb && tb.IsVisible && !string.IsNullOrEmpty(tb.Text)
-                && tb.TextWrapping == TextWrapping.NoWrap && tb.ActualWidth > 0)
+                && tb.TextWrapping == TextWrapping.NoWrap && tb.TextTrimming == TextTrimming.None
+                && tb.ActualWidth > 0)
             {
                 var ft = new FormattedText(tb.Text, CultureInfo.CurrentUICulture, tb.FlowDirection,
                     new Typeface(tb.FontFamily, tb.FontStyle, tb.FontWeight, tb.FontStretch),
@@ -120,7 +123,7 @@ public static class Program
                 if (need > tb.ActualWidth + 0.5)
                 {
                     issues++;
-                    Log($"  [{tag}] TEXT DOES NOT FIT ({need:F0} > {tb.ActualWidth:F0} px): \"{tb.Text}\" — {Describe(tb)}");
+                    Log($"  FAIL [{tag}] TEXT DOES NOT FIT ({need:F0} > {tb.ActualWidth:F0} px): \"{tb.Text}\" — {Describe(tb)}");
                 }
             }
             // Element rendered wider/taller than the slot its parent gave it:
@@ -140,7 +143,7 @@ public static class Program
                     {
                         issues++;
                         string what = fe is TextBlock t ? $" \"{t.Text}\"" : "";
-                        Log($"  [{tag}] EXCEEDS SLOT ({fe.ActualWidth:F0}x{fe.ActualHeight:F0} in {availW:F0}x{availH:F0}){what} — {Describe(fe)}");
+                        Log($"  FAIL [{tag}] EXCEEDS SLOT ({fe.ActualWidth:F0}x{fe.ActualHeight:F0} in {availW:F0}x{availH:F0}){what} — {Describe(fe)}");
                     }
                 }
             }
@@ -150,11 +153,40 @@ public static class Program
                 if (want > p.ActualHeight + 0.5 && p is not VirtualizingPanel)
                 {
                     issues++;
-                    Log($"  [{tag}] PANEL CLIPPED VERTICALLY (wants {want:F0}, has {p.ActualHeight:F0} px) — {Describe(p)}");
+                    Log($"  FAIL [{tag}] PANEL CLIPPED VERTICALLY (wants {want:F0}, has {p.ActualHeight:F0} px) — {Describe(p)}");
                 }
             }
         }
-        if (issues == 0) Log($"  [{tag}] layout OK: no clipped/trimmed text, no clipped panels");
+        issues += CheckInsideCards(root, tag);
+        if (issues == 0) Log($"  [{tag}] layout OK: no clipped text or panels, nothing outside its card");
+        return issues;
+    }
+
+    // A panel squeezed by its row keeps arranging children at their full
+    // size, and WPF clips DesiredSize to the space offered, so the checks
+    // above cannot see it (the Hotkeys card cut off at the window bottom
+    // passed them). Instead: every visible element must lie within the
+    // nearest bordered ancestor (a card / dialog) on screen.
+    static int CheckInsideCards(FrameworkElement root, string tag)
+    {
+        int issues = 0;
+        foreach (var fe in Walk(root).OfType<FrameworkElement>())
+        {
+            if (!fe.IsVisible || fe.ActualHeight <= 0 || fe.ActualWidth <= 0 || IsInsideScrollContent(fe)) continue;
+            Border? card = null;
+            for (var a = VisualTreeHelper.GetParent(fe); a is not null; a = VisualTreeHelper.GetParent(a))
+                if (a is Border { BorderThickness.Top: > 0 } b && b.ActualHeight > 0) { card = b; break; }
+            if (card is null) continue;
+
+            var tl = fe.TranslatePoint(new Point(0, 0), card);
+            bool outside = tl.Y + fe.ActualHeight > card.ActualHeight + 0.5 || tl.X + fe.ActualWidth > card.ActualWidth + 0.5
+                        || tl.Y < -0.5 || tl.X < -0.5;
+            if (!outside) continue;
+            issues++;
+            Log($"  FAIL [{tag}] OUTSIDE CARD ({tl.X:F0},{tl.Y:F0} {fe.ActualWidth:F0}x{fe.ActualHeight:F0} in card {card.ActualWidth:F0}x{card.ActualHeight:F0}) — {Describe(fe)}");
+            break;   // the first one names the problem; its children would repeat it
+        }
+        return issues;
     }
 
     // Content of a ScrollViewer is allowed to be larger than its viewport.
@@ -467,6 +499,9 @@ public static class Program
             md[2] = new ResourceDictionary { Source = Pack($"Views/Strings/Strings.{lang}.xaml") };
             SetField(settingsVm, "_selectedTheme", themeEnum);
             SetField(settingsVm, "_selectedLanguage", langEnum);
+            // Idle-off picker: Custom (minutes box shown) in two themes, Off in the others.
+            SetField(settingsVm, "_selectedIdleOffOption", theme is "Black" or "Light" ? SettingsViewModel.IdleOffCustom : 0);
+            SetField(settingsVm, "_timerIdleOffMinutes", 25);
             SetField(settingsVm, "_isOpen", false);
             SetField(vm, "_statusMessage", loc.GetString("Str_Status_Ready"));
             SetField(vm, "_timerLock", theme is "Light" or "Black" ? TimerLockMode.InGame : TimerLockMode.Unlocked);   // show two lock states
@@ -558,7 +593,7 @@ public static class Program
                 var raise = vm.GetType().GetMethod("OnPropertyChanged", BindingFlags.Instance | BindingFlags.NonPublic, [typeof(string)])!;
                 SetField(vm, flag, true);  raise.Invoke(vm, [prop]); Pump();
                 Save(root, Path.Combine(outDir, $"{tag}-4-{name}.png"));
-                CheckLayout(root, $"{tag} {name}");
+                failures += CheckLayout(root, $"{tag} {name}");
                 SetField(vm, flag, false); raise.Invoke(vm, [prop]); Pump();
             }
             {
@@ -580,7 +615,7 @@ public static class Program
                        Path.Combine(outDir, $"{tag}-purge-x4.png"));
             SaveZoomed(Walk(root).OfType<StandbyAndTimer.Views.Cards.StandbyPurgeCard>().Single(),
                        Path.Combine(outDir, $"{tag}-purge-x1.png"), 1);
-            CheckLayout(root, tag + " status");
+            failures += CheckLayout(root, tag + " status");
 
             // VM → View: IsOpen=true must select the Settings tab.
             settingsVm.IsOpen = true;
@@ -588,7 +623,7 @@ public static class Program
             if (tabs.SelectedIndex != 1) { failures++; Log($"  FAIL IsOpen=true → SelectedIndex={tabs.SelectedIndex}, expected 1"); }
             else Log("  OK   IsOpen=true selects Settings tab");
             Save(root, Path.Combine(outDir, $"{tag}-2-settings.png"));
-            CheckLayout(root, tag + " settings");
+            failures += CheckLayout(root, tag + " settings");
             {
                 // Cards sharing a grid row must share their top and bottom edges.
                 var page = Walk(root).OfType<StandbyAndTimer.Views.SettingsPanelView>().Single();
@@ -625,7 +660,7 @@ public static class Program
                         $"tags=[{string.Join(", ", pills.Select(b => $"{b.Tag?.GetType().Name}:{b.Tag}"))}]");
             }
             Save(root, Path.Combine(outDir, $"{tag}-3-hotkey-recording.png"));
-            CheckLayout(root, tag + " hotkey-recording");
+            failures += CheckLayout(root, tag + " hotkey-recording");
 
             // Code-behind wiring: synthetic key events into the Settings page.
             if (tag == "Dark-en-US" && Keyboard.Modifiers != ModifierKeys.None)

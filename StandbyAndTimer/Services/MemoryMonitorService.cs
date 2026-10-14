@@ -137,13 +137,14 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
             ? RunningGames.Match(watched, RunningGames.CurrentProcessNames())
             : [];
 
-        var snapshot = ReadSnapshot() with { RunningGamePaths = running };
+        TimeSpan idleFor = _idleMonitor.TimeSinceLastInput;   // idle gate below + timer idle-off (view model)
+        var snapshot = ReadSnapshot() with { RunningGamePaths = running, IdleFor = idleFor };
         SnapshotUpdated?.Invoke(this, snapshot);
 
         // Idle gate: when AutoPurgeIdleOnly is on, suppress the purge
         // until the user has been quiet for IdleThresholdMs.
         bool idleGate = !AutoPurgeIdleOnly
-                     || _idleMonitor.TimeSinceLastInput.TotalMilliseconds >= IdleThresholdMs;
+                     || idleFor.TotalMilliseconds >= IdleThresholdMs;
 
         var noPurge = NoAutoPurgeGamePaths;
         bool blocked = noPurge.Count > 0

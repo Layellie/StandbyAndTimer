@@ -56,6 +56,25 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string   _timerHotkeyText      = "Ctrl+Alt+T";
     [ObservableProperty] private string   _autoPurgeHotkeyText  = "Ctrl+Alt+O";
 
+    // "Turn the timer off when idle". One picker: Off, 5 / 10 / 15 min, or
+    // Custom, which shows a minutes box. Enabled + minutes are what is
+    // stored; the picker is derived from them.
+    public const int IdleOffCustom = -1;
+    internal const int IdleOffMaxMinutes = 240;
+    public int[] IdleOffOptions { get; } = [0, 5, 10, 15, IdleOffCustom];
+
+    [ObservableProperty] private bool _timerIdleOffEnabled;
+    [ObservableProperty] private int  _timerIdleOffMinutes = 10;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsIdleOffCustom))]
+    private int _selectedIdleOffOption;
+
+    public bool IsIdleOffCustom => SelectedIdleOffOption == IdleOffCustom;
+
+    internal static int IdleOffOptionFor(bool enabled, int minutes) =>
+        !enabled ? 0 : minutes is 5 or 10 or 15 ? minutes : IdleOffCustom;
+
     // Hotkey rebinding. RecordingHotkeyId is the id being recorded (one of
     // HotkeyIds) or null; HotkeyError is shown under the Hotkeys group and
     // cleared when a new recording starts.
@@ -162,10 +181,14 @@ public sealed partial class SettingsViewModel : ObservableObject
     public void Initialize(
         bool autoStartEnabled, Language language, bool updateCheckEnabled, Theme theme,
         bool notifyOnPurge, bool notifyOnTimerToggle, bool notifyOnGameDetected,
-        string purgeHotkey, string timerHotkey, string autoPurgeHotkey)
+        string purgeHotkey, string timerHotkey, string autoPurgeHotkey,
+        bool timerIdleOffEnabled = false, int timerIdleOffMinutes = 10)
     {
         using (new InitScope(v => _isInitializing = v))
         {
+            TimerIdleOffEnabled   = timerIdleOffEnabled;
+            TimerIdleOffMinutes   = Math.Clamp(timerIdleOffMinutes, 1, IdleOffMaxMinutes);
+            SelectedIdleOffOption = IdleOffOptionFor(TimerIdleOffEnabled, TimerIdleOffMinutes);
             AutoStartEnabled     = autoStartEnabled;
             SelectedLanguage     = language;
             UpdateCheckEnabled   = updateCheckEnabled;
@@ -355,6 +378,24 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     partial void OnNotifyOnGameDetectedChanged(bool value)
     {
+        if (_isInitializing) return;
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    partial void OnSelectedIdleOffOptionChanged(int value)
+    {
+        if (_isInitializing) return;
+        TimerIdleOffEnabled = value != 0;
+        if (value > 0) TimerIdleOffMinutes = value;   // Custom keeps the last minutes
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    // The Custom minutes box. Out of range (0, negative, days) is clamped
+    // rather than rejected, so the box always shows what is in effect.
+    partial void OnTimerIdleOffMinutesChanged(int value)
+    {
+        int clamped = Math.Clamp(value, 1, IdleOffMaxMinutes);
+        if (clamped != value) { TimerIdleOffMinutes = clamped; return; }
         if (_isInitializing) return;
         SettingsChanged?.Invoke(this, EventArgs.Empty);
     }

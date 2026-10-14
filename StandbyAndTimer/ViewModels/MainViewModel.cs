@@ -61,6 +61,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     // the last game exiting turn it off again).
     private bool _anyGameRunning;
     private bool _timerStartedForGame;
+    // Timer switched off by "turn off when idle"; the next input turns it
+    // back on. A TIMER press clears it (the user is in charge then).
+    private bool _timerPausedForIdle;
     // Listed games running at the last tick, to spot the ones that just started.
     private readonly HashSet<string> _runningGames = new(StringComparer.OrdinalIgnoreCase);
     [ObservableProperty] private double  _actualTimerMs;
@@ -186,7 +189,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             Settings.Initialize(
                 s.AutoStartEnabled, s.Language, s.UpdateCheckEnabled, s.Theme,
                 s.NotifyOnPurge, s.NotifyOnTimerToggle, s.NotifyOnGameDetected,
-                s.PurgeHotkey, s.TimerHotkey, s.AutoPurgeHotkey);
+                s.PurgeHotkey, s.TimerHotkey, s.AutoPurgeHotkey,
+                s.TimerIdleOffEnabled, s.TimerIdleOffMinutes);
         }
         SyncMonitorThresholds();
         SyncMonitorGames();
@@ -279,7 +283,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         IdleThresholdMinutes  = IdleThresholdMinutes,
         GameModeEnabled       = GameModeEnabled,
         AutoStartEnabled      = Settings.AutoStartEnabled,
-        TimerResolutionActive = TimerActive,
+        TimerResolutionActive = TimerActive || _timerPausedForIdle,   // idle pause is not "off"
         TimerLock             = TimerLock,
         TimerLocked           = TimerLock == TimerLockMode.Locked,   // for 2.2.x
         Language              = Settings.SelectedLanguage,
@@ -291,6 +295,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         PurgeHotkey           = Settings.PurgeHotkeyText,
         TimerHotkey           = Settings.TimerHotkeyText,
         AutoPurgeHotkey       = Settings.AutoPurgeHotkeyText,
+        TimerIdleOffEnabled   = Settings.TimerIdleOffEnabled,
+        TimerIdleOffMinutes   = Settings.TimerIdleOffMinutes,
         FirstRunCompleted     = _firstRunCompleted,
         Games                 = [.. Games],
         IgnoredGamePaths      = [.. _ignoredGamePaths]
@@ -309,8 +315,54 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             TotalRamMb   = snapshot.TotalMb;
             FreeRamMb    = snapshot.FreeMb;
             StandbyRamMb = snapshot.StandbyMb;
-            _ = HandleRunningGamesAsync(snapshot.RunningGamePaths ?? []);
+            _ = HandleTickAsync(snapshot);
         });
+
+    // Games first: a game starting while the timer is paused for idle is
+    // the in-game lock's to switch on.
+    private async Task HandleTickAsync(MemorySnapshot snapshot)
+    {
+        try
+        {
+            await HandleRunningGamesAsync(snapshot.RunningGamePaths ?? []).ConfigureAwait(true);
+            await ApplyIdleStateAsync(snapshot.IdleFor, snapshot.AnyGameRunning).ConfigureAwait(true);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            Logger.Warn($"Tick handling: {ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// "Turn the timer off when idle": no input for the chosen minutes turns
+    /// a running timer off, which also lets Windows sleep again; the next
+    /// input turns it back on. Never while a listed game runs: gamepad input
+    /// does not count as input for Windows' idle time.
+    /// </summary>
+    internal async Task ApplyIdleStateAsync(TimeSpan idleFor, bool anyGameRunning)
+    {
+        int  minutes = Settings.TimerIdleOffMinutes;
+        bool idle    = Settings.TimerIdleOffEnabled && !anyGameRunning
+                    && idleFor >= TimeSpan.FromMinutes(minutes);
+
+        if (idle && TimerActive && !_timerPausedForIdle)
+        {
+            DeactivateTimer(notify: false);
+            _timerPausedForIdle = true;
+            StatusMessage = string.Format(CultureInfo.CurrentCulture,
+                _localization.GetString("Str_Status_TimerIdleOff"), minutes);
+            Logger.Info($"Idle {minutes} min: timer OFF");
+        }
+        else if (!idle && _timerPausedForIdle)
+        {
+            _timerPausedForIdle = false;
+            if (TimerActive) return;   // already back on (a game start, a lock change)
+            await ActivateTimerInternalAsync(silent: true).ConfigureAwait(true);
+            StatusMessage = string.Format(CultureInfo.CurrentCulture,
+                _localization.GetString("Str_Status_TimerIdleBack"), ActualTimerMs);
+            Logger.Info("Input after idle: timer ON");
+        }
+    }
 
     /// <summary>
     /// Per tick: lets the in-game lock act, then announces each listed game
@@ -534,6 +586,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private async Task ToggleTimerResolutionAsync()
     {
         _timerStartedForGame = false;   // the user is in charge now
+        _timerPausedForIdle  = false;
         if (TimerActive)
         {
             DeactivateTimer(notify: true);

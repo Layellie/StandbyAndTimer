@@ -119,6 +119,8 @@
     <sys:String x:Key="Str_Status_TimerLockedOn">Timer kilitlendi — her açılışta otomatik açılacak</sys:String>
     <sys:String x:Key="Str_Status_TimerLockedOff">Timer kilidi açıldı — sonraki açılışta kapalı başlayacak</sys:String>
     <sys:String x:Key="Str_Status_TimerLockedInGame">Timer oyunlara bağlandı: listedeki bir oyun açılınca açılacak</sys:String>
+    <sys:String x:Key="Str_Status_TimerIdleOff">{0} dk girdi yok: timer kapandı, PC uyuyabilir</sys:String>
+    <sys:String x:Key="Str_Status_TimerIdleBack">Hoş geldin: timer tekrar açık ({0:F2} ms)</sys:String>
     <sys:String x:Key="Str_Status_TimerGameOn">Oyun açıldı, timer açık</sys:String>
     <sys:String x:Key="Str_Status_TimerGameOff">Oyun kapandı, timer kapalı</sys:String>
     <sys:String x:Key="Str_Status_AutoPurgeOn">Oto temizle açık</sys:String>
@@ -204,10 +206,17 @@
     <!-- Sekmeler + Ayarlar sayfası (yatay düzen) -->
     <sys:String x:Key="Str_Tab_Status">Durum</sys:String>
     <sys:String x:Key="Str_Tab_Settings">Ayarlar</sys:String>
-    <sys:String x:Key="Str_Settings_StartupSection">BAŞLANGIÇ</sys:String>
+    <sys:String x:Key="Str_Settings_StartupSection">GENEL</sys:String>
     <sys:String x:Key="Str_Settings_AppearanceSection">GÖRÜNÜM</sys:String>
     <sys:String x:Key="Str_Settings_LaunchOnStartupDesc">Oturum açılınca Görev Zamanlayıcı ile başlar</sys:String>
     <sys:String x:Key="Str_Settings_CheckUpdateOnStartup">Açılışta güncelleme kontrolü</sys:String>
     <sys:String x:Key="Str_Settings_CheckUpdateOnStartupDesc">Yeni sürüm varsa tepside bildirim gösterir</sys:String>
+    <sys:String x:Key="Str_Settings_TimerIdleOff">Boştayken timer'ı kapat</sys:String>
+    <sys:String x:Key="Str_Settings_TimerIdleOffDesc">PC uyuyabilsin; dönünce tekrar açılır</sys:String>
+    <sys:String x:Key="Str_Settings_TimerIdleOffTip">Timer açıkken Windows kendiliğinden uykuya geçmez. Bu açıkken seçtiğin süre boyunca fare ya da klavye kullanılmazsa timer kapanır (PC yine uyuyabilir), ilk dokunuşta tekrar açılır. Game Mode listesindeki bir oyun açıkken hiç kapanmaz: gamepad girdisi sayılmıyor.</sys:String>
+    <sys:String x:Key="Str_IdleOff_Off">Kapalı</sys:String>
+    <sys:String x:Key="Str_IdleOff_Minutes">{0} dk</sys:String>
+    <sys:String x:Key="Str_IdleOff_Custom">Özel</sys:String>
+    <sys:String x:Key="Str_IdleOff_CustomTip">Dakika (1-240)</sys:String>
 
 </ResourceDictionary>

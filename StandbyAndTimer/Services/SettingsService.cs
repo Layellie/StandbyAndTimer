@@ -50,6 +50,8 @@ internal sealed class SettingsService : ISettingsService
                 AutoPurgeIdleOnly     = GetBool(key,     "AutoPurgeIdleOnly"),
                 LightPurge            = GetBool(key,     "LightPurge"),
                 IdleThresholdMinutes  = GetInt (key,     "IdleThresholdMinutes", 5),
+                TimerIdleOffEnabled   = GetBool(key,     "TimerIdleOffEnabled"),
+                TimerIdleOffMinutes   = GetInt (key,     "TimerIdleOffMinutes", 10),
 
                 PurgeHotkey           = key.GetValue("PurgeHotkey")?.ToString() ?? "Ctrl+Alt+P",
                 TimerHotkey           = key.GetValue("TimerHotkey")?.ToString() ?? "Ctrl+Alt+T",
@@ -115,6 +117,8 @@ internal sealed class SettingsService : ISettingsService
             key.SetValue("AutoPurgeIdleOnly",      settings.AutoPurgeIdleOnly      ? "1" : "0");
             key.SetValue("LightPurge",             settings.LightPurge             ? "1" : "0");
             key.SetValue("IdleThresholdMinutes",   settings.IdleThresholdMinutes,  RegistryValueKind.DWord);
+            key.SetValue("TimerIdleOffEnabled",    settings.TimerIdleOffEnabled    ? "1" : "0");
+            key.SetValue("TimerIdleOffMinutes",    settings.TimerIdleOffMinutes,   RegistryValueKind.DWord);
             key.SetValue("PurgeHotkey",            settings.PurgeHotkey            ?? "Ctrl+Alt+P");
             key.SetValue("TimerHotkey",            settings.TimerHotkey            ?? "Ctrl+Alt+T");
             key.SetValue("AutoPurgeHotkey",        settings.AutoPurgeHotkey        ?? "Ctrl+Alt+O");
