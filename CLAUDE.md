@@ -24,6 +24,12 @@ dotnet run --project StandbyAndTimer/StandbyAndTimer.csproj
 
 # Release build
 dotnet build StandbyAndTimer/StandbyAndTimer.csproj -c Release
+
+# Unit tests
+dotnet test StandbyAndTimer.Tests/StandbyAndTimer.Tests.csproj -c Release
+
+# UI renders + view checks after XAML/style/string changes (PNGs in ui-render-out/)
+dotnet run --project tools/UiRender -c Release
 ```
 
 The solution file uses the `.slnx` format (`StandbyAndTimer.slnx`).

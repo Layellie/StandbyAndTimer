@@ -8,11 +8,19 @@ namespace StandbyAndTimer.Services;
 
 internal sealed class SettingsService : ISettingsService
 {
+    private readonly string _keyPath;
+
+    // DI uses this one (it only sees public constructors).
+    public SettingsService() : this(AppConstants.SettingsRegistryPath) { }
+
+    // Tests point it at a throwaway HKCU key.
+    internal SettingsService(string keyPath) => _keyPath = keyPath;
+
     public AppSettings Load()
     {
         try
         {
-            using var key = Registry.CurrentUser.OpenSubKey(AppConstants.SettingsRegistryPath);
+            using var key = Registry.CurrentUser.OpenSubKey(_keyPath);
             if (key is null)
                 return new AppSettings();
 
@@ -82,7 +90,7 @@ internal sealed class SettingsService : ISettingsService
     {
         try
         {
-            using var key = Registry.CurrentUser.CreateSubKey(AppConstants.SettingsRegistryPath);
+            using var key = Registry.CurrentUser.CreateSubKey(_keyPath);
 
             // Ints stored as REG_DWORD — native typing means regedit shows them
             // as numbers (not quoted strings) and Load() doesn't have to parse.
@@ -164,6 +172,8 @@ internal sealed class SettingsService : ISettingsService
         return bool.TryParse(v, out bool parsed) ? parsed : defaultValue;
     }
 
-    private static TEnum GetEnum<TEnum>(RegistryKey key, string name, TEnum fallback) where TEnum : struct =>
-        Enum.TryParse<TEnum>(key.GetValue(name)?.ToString(), out var v) ? v : fallback;
+    // Enum.TryParse also accepts any number ("7"), giving a value the enum
+    // does not define; a hand-edited or corrupt value falls back instead.
+    private static TEnum GetEnum<TEnum>(RegistryKey key, string name, TEnum fallback) where TEnum : struct, Enum =>
+        Enum.TryParse<TEnum>(key.GetValue(name)?.ToString(), out var v) && Enum.IsDefined(v) ? v : fallback;
 }

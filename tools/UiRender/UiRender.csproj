@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Offscreen UI renderer and view checks for StandbyAndTimer (dev tool,
+       not shipped). Loads the real XAML views with no-op fake services (no
+       registry, no timer, no process changes), writes PNGs for every
+       theme × language, and fails on layout overflow or broken bindings.
+       See README.md. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <!-- WinForms only for the screen capture of the tray menu / the screen option. -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms"/>
+    <Using Remove="System.Drawing"/>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\StandbyAndTimer\StandbyAndTimer.csproj" />
+  </ItemGroup>
+</Project>

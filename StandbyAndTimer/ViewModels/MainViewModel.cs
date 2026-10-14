@@ -61,6 +61,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     // the last game exiting turn it off again).
     private bool _anyGameRunning;
     private bool _timerStartedForGame;
+    // Listed games running at the last tick, to spot the ones that just started.
+    private readonly HashSet<string> _runningGames = new(StringComparer.OrdinalIgnoreCase);
     [ObservableProperty] private double  _actualTimerMs;
     [ObservableProperty] private string  _statusMessage  = string.Empty;
     [ObservableProperty] private GameEntry? _selectedGame;
@@ -86,6 +88,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     // Raised when timer was toggled (true=on, false=off). Includes actual ms.
     public event EventHandler<TimerToggledArgs>? TimerToggledNotification;
+
+    // Raised once per listed game start, after the in-game lock has acted,
+    // with what the app does for that game. App shows it as a balloon
+    // (Settings -> Notifications -> game notifications).
+    public event EventHandler<GameStartedArgs>? GameStartedNotification;
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -302,8 +309,44 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             TotalRamMb   = snapshot.TotalMb;
             FreeRamMb    = snapshot.FreeMb;
             StandbyRamMb = snapshot.StandbyMb;
-            _ = ApplyGameStateAsync(snapshot.AnyGameRunning);
+            _ = HandleRunningGamesAsync(snapshot.RunningGamePaths ?? []);
         });
+
+    /// <summary>
+    /// Per tick: lets the in-game lock act, then announces each listed game
+    /// that was not running at the last tick.
+    /// </summary>
+    internal async Task HandleRunningGamesAsync(IReadOnlyList<string> running)
+    {
+        var started = running.Where(p => !_runningGames.Contains(p)).ToList();
+        _runningGames.Clear();
+        _runningGames.UnionWith(running);
+
+        await ApplyGameStateAsync(running.Count > 0).ConfigureAwait(true);
+
+        foreach (string path in started)
+        {
+            var game = Games.FirstOrDefault(g => g.ExecutablePath.Equals(path, StringComparison.OrdinalIgnoreCase));
+            if (game is null) continue;   // removed from the list meanwhile
+            GameStartedNotification?.Invoke(this, new GameStartedArgs(game.DisplayName, DescribeGameStart(game)));
+            Logger.Info($"Game started: {game.DisplayName}");
+        }
+    }
+
+    // "High priority · Timer on (0.50 ms) · Auto purge paused": only the
+    // features that are switched on, as they apply to this game right now.
+    private string DescribeGameStart(GameEntry game)
+    {
+        var parts = new List<string>(3);
+        if (GameModeEnabled)
+            parts.Add(_localization.GetString(game.BoostPriority ? "Str_GameNotify_Boost" : "Str_GameNotify_NoBoost"));
+        parts.Add(TimerActive
+            ? string.Format(CultureInfo.CurrentCulture, _localization.GetString("Str_GameNotify_TimerOn"), ActualTimerMs)
+            : _localization.GetString("Str_GameNotify_TimerOff"));
+        if (AutoPurgeEnabled)
+            parts.Add(_localization.GetString(game.AllowAutoPurge ? "Str_GameNotify_PurgeOn" : "Str_GameNotify_PurgePaused"));
+        return string.Join(" · ", parts);
+    }
 
     /// <summary>
     /// In-game lock: a listed game starting turns the timer on, the last one
@@ -698,3 +741,5 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 }
 
 public sealed record TimerToggledArgs(bool IsActive, double ActualMs);
+
+public sealed record GameStartedArgs(string GameName, string Body);

@@ -34,3 +34,6 @@ installer/dist/
 
 # ── Tooling local state ──────────────────────────────────────────────────────
 .claude/
+
+# UiRender output (tools/UiRender)
+ui-render-out/

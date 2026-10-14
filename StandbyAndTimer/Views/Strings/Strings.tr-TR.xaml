@@ -168,6 +168,13 @@
     <!-- Oyun otomatik tespit -->
     <sys:String x:Key="Str_Detect_NotifyTitle">Game Mode'a oyun eklendi</sys:String>
     <sys:String x:Key="Str_Detect_NotifyBody">"{0}" tam ekranda algılandı ve Game Mode listesine eklendi. Oyun değilse listeden silebilirsin.</sys:String>
+    <sys:String x:Key="Str_GameNotify_Title">{0} başladı</sys:String>
+    <sys:String x:Key="Str_GameNotify_Boost">Yüksek öncelik</sys:String>
+    <sys:String x:Key="Str_GameNotify_NoBoost">Öncelik değiştirilmedi</sys:String>
+    <sys:String x:Key="Str_GameNotify_TimerOn">Timer açık ({0:F2} ms)</sys:String>
+    <sys:String x:Key="Str_GameNotify_TimerOff">Timer kapalı</sys:String>
+    <sys:String x:Key="Str_GameNotify_PurgeOn">Oto temizlik açık</sys:String>
+    <sys:String x:Key="Str_GameNotify_PurgePaused">Oto temizlik duraklatıldı</sys:String>
     <sys:String x:Key="Str_Status_GameAutoAdded">Otomatik eklendi: {0}</sys:String>
 
     <!-- v2.1.0 -->
@@ -179,7 +186,8 @@
     <sys:String x:Key="Str_Settings_NotificationsSection">BİLDİRİMLER</sys:String>
     <sys:String x:Key="Str_Settings_NotifyOnPurge">Temizleme bildirimleri</sys:String>
     <sys:String x:Key="Str_Settings_NotifyOnTimer">Zamanlayıcı bildirimleri</sys:String>
-    <sys:String x:Key="Str_Settings_NotifyOnGame">Oyun algılandı bildirimleri</sys:String>
+    <sys:String x:Key="Str_Settings_NotifyOnGame">Oyun bildirimleri</sys:String>
+    <sys:String x:Key="Str_Settings_NotifyOnGameTip">Listedeki bir oyun açılınca ve tam ekranda yeni bir oyun algılanınca bildirim gösterir.</sys:String>
     <sys:String x:Key="Str_Settings_HotkeysSection">KISAYOLLAR</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyPurge">Manuel temizle</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyTimer">Zamanlayıcı aç/kapa</sys:String>

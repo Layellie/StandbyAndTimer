@@ -134,6 +134,7 @@ public partial class App : Application
         _viewModel.PropertyChanged          += OnViewModelPropertyChanged;
         _viewModel.PurgeNotification        += OnPurgeNotification;
         _viewModel.TimerToggledNotification += OnTimerToggledNotification;
+        _viewModel.GameStartedNotification  += OnGameStartedNotification;
         _viewModel.GameAutoDetected         += OnGameAutoDetected;
         _viewModel.SettingsPersisted        += (_, latest) => _userSettings = latest;
 
@@ -204,6 +205,9 @@ public partial class App : Application
 
         if (savedSettings.UpdateCheckEnabled)
             _ = SilentUpdateCheckAsync();
+
+        // Installers downloaded by earlier in-app updates; off the UI thread.
+        _ = Task.Run(() => UpdateService.DeleteDownloadedInstallers(Path.GetTempPath()));
     }
 
     private async Task InitializeViewModelAsync(Stopwatch sw)
@@ -238,6 +242,7 @@ public partial class App : Application
             _viewModel.PropertyChanged          -= OnViewModelPropertyChanged;
             _viewModel.PurgeNotification        -= OnPurgeNotification;
             _viewModel.TimerToggledNotification -= OnTimerToggledNotification;
+            _viewModel.GameStartedNotification  -= OnGameStartedNotification;
             _viewModel.GameAutoDetected         -= OnGameAutoDetected;
         }
 
@@ -443,6 +448,17 @@ public partial class App : Application
             Logger.Info($"GameDetection balloon shown for {fileName}");
         }
         catch (Exception ex) { Logger.Warn($"OnGameAutoDetected: {ex.Message}"); }
+    }
+
+    // Same switch as the auto-detect balloon: Settings -> "Game notifications".
+    private void OnGameStartedNotification(object? sender, GameStartedArgs args)
+    {
+        if (_userSettings is { NotifyOnGameDetected: false }) return;
+        string title = string.Format(
+            CultureInfo.CurrentCulture,
+            _localization!.GetString("Str_GameNotify_Title"),
+            args.GameName);
+        _tray?.ShowBalloon(title, args.Body);
     }
 
     private void OnTimerToggledNotification(object? sender, TimerToggledArgs args)
