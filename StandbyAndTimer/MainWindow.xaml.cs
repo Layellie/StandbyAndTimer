@@ -172,4 +172,6 @@ public partial class MainWindow : Window
     // ── Game list drag-and-drop (forwarded from cards:GameModeCard) ──────────
 
     private void OnGameDropped(object? sender, string path) => _vm.AddGameFromPath(path);
+
+    private void OnGameLaunchRequested(object? sender, Core.Models.GameEntry game) => _vm.LaunchGame(game);
 }

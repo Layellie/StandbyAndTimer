@@ -4,11 +4,33 @@
              FontFamily="{StaticResource AppFont}" FontSize="13">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <!-- One total tile: label, freed amount, purge count. -->
+        <Style x:Key="TileStyle" TargetType="Border" BasedOn="{StaticResource SettingsGroupStyle}">
+            <Setter Property="Margin"  Value="0"/>
+            <Setter Property="Padding" Value="12,8"/>
+        </Style>
+        <Style x:Key="TileLabel" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppFgDim}"/>
+        </Style>
+        <Style x:Key="TileValue" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="18"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentText}"/>
+            <Setter Property="Margin"     Value="0,2,0,0"/>
+        </Style>
+        <Style x:Key="TileCount" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="11"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppFgDim}"/>
+        </Style>
     </UserControl.Resources>
 
     <!-- Purge history, opened from the Purges count on the Standby memory
-         card: time, kind (+ trigger) and how much each purge freed, newest
-         first, this session. The dim overlay closes it; clicks inside do not. -->
+         card: totals for today / 7 days / all time and per kind, then the
+         last 20 purges with time, kind (+ trigger) and how much each freed.
+         Kept across restarts (purge-history.json). The dim overlay closes
+         it; clicks inside do not. -->
     <Border Background="{DynamicResource ModalOverlayBrush}"
             Visibility="{Binding IsPurgeHistoryVisible, Converter={StaticResource BoolToVis}}">
         <Border.InputBindings>
@@ -21,14 +43,17 @@
                 BorderThickness="1"
                 CornerRadius="{StaticResource RadiusLarge}"
                 Padding="22,18"
-                Width="440"
-                MaxHeight="440"
+                Width="560"
+                MaxHeight="476"
                 MouseLeftButtonDown="DialogMouseDown">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>  <!-- title -->
+                    <RowDefinition Height="Auto"/>  <!-- totals -->
+                    <RowDefinition Height="Auto"/>  <!-- per kind -->
+                    <RowDefinition Height="Auto"/>  <!-- list label -->
+                    <RowDefinition Height="*"/>     <!-- list -->
+                    <RowDefinition Height="Auto"/>  <!-- buttons -->
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="0" Margin="0,0,0,12">
@@ -48,10 +73,50 @@
                                Margin="17,0,0,0"/>
                 </StackPanel>
 
-                <Border Grid.Row="1" Style="{StaticResource SettingsGroupStyle}" Margin="0" Padding="12,6">
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Style="{StaticResource TileStyle}">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Str_History_Today}" Style="{StaticResource TileLabel}"/>
+                            <TextBlock Text="{Binding StatsTodayFreed}" Style="{StaticResource TileValue}"/>
+                            <TextBlock Text="{Binding StatsTodayCount}" Style="{StaticResource TileCount}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="2" Style="{StaticResource TileStyle}">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Str_History_Week}" Style="{StaticResource TileLabel}"/>
+                            <TextBlock Text="{Binding StatsWeekFreed}" Style="{StaticResource TileValue}"/>
+                            <TextBlock Text="{Binding StatsWeekCount}" Style="{StaticResource TileCount}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="4" Style="{StaticResource TileStyle}">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Str_History_AllTime}" Style="{StaticResource TileLabel}"/>
+                            <TextBlock Text="{Binding StatsAllFreed}" Style="{StaticResource TileValue}"/>
+                            <TextBlock Text="{Binding StatsAllCount}" Style="{StaticResource TileCount}"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <StackPanel Grid.Row="2" Margin="2,8,0,0">
+                    <TextBlock Text="{Binding StatsByKind}" FontSize="11"
+                               Foreground="{DynamicResource AppFgDim}" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding StatsSince}" FontSize="11"
+                               Foreground="{DynamicResource AppFgDim}" Margin="0,2,0,0"/>
+                </StackPanel>
+
+                <TextBlock Grid.Row="3" Text="{DynamicResource Str_History_Recent}"
+                           Style="{StaticResource PageSectionLabelStyle}" Margin="2,12,0,6"/>
+
+                <Border Grid.Row="4" Style="{StaticResource SettingsGroupStyle}" Margin="0" Padding="12,6">
                     <Grid>
-                        <TextBlock x:Name="Empty"
-                                   Text="{DynamicResource Str_History_Empty}"
+                        <TextBlock Text="{DynamicResource Str_History_Empty}"
                                    FontSize="12"
                                    Foreground="{DynamicResource AppFgDim}"
                                    Margin="0,6">
@@ -72,9 +137,9 @@
                             <ItemsControl ItemsSource="{Binding PurgeHistory}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid Margin="0,5">
+                                        <Grid Margin="0,4">
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="70"/>
+                                                <ColumnDefinition Width="96"/>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
@@ -94,13 +159,28 @@
                     </Grid>
                 </Border>
 
-                <Button Grid.Row="2"
-                        Content="{DynamicResource Str_History_Close}"
-                        Command="{Binding ClosePurgeHistoryCommand}"
-                        Style="{StaticResource DarkButtonStyle}"
-                        HorizontalAlignment="Right"
-                        MinWidth="80" Height="30"
-                        Margin="0,14,0,0"/>
+                <Grid Grid.Row="5" Margin="0,14,0,0">
+                    <!-- Reset: the first press arms it (label changes), the second clears. -->
+                    <Button Command="{Binding ResetPurgeHistoryCommand}"
+                            HorizontalAlignment="Left"
+                            MinWidth="120" Height="30">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource GhostButtonStyle}">
+                                <Setter Property="Content" Value="{DynamicResource Str_History_Reset}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsResetArmed}" Value="True">
+                                        <Setter Property="Content" Value="{DynamicResource Str_History_ResetConfirm}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Content="{DynamicResource Str_History_Close}"
+                            Command="{Binding ClosePurgeHistoryCommand}"
+                            Style="{StaticResource DarkButtonStyle}"
+                            HorizontalAlignment="Right"
+                            MinWidth="80" Height="30"/>
+                </Grid>
             </Grid>
         </Border>
     </Border>

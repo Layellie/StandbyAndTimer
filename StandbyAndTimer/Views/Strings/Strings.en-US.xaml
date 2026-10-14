@@ -63,6 +63,7 @@
     <sys:String x:Key="Str_Game_FileDialogTitle">Select Game Executable</sys:String>
     <sys:String x:Key="Str_Game_FileDialogFilter">Executable Files (*.exe)|*.exe</sys:String>
     <sys:String x:Key="Str_Game_DropHint">Drag &amp; drop .exe files here</sys:String>
+    <sys:String x:Key="Str_Game_ListTip">Drag and drop .exe files here. Double-click a game to start it.</sys:String>
     <sys:String x:Key="Str_Game_AutoTag">AUTO</sys:String>
     <sys:String x:Key="Str_Game_AutoTagTip">Detected fullscreen and added automatically. Remove it and it will not be added again.</sys:String>
     <sys:String x:Key="Str_Game_CustomTagTip">This game has its own rules: priority boost or auto purge off, or purge at start on.</sys:String>
@@ -115,6 +116,11 @@
     <sys:String x:Key="Str_Tray_TimerEnable">Enable Timer</sys:String>
     <sys:String x:Key="Str_Tray_TimerDisable">Disable Timer</sys:String>
     <sys:String x:Key="Str_Tray_PurgeNow">Purge Standby Now</sys:String>
+    <sys:String x:Key="Str_Tray_DeepPurge">Deep purge: {0}</sys:String>
+    <sys:String x:Key="Str_Tray_GameMode">Game Mode: {0}</sys:String>
+    <sys:String x:Key="Str_Tray_TimerLock">Timer lock: {0}</sys:String>
+    <sys:String x:Key="Str_Tray_On">On</sys:String>
+    <sys:String x:Key="Str_Tray_Off">Off</sys:String>
     <sys:String x:Key="Str_Tray_Exit">Exit</sys:String>
 
     <!-- Tray balloon / tooltip -->
@@ -126,6 +132,9 @@
 
     <!-- Purge result, history, live estimate, purge at game start -->
     <sys:String x:Key="Str_Status_PurgeFreed">Standby purged: {0} freed</sys:String>
+    <sys:String x:Key="Str_Status_GameLaunching">Starting {0}…</sys:String>
+    <sys:String x:Key="Str_Status_GameLaunchFailed">Could not start {0}; details in the log</sys:String>
+    <sys:String x:Key="Str_Status_GameMissing">{0} not found (the file was moved or deleted)</sys:String>
     <sys:String x:Key="Str_PurgeKind_Normal">Normal</sys:String>
     <sys:String x:Key="Str_PurgeKind_Light">Light</sys:String>
     <sys:String x:Key="Str_PurgeKind_Deep">Deep</sys:String>
@@ -139,7 +148,16 @@
     <sys:String x:Key="Str_Game_PurgeOnStartTip">When this game starts, the standby list is purged once, before the game fills RAM (in the selected mode: normal, light or deep). Works with AUTO PURGE off too.</sys:String>
     <sys:String x:Key="Str_GameNotify_PurgeAtStart">Purge at start</sys:String>
     <sys:String x:Key="Str_History_Title">Purge history</sys:String>
-    <sys:String x:Key="Str_History_Subtitle">The last 20 purges of this session</sys:String>
+    <sys:String x:Key="Str_History_Subtitle">How much memory was freed; kept across restarts</sys:String>
+    <sys:String x:Key="Str_History_Today">TODAY</sys:String>
+    <sys:String x:Key="Str_History_Week">LAST 7 DAYS</sys:String>
+    <sys:String x:Key="Str_History_AllTime">ALL TIME</sys:String>
+    <sys:String x:Key="Str_History_Count">{0} purges</sys:String>
+    <sys:String x:Key="Str_History_ByKind">Normal {0} · Light {1} · Deep {2}</sys:String>
+    <sys:String x:Key="Str_History_Since">Recorded since {0}</sys:String>
+    <sys:String x:Key="Str_History_Recent">LAST 20 PURGES</sys:String>
+    <sys:String x:Key="Str_History_Reset">Reset history</sys:String>
+    <sys:String x:Key="Str_History_ResetConfirm">Sure? Press again</sys:String>
     <sys:String x:Key="Str_History_Empty">No purges yet.</sys:String>
     <sys:String x:Key="Str_History_Close">Close</sys:String>
     <sys:String x:Key="Str_Tray_NotifyTimerOnTitle">Timer activated</sys:String>
@@ -194,15 +212,17 @@
     <sys:String x:Key="Str_Help_Standby4">"Only when idle": purges only after the given minutes without mouse or keyboard input. "Only while a game runs": purges only while a game from the Game Mode list runs. You can pick one of the two.</sys:String>
     <sys:String x:Key="Str_Help_Standby5">Light purge clears only the part Windows rates least likely to be used again. It is gentler but frees little on most systems.</sys:String>
     <sys:String x:Key="Str_Help_Standby6">Deep purge: before purging, writes out the pages waiting to be written (the modified list) and empties Windows' system cache; those land on the standby list and are purged with it. Frees more than a normal purge; can cause a short burst of disk writes. Cannot be combined with light purge.</sys:String>
-    <sys:String x:Key="Str_Help_Standby7">The big number on the Standby memory card is what the selected purge would free right now (hover to compare all three). After every purge the app says how much it freed; click the purge count on the card for the last 20 purges of the session.</sys:String>
+    <sys:String x:Key="Str_Help_Standby7">The big number on the Standby memory card is what the selected purge would free right now (hover to compare all three). After every purge the app says how much it freed; click the purge count on the card for the history: how much was freed today, in the last 7 days and in all, per purge type, and the last 20 purges. It is kept across restarts.</sys:String>
     <sys:String x:Key="Str_Help_GameTitle">GAME MODE</sys:String>
     <sys:String x:Key="Str_Help_Game1">With Game Mode on, a listed game that runs gets High priority and all CPU cores, and Windows' background throttling (EcoQoS) is switched off for it.</sys:String>
     <sys:String x:Key="Str_Help_Game2">To add a game, press ADD or drag its .exe onto the list. The app also finds games running fullscreen and adds them with an AUTO tag; delete an AUTO game and it is never added again. Games are recognised by their .exe name.</sys:String>
     <sys:String x:Key="Str_Help_Game3">Select a game in the list and the two switches below apply to that game only. With "Give high priority" off the app leaves the game alone; turn it off if you use a tool such as Process Lasso (it applies the next time the game starts). With "Auto purge while it runs" off, automatic purges pause while that game runs.</sys:String>
     <sys:String x:Key="Str_Help_Game4">"Purge once when it starts": when that game starts, the standby list is purged once, before the game fills RAM. No thresholds to set; works with AUTO PURGE off.</sys:String>
+    <sys:String x:Key="Str_Help_Game5">Double-click a game in the list to start it. Even though the app runs as administrator, the game starts with your normal rights (like opening it from the desktop), so the Steam overlay and anti-cheat are not affected.</sys:String>
     <sys:String x:Key="Str_Help_KeysTitle">HOTKEYS AND NOTIFICATIONS</sys:String>
     <sys:String x:Key="Str_Help_Keys1">Default hotkeys: Ctrl+Alt+P purges, Ctrl+Alt+T toggles the timer, Ctrl+Alt+O toggles auto purge. To change one, click it under Settings → Hotkeys and press the new keys; Esc cancels. Hotkeys work while the app is in the background.</sys:String>
     <sys:String x:Key="Str_Help_Keys2">Notifications appear on a purge, when the timer turns on or off, when a game is added to the list and when a listed game starts. Each one can be switched off under Settings → Notifications.</sys:String>
+    <sys:String x:Key="Str_Help_Keys3">Right-click the tray icon to change deep purge, Game Mode and the timer lock without opening the window.</sys:String>
     <sys:String x:Key="Str_Help_MoreTitle">SETTINGS AND MORE</sys:String>
     <sys:String x:Key="Str_Help_More1">Launch on startup: starts in the tray through Task Scheduler when you sign in to Windows.</sys:String>
     <sys:String x:Key="Str_Help_More2">Updates: the app looks for a new version on GitHub when it starts; download and install it from Settings. The download is checked with SHA256 and not installed if the check fails.</sys:String>

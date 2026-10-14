@@ -23,6 +23,10 @@ internal sealed class TrayIconService : ITrayIconService
     private WinForms.ToolStripMenuItem? _settingsMenuItem;
     private WinForms.ToolStripMenuItem? _timerMenuItem;
     private WinForms.ToolStripMenuItem? _purgeMenuItem;
+    private WinForms.ToolStripMenuItem? _deepMenuItem;
+    private WinForms.ToolStripMenuItem? _gameModeMenuItem;
+    private WinForms.ToolStripMenuItem? _lockMenuItem;
+    private TrayState _state = new(false, 0);
     private WinForms.ToolStripMenuItem? _exitMenuItem;
 
     private System.Drawing.Icon? _iconBase;
@@ -36,6 +40,9 @@ internal sealed class TrayIconService : ITrayIconService
     public event EventHandler? ExitRequested;
     public event EventHandler? TimerToggleRequested;
     public event EventHandler? PurgeRequested;
+    public event EventHandler? DeepPurgeToggleRequested;
+    public event EventHandler? GameModeToggleRequested;
+    public event EventHandler? TimerLockCycleRequested;
 
     public TrayIconService(ILocalizationService localization)
     {
@@ -83,12 +90,18 @@ internal sealed class TrayIconService : ITrayIconService
         _settingsMenuItem = new WinForms.ToolStripMenuItem();
         _timerMenuItem    = new WinForms.ToolStripMenuItem();
         _purgeMenuItem    = new WinForms.ToolStripMenuItem();
+        _deepMenuItem     = new WinForms.ToolStripMenuItem();
+        _gameModeMenuItem = new WinForms.ToolStripMenuItem();
+        _lockMenuItem     = new WinForms.ToolStripMenuItem();
         _exitMenuItem     = new WinForms.ToolStripMenuItem();
 
         _showMenuItem.Click     += (_, _) => ShowRequested?.Invoke(this, EventArgs.Empty);
         _settingsMenuItem.Click += (_, _) => SettingsRequested?.Invoke(this, EventArgs.Empty);
         _timerMenuItem.Click    += (_, _) => TimerToggleRequested?.Invoke(this, EventArgs.Empty);
         _purgeMenuItem.Click    += (_, _) => PurgeRequested?.Invoke(this, EventArgs.Empty);
+        _deepMenuItem.Click     += (_, _) => DeepPurgeToggleRequested?.Invoke(this, EventArgs.Empty);
+        _gameModeMenuItem.Click += (_, _) => GameModeToggleRequested?.Invoke(this, EventArgs.Empty);
+        _lockMenuItem.Click     += (_, _) => TimerLockCycleRequested?.Invoke(this, EventArgs.Empty);
         _exitMenuItem.Click     += (_, _) => ExitRequested?.Invoke(this, EventArgs.Empty);
 
         menu.Items.Add(_showMenuItem);
@@ -96,6 +109,11 @@ internal sealed class TrayIconService : ITrayIconService
         menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add(_timerMenuItem);
         menu.Items.Add(_purgeMenuItem);
+        // Quick settings: the label carries the current state.
+        menu.Items.Add(new WinForms.ToolStripSeparator());
+        menu.Items.Add(_deepMenuItem);
+        menu.Items.Add(_gameModeMenuItem);
+        menu.Items.Add(_lockMenuItem);
         menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add(_exitMenuItem);
 
@@ -129,29 +147,32 @@ internal sealed class TrayIconService : ITrayIconService
         }
     }
 
-    public void Refresh(bool timerActive, int purgeCount)
+    public void Refresh(TrayState state)
     {
-        RefreshLabels(timerActive);
+        _state = state;
+        RefreshLabels(state);
 
         if (_notifyIcon is null) return;
         try
         {
-            _notifyIcon.Icon = timerActive ? (_iconActive ?? _iconBase!) : _iconBase!;
+            _notifyIcon.Icon = state.TimerActive ? (_iconActive ?? _iconBase!) : _iconBase!;
 
-            string state = _localization.GetString(
-                timerActive ? "Str_Tray_TimerStateOn" : "Str_Tray_TimerStateOff");
+            string timer = _localization.GetString(
+                state.TimerActive ? "Str_Tray_TimerStateOn" : "Str_Tray_TimerStateOff");
             string fmt   = _localization.GetString("Str_Tray_TooltipFormat");
 
-            string tip = string.Format(CultureInfo.CurrentCulture, fmt, state, purgeCount);
+            string tip = string.Format(CultureInfo.CurrentCulture, fmt, timer, state.PurgeCount);
             if (tip.Length > TooltipMaxLength) tip = tip[..TooltipMaxLength];
             _notifyIcon.Text = tip;
         }
         catch (Exception ex) { Logger.Warn($"TrayIconService.Refresh: {ex.Message}"); }
     }
 
-    public void RefreshLabels() => RefreshLabels(timerActive: false);
+    // Language change: same state, new words (it used to reset the timer
+    // item to "Enable" until the next 3 s refresh).
+    public void RefreshLabels() => RefreshLabels(_state);
 
-    private void RefreshLabels(bool timerActive)
+    private void RefreshLabels(TrayState state)
     {
         if (_showMenuItem is not null)
             _showMenuItem.Text = _localization.GetString("Str_Tray_Show");
@@ -161,10 +182,27 @@ internal sealed class TrayIconService : ITrayIconService
 
         if (_timerMenuItem is not null)
             _timerMenuItem.Text = _localization.GetString(
-                timerActive ? "Str_Tray_TimerDisable" : "Str_Tray_TimerEnable");
+                state.TimerActive ? "Str_Tray_TimerDisable" : "Str_Tray_TimerEnable");
 
         if (_purgeMenuItem is not null)
             _purgeMenuItem.Text = _localization.GetString("Str_Tray_PurgeNow");
+
+        string OnOff(bool on) => _localization.GetString(on ? "Str_Tray_On" : "Str_Tray_Off");
+        if (_deepMenuItem is not null)
+            _deepMenuItem.Text = string.Format(CultureInfo.CurrentCulture,
+                _localization.GetString("Str_Tray_DeepPurge"), OnOff(state.DeepPurge));
+        if (_gameModeMenuItem is not null)
+            _gameModeMenuItem.Text = string.Format(CultureInfo.CurrentCulture,
+                _localization.GetString("Str_Tray_GameMode"), OnOff(state.GameMode));
+        if (_lockMenuItem is not null)
+            _lockMenuItem.Text = string.Format(CultureInfo.CurrentCulture,
+                _localization.GetString("Str_Tray_TimerLock"),
+                _localization.GetString(state.TimerLock switch
+                {
+                    TimerLockMode.Locked => "Str_Card_TimerLocked",
+                    TimerLockMode.InGame => "Str_Card_TimerInGame",
+                    _                    => "Str_Card_TimerUnlocked",
+                }));
 
         if (_exitMenuItem is not null)
             _exitMenuItem.Text = _localization.GetString("Str_Tray_Exit");

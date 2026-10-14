@@ -29,6 +29,7 @@ internal static class AppBootstrapper
         services.AddSingleton<ITrayIconService,            TrayIconService>();
         services.AddSingleton<ILogTailReader,              LogTailReader>();
         services.AddSingleton<IGlobalTimerSetting,         GlobalTimerSetting>();
+        services.AddSingleton<IPurgeStatsStore,            PurgeStatsStore>();
 
         // ── Presentation ─────────────────────────────────────────────────────
         services.AddSingleton<SettingsViewModel>();

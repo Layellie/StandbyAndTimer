@@ -67,7 +67,8 @@
                      DragEnter="GamesList_DragEnter"
                      DragOver="GamesList_DragEnter"
                      Drop="GamesList_Drop"
-                     ToolTip="{DynamicResource Str_Game_DropHint}">
+                     MouseDoubleClick="GamesList_MouseDoubleClick"
+                     ToolTip="{DynamicResource Str_Game_ListTip}">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <!-- Name trims; the AUTO tag (fullscreen detection
