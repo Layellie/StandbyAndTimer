@@ -10,6 +10,7 @@ public sealed class GameEntry : INotifyPropertyChanged
 {
     private bool _boostPriority  = true;
     private bool _allowAutoPurge = true;
+    private bool _purgeOnStart;
 
     public string DisplayName    { get; init; } = string.Empty;
     public string ExecutablePath { get; init; } = string.Empty;
@@ -34,8 +35,18 @@ public sealed class GameEntry : INotifyPropertyChanged
         set => Set(ref _allowAutoPurge, value);
     }
 
-    /// <summary>True when either per-game switch is off; drives the list row marker.</summary>
-    public bool HasCustomRules => !_boostPriority || !_allowAutoPurge;
+    /// <summary>
+    /// True: one purge (in the chosen mode) as soon as this game starts, before
+    /// it fills RAM. Works without AUTO PURGE. Off by default.
+    /// </summary>
+    public bool PurgeOnStart
+    {
+        get => _purgeOnStart;
+        set => Set(ref _purgeOnStart, value);
+    }
+
+    /// <summary>True when a per-game switch is not at its default; drives the list row marker.</summary>
+    public bool HasCustomRules => !_boostPriority || !_allowAutoPurge || _purgeOnStart;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

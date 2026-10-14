@@ -12,23 +12,14 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
     private readonly IProcessOptimizationService _processService;
     private readonly IIdleMonitor                _idleMonitor;
 
-    // The total Windows standby list = the standby pages of all 8 priorities.
-    // Read with NtQuerySystemInformation(SystemMemoryListInformation): it
-    // gives the same total as the three "Memory\Standby Cache *" counters
-    // (checked to the MB), in ~0.2 µs instead of ~150 µs per read, and
-    // without the ~9 MB / 0.5 s the PerformanceCounter machinery costs.
-    // The counters remain as the fallback if the query ever fails; they are
-    // then created lazily on the loop thread (their constructor blocked the
-    // UI thread for seconds when built in the service ctor).
-    private readonly long[] _memoryList = new long[MemoryListLongs];
-    private bool _nativeStandbyFailed;
-
-    // SYSTEM_MEMORY_LIST_INFORMATION (x64): ZeroPageCount, FreePageCount,
-    // ModifiedPageCount, ModifiedNoWritePageCount, BadPageCount, then
-    // PageCountByPriority[8] (standby by priority), RepurposedPagesByPriority[8],
-    // ModifiedPageCountPageFile: 22 ULONG_PTRs.
-    private const int MemoryListLongs        = 22;
-    private const int StandbyByPriorityStart = 5;
+    // The standby list (all 8 priorities), its priority-0 part and the
+    // modified list come from MemoryLists (SystemMemoryListInformation): the
+    // same standby total as the Memory "Standby Cache *" counters, in ~0.2 µs
+    // instead of ~150 µs, without the ~9 MB / 0.5 s the counters cost. The
+    // counters remain as the fallback if the query ever fails; they are then
+    // created lazily on the loop thread (their constructor blocked the UI
+    // thread for seconds when built in the service ctor).
+    private bool _nativeListsFailed;
 
     private PerformanceCounter? _standbyNormal;
     private PerformanceCounter? _standbyReserve;
@@ -160,7 +151,7 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
             idleGate, blocked, AutoPurgeOnlyInGames, running.Count > 0);
 
         if (purgeNeeded)
-            await _purgeService.PurgeAsync().ConfigureAwait(false);
+            await _purgeService.PurgeAsync(PurgeTrigger.Auto).ConfigureAwait(false);
 
         if (GameModeEnabled && GamePaths.Count > 0)
             await _processService.CheckAndOptimizeAsync(BoostTargets(GamePaths, running),
@@ -208,7 +199,7 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
 
         long totalMb     = (long)(mem.ullTotalPhys / (1024 * 1024));
         long availableMb = (long)(mem.ullAvailPhys / (1024 * 1024));
-        long standbyMb   = ReadStandbyMb();
+        var (standbyMb, standbyLowMb, modifiedMb) = ReadLists();
 
         // GlobalMemoryStatusEx.ullAvailPhys is "Available" = standby + free + zero.
         // Surfacing that as "Free" makes the UI double-count cache memory and
@@ -219,15 +210,21 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
         // below the value still cached in mem.ullAvailPhys.
         long freeMb = Math.Max(0, availableMb - standbyMb);
 
-        return new MemorySnapshot(totalMb, freeMb, standbyMb);
+        return new MemorySnapshot(totalMb, freeMb, standbyMb)
+        {
+            StandbyLowMb = standbyLowMb,
+            ModifiedMb   = modifiedMb,
+        };
     }
 
-    private long ReadStandbyMb()
+    // Standby total, its priority-0 part and the modified list, in MB. The
+    // counter fallback only knows the total.
+    private (long standby, long low, long modified) ReadLists()
     {
-        if (!_nativeStandbyFailed)
+        if (!_nativeListsFailed)
         {
-            if (TryReadStandbyBytes(_memoryList, out long native)) return native / (1024 * 1024);
-            _nativeStandbyFailed = true;
+            if (MemoryLists.TryRead(out var lists)) return (lists.StandbyMb, lists.StandbyLowMb, lists.ModifiedMb);
+            _nativeListsFailed = true;
             Logger.Warn("MemoryMonitor: SystemMemoryListInformation query failed, using performance counters");
         }
 
@@ -236,27 +233,7 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
         bytes += SafeNext(_standbyNormal);
         bytes += SafeNext(_standbyReserve);
         bytes += SafeNext(_standbyCore);
-        return (long)(bytes / (1024 * 1024));
-    }
-
-    /// <summary>Standby list size in bytes (all priorities); false if the query failed.</summary>
-    internal static bool TryReadStandbyBytes(long[] buffer, out long bytes)
-    {
-        bytes = 0;
-        if (IntPtr.Size != 8 || buffer.Length < MemoryListLongs) return false;
-        var handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
-        try
-        {
-            if (NativeMethods.NtQuerySystemInformation(NativeMethods.SystemMemoryListInformation,
-                    handle.AddrOfPinnedObject(), MemoryListLongs * sizeof(long), out _) != 0)
-                return false;
-        }
-        finally { handle.Free(); }
-
-        long pages = 0;
-        for (int i = StandbyByPriorityStart; i < StandbyByPriorityStart + 8; i++) pages += buffer[i];
-        bytes = pages * Environment.SystemPageSize;
-        return true;
+        return ((long)(bytes / (1024 * 1024)), 0, 0);
     }
 
     private static float SafeNext(PerformanceCounter? counter)

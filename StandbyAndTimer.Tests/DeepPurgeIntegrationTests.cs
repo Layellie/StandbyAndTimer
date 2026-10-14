@@ -33,11 +33,14 @@ public class DeepPurgeIntegrationTests(ITestOutputHelper output)
         if (Environment.GetEnvironmentVariable("SAT_PURGE_TEST") != "1") return;
 
         var service = new StandbyPurgeService();
+        var results = new List<StandbyAndTimer.Core.Models.PurgeResult>();
+        service.PurgeSucceeded += (_, r) => results.Add(r);
         Print("before", Lists());
 
         Assert.True(await service.PurgeAsync());
         var afterNormal = Lists();
         Print("after normal purge", afterNormal);
+        output.WriteLine($"  reported: {results[^1].Kind}, freed {results[^1].FreedMb} MB");
 
         await Task.Delay(TimeSpan.FromSeconds(30));   // let the lists refill a little
         var beforeDeep = Lists();
@@ -47,6 +50,9 @@ public class DeepPurgeIntegrationTests(ITestOutputHelper output)
         Assert.True(await service.PurgeAsync());
         var afterDeep = Lists();
         Print("after deep purge", afterDeep);
+        output.WriteLine($"  reported: {results[^1].Kind}, freed {results[^1].FreedMb} MB");
+        Assert.Equal(2, results.Count);
+        Assert.All(results, r => Assert.True(r.FreedMb > 0));
 
         // Deep must have emptied the standby list too, and not left more
         // modified pages than it found.

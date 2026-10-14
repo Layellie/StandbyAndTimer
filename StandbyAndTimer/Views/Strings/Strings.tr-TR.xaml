@@ -65,7 +65,7 @@
     <sys:String x:Key="Str_Game_DropHint">.exe dosyalarını buraya sürükleyin</sys:String>
     <sys:String x:Key="Str_Game_AutoTag">OTO</sys:String>
     <sys:String x:Key="Str_Game_AutoTagTip">Tam ekranda algılanıp otomatik eklendi. Silersen bir daha eklenmez.</sys:String>
-    <sys:String x:Key="Str_Game_CustomTagTip">Bu oyun için öncelik verme ya da oto temizlik kapatıldı.</sys:String>
+    <sys:String x:Key="Str_Game_CustomTagTip">Bu oyun için özel ayar var: öncelik verme ya da oto temizlik kapalı, ya da açılınca temizleme açık.</sys:String>
     <sys:String x:Key="Str_Game_BoostLabel">Yüksek öncelik ver</sys:String>
     <sys:String x:Key="Str_Game_BoostTip">Kapalıysa uygulama bu oyuna hiç dokunmaz (öncelik, çekirdek, EcoQoS). Process Lasso gibi bir araç kullanıyorsan kapat. Değişiklik oyunun bir sonraki açılışında geçerli olur.</sys:String>
     <sys:String x:Key="Str_Game_AutoPurgeLabel">Açıkken oto temizle</sys:String>
@@ -122,7 +122,26 @@
     <sys:String x:Key="Str_Tray_TimerStateOn">AÇIK</sys:String>
     <sys:String x:Key="Str_Tray_TimerStateOff">KAPALI</sys:String>
     <sys:String x:Key="Str_Tray_NotifyPurgeTitle">Standby bellek temizlendi</sys:String>
-    <sys:String x:Key="Str_Tray_NotifyPurgeBody">Toplam temizleme: {0}</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyPurgeBody">{0} boşaltıldı · {1} · toplam {2}</sys:String>
+
+    <!-- Temizlik sonucu, geçmişi, canlı tahmin, oyun açılışında temizlik -->
+    <sys:String x:Key="Str_Status_PurgeFreed">Standby temizlendi: {0} boşaltıldı</sys:String>
+    <sys:String x:Key="Str_PurgeKind_Normal">Normal</sys:String>
+    <sys:String x:Key="Str_PurgeKind_Light">Hafif</sys:String>
+    <sys:String x:Key="Str_PurgeKind_Deep">Derin</sys:String>
+    <sys:String x:Key="Str_PurgeTrigger_Auto">otomatik</sys:String>
+    <sys:String x:Key="Str_PurgeTrigger_GameStart">oyun açılışı</sys:String>
+    <sys:String x:Key="Str_Card_ClearableLight">Hafif temizlikle</sys:String>
+    <sys:String x:Key="Str_Card_ClearableDeep">Derin temizlikle</sys:String>
+    <sys:String x:Key="Str_Card_ClearableTip">Şu an temizlik açar: normal {0} · hafif {1} · derin {2} ve biraz daha (sistem önbelleği). Büyük değer seçili temizlik türünü gösterir.</sys:String>
+    <sys:String x:Key="Str_Card_PurgesTip">Temizlik geçmişini görmek için tıkla</sys:String>
+    <sys:String x:Key="Str_Game_PurgeOnStartLabel">Açılınca bir kez temizle</sys:String>
+    <sys:String x:Key="Str_Game_PurgeOnStartTip">Bu oyun başladığında, RAM'e yüklenmeden önce bir kez standby temizlenir (seçili türde: normal, hafif ya da derin). OTO TEMİZLE kapalıyken de çalışır.</sys:String>
+    <sys:String x:Key="Str_GameNotify_PurgeAtStart">Açılış temizliği</sys:String>
+    <sys:String x:Key="Str_History_Title">Temizlik geçmişi</sys:String>
+    <sys:String x:Key="Str_History_Subtitle">Bu oturumdaki son 20 temizlik</sys:String>
+    <sys:String x:Key="Str_History_Empty">Henüz temizlik yapılmadı.</sys:String>
+    <sys:String x:Key="Str_History_Close">Kapat</sys:String>
     <sys:String x:Key="Str_Tray_NotifyTimerOnTitle">Timer aktif</sys:String>
     <sys:String x:Key="Str_Tray_NotifyTimerOnBody">Sistem saati {0:F3} ms olarak kilitlendi</sys:String>
     <sys:String x:Key="Str_Tray_NotifyTimerOffTitle">Timer devre dışı</sys:String>
@@ -175,10 +194,12 @@
     <sys:String x:Key="Str_Help_Standby4">"Sadece boştayken": belirttiğin dakika boyunca fare ve klavye kullanılmadıysa temizler. "Sadece oyun açıkken": yalnızca Oyun Modu listesindeki bir oyun çalışırken temizler. İkisi birlikte seçilemez.</sys:String>
     <sys:String x:Key="Str_Help_Standby5">Hafif temizlik: sadece Windows'un en az tekrar kullanılacak dediği kısmı siler. Daha yumuşaktır ama çoğu sistemde az yer açar.</sys:String>
     <sys:String x:Key="Str_Help_Standby6">Derin temizlik: temizlikten önce diske yazılmayı bekleyen (değiştirilmiş) sayfaları yazar ve Windows'un sistem önbelleğini boşaltır; bunlar da standby'a iner ve birlikte temizlenir. Normal temizlikten daha çok yer açar, kısa bir disk yazımı olabilir. Hafif temizlikle birlikte seçilemez.</sys:String>
+    <sys:String x:Key="Str_Help_Standby7">Standby bellek kartındaki büyük değer, seçili temizlik türünün şu an ne kadar açacağını gösterir (üzerine gelince üç türün karşılaştırması). Her temizlikten sonra ne kadar boşaltıldığı yazılır; kartın altındaki temizleme sayısına tıklayınca bu oturumdaki son 20 temizliğin geçmişi açılır.</sys:String>
     <sys:String x:Key="Str_Help_GameTitle">OYUN MODU</sys:String>
     <sys:String x:Key="Str_Help_Game1">Oyun Modu açıkken listedeki bir oyun çalışınca ona Yüksek öncelik ve tüm CPU çekirdekleri verilir, Windows'un arka plan kısıtlaması (EcoQoS) kapatılır.</sys:String>
     <sys:String x:Key="Str_Help_Game2">Oyun eklemek için EKLE'ye bas ya da .exe dosyasını listeye sürükle. Tam ekran çalışan bir oyunu uygulama kendisi de bulup OTO etiketiyle ekler; OTO bir oyunu silersen bir daha eklenmez. Oyunlar .exe adına göre tanınır.</sys:String>
     <sys:String x:Key="Str_Help_Game3">Listeden bir oyun seçince altındaki iki ayar sadece o oyun içindir. "Yüksek öncelik ver" kapalıysa uygulama o oyuna hiç dokunmaz; Process Lasso gibi bir araç kullanıyorsan kapat (oyunun bir sonraki açılışında geçerli olur). "Açıkken oto temizle" kapalıysa o oyun çalışırken otomatik temizlik durur.</sys:String>
+    <sys:String x:Key="Str_Help_Game4">"Açılınca bir kez temizle": o oyun başladığında, RAM'e yüklenmeden önce bir kez standby temizlenir. Eşik ayarlamadan, OTO TEMİZLE kapalıyken de çalışır.</sys:String>
     <sys:String x:Key="Str_Help_KeysTitle">KISAYOLLAR VE BİLDİRİMLER</sys:String>
     <sys:String x:Key="Str_Help_Keys1">Varsayılan kısayollar: Ctrl+Alt+P temizler, Ctrl+Alt+T timer'ı açıp kapatır, Ctrl+Alt+O oto temizliği açıp kapatır. Değiştirmek için Ayarlar → Kısayollar'da kısayola tıklayıp yeni tuşlara bas; Esc vazgeçer. Kısayollar uygulama arka plandayken de çalışır.</sys:String>
     <sys:String x:Key="Str_Help_Keys2">Bildirimler temizlikte, timer açılıp kapanınca, bir oyun listeye eklenince ve listedeki bir oyun başlayınca çıkar. Her biri Ayarlar → Bildirimler'den kapatılabilir.</sys:String>

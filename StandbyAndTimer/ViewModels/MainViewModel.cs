@@ -91,7 +91,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     // Raised once a manual or auto purge succeeds — App.xaml.cs subscribes to
     // show a balloon notification without needing to know about MVVM internals.
-    public event EventHandler<int>? PurgeNotification;
+    public event EventHandler<PurgeNotice>? PurgeNotification;
 
     // Raised when timer was toggled (true=on, false=off). Includes actual ms.
     public event EventHandler<TimerToggledArgs>? TimerToggledNotification;
@@ -342,11 +342,18 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private void OnSnapshotUpdated(object? sender, MemorySnapshot snapshot) =>
         Application.Current.Dispatcher.InvokeAsync(() =>
         {
-            TotalRamMb   = snapshot.TotalMb;
-            FreeRamMb    = snapshot.FreeMb;
-            StandbyRamMb = snapshot.StandbyMb;
+            ShowSnapshot(snapshot);
             _ = HandleTickAsync(snapshot);
         });
+
+    internal void ShowSnapshot(MemorySnapshot snapshot)
+    {
+        TotalRamMb    = snapshot.TotalMb;
+        FreeRamMb     = snapshot.FreeMb;
+        StandbyRamMb  = snapshot.StandbyMb;
+        _lastSnapshot = snapshot;
+        UpdateClearable();
+    }
 
     // Games first: a game starting while the timer is paused for idle is
     // the in-game lock's to switch on.
@@ -406,13 +413,20 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
         await ApplyGameStateAsync(running.Count > 0).ConfigureAwait(true);
 
+        bool purgeNow = false;
         foreach (string path in started)
         {
             var game = Games.FirstOrDefault(g => g.ExecutablePath.Equals(path, StringComparison.OrdinalIgnoreCase));
             if (game is null) continue;   // removed from the list meanwhile
+            purgeNow |= game.PurgeOnStart;
             GameStartedNotification?.Invoke(this, new GameStartedArgs(game.DisplayName, DescribeGameStart(game)));
             Logger.Info($"Game started: {game.DisplayName}");
         }
+
+        // "Purge once when it starts": one purge for the tick even if two such
+        // games start together, in the chosen mode, without AUTO PURGE.
+        if (purgeNow)
+            await _purgeService.PurgeAsync(PurgeTrigger.GameStart).ConfigureAwait(true);
     }
 
     // "High priority · Timer on (0.50 ms) · Auto purge paused": only the
@@ -427,7 +441,47 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             : _localization.GetString("Str_GameNotify_TimerOff"));
         if (AutoPurgeEnabled)
             parts.Add(_localization.GetString(game.AllowAutoPurge ? "Str_GameNotify_PurgeOn" : "Str_GameNotify_PurgePaused"));
+        if (game.PurgeOnStart)
+            parts.Add(_localization.GetString("Str_GameNotify_PurgeAtStart"));
         return string.Join(" · ", parts);
+    }
+
+    // ── "Clearable": what a purge in the chosen mode would free now ──────────
+
+    private MemorySnapshot? _lastSnapshot;
+
+    public PurgeKind SelectedPurgeKind =>
+        DeepPurge ? PurgeKind.Deep : LightPurge ? PurgeKind.Light : PurgeKind.Normal;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ClearableValue), nameof(ClearableUnit))]
+    private long _clearableMb;
+
+    /// <summary>"2.8" (GB) from 1 GB up, "150" (MB) below, so a light purge's few MB do not show as 0.0 GB.</summary>
+    public string ClearableValue => ClearableMb >= 1024
+        ? (ClearableMb / 1024.0).ToString("0.0", CultureInfo.CurrentCulture)
+        : ClearableMb.ToString(CultureInfo.CurrentCulture);
+
+    public string ClearableUnit => ClearableMb >= 1024 ? "GB" : "MB";
+
+    public string ClearableLabel => _localization.GetString(SelectedPurgeKind switch
+    {
+        PurgeKind.Light => "Str_Card_ClearableLight",
+        PurgeKind.Deep  => "Str_Card_ClearableDeep",
+        _               => "Str_Card_StandbyClearable",
+    });
+
+    /// <summary>All three modes side by side, for the card's tooltip.</summary>
+    public string ClearableTip => _lastSnapshot is not { } s ? string.Empty : string.Format(CultureInfo.CurrentCulture,
+        _localization.GetString("Str_Card_ClearableTip"),
+        FormatSize(s.ClearableMb(PurgeKind.Normal)), FormatSize(s.ClearableMb(PurgeKind.Light)),
+        FormatSize(s.ClearableMb(PurgeKind.Deep)));
+
+    private void UpdateClearable()
+    {
+        ClearableMb = _lastSnapshot?.ClearableMb(SelectedPurgeKind) ?? StandbyRamMb;
+        OnPropertyChanged(nameof(ClearableLabel));
+        OnPropertyChanged(nameof(ClearableTip));
     }
 
     /// <summary>
@@ -458,17 +512,70 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    private void OnPurgeSucceeded(object? sender, EventArgs e) =>
-        Application.Current.Dispatcher.InvokeAsync(() =>
+    private void OnPurgeSucceeded(object? sender, PurgeResult result) =>
+        Application.Current.Dispatcher.InvokeAsync(() => RecordPurge(result));
+
+    /// <summary>Newest first, this session only (PurgeHistoryMax entries).</summary>
+    public ObservableCollection<PurgeHistoryRow> PurgeHistory { get; } = [];
+    internal const int PurgeHistoryMax = 20;
+
+    [ObservableProperty] private bool _isPurgeHistoryVisible;
+
+    [RelayCommand] private void ShowPurgeHistory()  => IsPurgeHistoryVisible = true;
+    [RelayCommand] private void ClosePurgeHistory() => IsPurgeHistoryVisible = false;
+
+    // One finished purge: count, history, status line ("1.8 GB freed"),
+    // then the tray balloon (App, if purge notifications are on).
+    internal void RecordPurge(PurgeResult result)
+    {
+        PurgeCount++;
+        PurgeHistory.Insert(0, RowFor(result));
+        while (PurgeHistory.Count > PurgeHistoryMax) PurgeHistory.RemoveAt(PurgeHistory.Count - 1);
+        StatusMessage = string.Format(CultureInfo.CurrentCulture,
+            _localization.GetString("Str_Status_PurgeFreed"), FormatSize(result.FreedMb));
+        PurgeNotification?.Invoke(this, new PurgeNotice(result, PurgeCount));
+    }
+
+    private PurgeHistoryRow RowFor(PurgeResult r) =>
+        new(r, r.At.ToString("HH:mm:ss", CultureInfo.CurrentCulture), DescribePurge(r), FormatSize(r.FreedMb));
+
+    // The rows carry text: rebuild them in the new language.
+    private void RelabelPurgeHistory()
+    {
+        var results = PurgeHistory.Select(h => h.Result).ToList();
+        PurgeHistory.Clear();
+        foreach (var r in results) PurgeHistory.Add(RowFor(r));
+    }
+
+    /// <summary>"Deep", "Light, automatic", "Normal, at game start": kind, plus the trigger unless it was a button / hotkey / tray press.</summary>
+    public string DescribePurge(PurgeResult result)
+    {
+        string kind = _localization.GetString(result.Kind switch
         {
-            PurgeCount++;
-            PurgeNotification?.Invoke(this, PurgeCount);
+            PurgeKind.Light => "Str_PurgeKind_Light",
+            PurgeKind.Deep  => "Str_PurgeKind_Deep",
+            _               => "Str_PurgeKind_Normal",
         });
+        return result.Trigger switch
+        {
+            PurgeTrigger.Auto      => kind + ", " + _localization.GetString("Str_PurgeTrigger_Auto"),
+            PurgeTrigger.GameStart => kind + ", " + _localization.GetString("Str_PurgeTrigger_GameStart"),
+            _                      => kind,
+        };
+    }
+
+    /// <summary>"1.8 GB" from 1 GB up, "350 MB" below (current culture).</summary>
+    internal static string FormatSize(long mb) =>
+        mb >= 1024
+            ? (mb / 1024.0).ToString("0.0", CultureInfo.CurrentCulture) + " GB"
+            : mb.ToString(CultureInfo.CurrentCulture) + " MB";
 
     private void OnLanguageChanged(object? sender, EventArgs e) =>
         Application.Current.Dispatcher.InvokeAsync(() =>
         {
             SetIdleStatus();
+            UpdateClearable();
+            RelabelPurgeHistory();
             OnPropertyChanged(nameof(TimerButtonLabel));
             OnPropertyChanged(nameof(AboutTitle));
             OnPropertyChanged(nameof(AboutClose));
@@ -538,6 +645,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         // or the other.
         if (value) DeepPurge = false;
         _purgeService.LightMode = value;
+        UpdateClearable();
         PersistSettings();
     }
 
@@ -545,6 +653,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         if (value) LightPurge = false;
         _purgeService.DeepMode = value;
+        UpdateClearable();
         PersistSettings();
     }
 
@@ -585,6 +694,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         RemoveGameCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(SelectedGameBoost));
         OnPropertyChanged(nameof(SelectedGameAutoPurge));
+        OnPropertyChanged(nameof(SelectedGamePurgeOnStart));
     }
 
     // Per-game switches for the selected list entry (the strip under the
@@ -601,12 +711,19 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         set => SetSelectedGameRule(g => g.AllowAutoPurge = value);
     }
 
+    public bool SelectedGamePurgeOnStart
+    {
+        get => SelectedGame?.PurgeOnStart ?? false;
+        set => SetSelectedGameRule(g => g.PurgeOnStart = value);
+    }
+
     private void SetSelectedGameRule(Action<GameEntry> apply)
     {
         if (SelectedGame is null) return;
         apply(SelectedGame);
         OnPropertyChanged(nameof(SelectedGameBoost));
         OnPropertyChanged(nameof(SelectedGameAutoPurge));
+        OnPropertyChanged(nameof(SelectedGamePurgeOnStart));
         SyncMonitorGames();
         PersistSettings();
     }
@@ -617,9 +734,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private async Task ManualPurgeAsync()
     {
         StatusMessage = _localization.GetString("Str_Status_Purging");
-        bool ok = await _purgeService.PurgeAsync().ConfigureAwait(false);
-        await Application.Current.Dispatcher.InvokeAsync(() =>
-            StatusMessage = _localization.GetString(ok ? "Str_Status_PurgeOk" : "Str_Status_PurgeFail"));
+        bool ok = await _purgeService.PurgeAsync(PurgeTrigger.Manual).ConfigureAwait(false);
+        // Success: RecordPurge already says how much was freed.
+        if (!ok)
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+                StatusMessage = _localization.GetString("Str_Status_PurgeFail"));
     }
 
     [RelayCommand]
@@ -847,3 +966,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 public sealed record TimerToggledArgs(bool IsActive, double ActualMs);
 
 public sealed record GameStartedArgs(string GameName, string Body);
+
+/// <summary>A finished purge for the tray balloon, with the session's purge count.</summary>
+public sealed record PurgeNotice(PurgeResult Result, int TotalPurges);
+
+/// <summary>One line of the purge history: the result and its text in the current language.</summary>
+public sealed record PurgeHistoryRow(PurgeResult Result, string Time, string What, string Freed);

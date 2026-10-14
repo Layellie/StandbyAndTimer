@@ -136,6 +136,7 @@
                         <ContentControl Content="{DynamicResource Str_Help_Standby4}" Style="{StaticResource HelpBulletStyle}"/>
                         <ContentControl Content="{DynamicResource Str_Help_Standby5}" Style="{StaticResource HelpBulletStyle}"/>
                         <ContentControl Content="{DynamicResource Str_Help_Standby6}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Standby7}" Style="{StaticResource HelpBulletStyle}"/>
 
                         <!-- Recommended thresholds -->
                         <TextBlock Text="{DynamicResource Str_About_ThresholdsTitle}"
@@ -189,6 +190,7 @@
                         <ContentControl Content="{DynamicResource Str_Help_Game1}" Style="{StaticResource HelpBulletStyle}"/>
                         <ContentControl Content="{DynamicResource Str_Help_Game2}" Style="{StaticResource HelpBulletStyle}"/>
                         <ContentControl Content="{DynamicResource Str_Help_Game3}" Style="{StaticResource HelpBulletStyle}"/>
+                        <ContentControl Content="{DynamicResource Str_Help_Game4}" Style="{StaticResource HelpBulletStyle}"/>
 
                         <TextBlock Text="{DynamicResource Str_Help_KeysTitle}" Style="{StaticResource HelpSectionStyle}"/>
                         <ContentControl Content="{DynamicResource Str_Help_Keys1}" Style="{StaticResource HelpBulletStyle}"/>

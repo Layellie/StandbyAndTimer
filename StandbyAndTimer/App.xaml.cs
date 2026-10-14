@@ -438,14 +438,17 @@ public partial class App : Application
     // `_localization!`: these handlers are only subscribed AFTER _localization
     // is resolved from the DI container in OnStartup, and unsubscribed at the
     // top of OnExit. Non-null for the lifetime of the subscription.
-    private void OnPurgeNotification(object? sender, int totalPurges)
+    // "1.8 GB freed · Deep, at game start · Total purges: 3"
+    private void OnPurgeNotification(object? sender, PurgeNotice notice)
     {
         if (_userSettings is { NotifyOnPurge: false }) return;
         string title = _localization!.GetString("Str_Tray_NotifyPurgeTitle");
         string body  = string.Format(
             CultureInfo.CurrentCulture,
             _localization.GetString("Str_Tray_NotifyPurgeBody"),
-            totalPurges);
+            MainViewModel.FormatSize(notice.Result.FreedMb),
+            _viewModel!.DescribePurge(notice.Result),
+            notice.TotalPurges);
         _tray?.ShowBalloon(title, body);
     }
 

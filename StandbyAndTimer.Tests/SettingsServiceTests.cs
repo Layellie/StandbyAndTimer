@@ -64,7 +64,7 @@ public sealed class SettingsServiceTests : IDisposable
             [
                 new GameEntry { DisplayName = "cs2", ExecutablePath = cs2 },
                 new GameEntry { DisplayName = "VALORANT", ExecutablePath = val, AutoAdded = true,
-                                BoostPriority = false, AllowAutoPurge = false },
+                                BoostPriority = false, AllowAutoPurge = false, PurgeOnStart = true },
             ],
         };
 
@@ -91,6 +91,8 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.False(s.Games[0].AutoAdded);
         Assert.True(s.Games[1].AutoAdded);
         Assert.False(s.Games[1].BoostPriority);
+        Assert.True(s.Games[1].PurgeOnStart);
+        Assert.False(s.Games[0].PurgeOnStart);
         Assert.False(s.Games[1].AllowAutoPurge);
     }
 

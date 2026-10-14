@@ -125,7 +125,8 @@
 
             <!-- The selected game's own switches. Always shown so the user
                  sees they exist; greyed (like DEL) until a row is picked,
-                 showing the defaults (both on). Tooltips still open while
+                 showing the defaults (boost and auto purge on, purge at
+                 start off). Tooltips still open while
                  greyed so the switches explain themselves. -->
             <StackPanel Grid.Row="4" Margin="0,0,0,8">
                 <StackPanel.Style>
@@ -146,6 +147,12 @@
                 <CheckBox Content="{DynamicResource Str_Game_AutoPurgeLabel}"
                           IsChecked="{Binding SelectedGameAutoPurge}"
                           ToolTip="{DynamicResource Str_Game_AutoPurgeTip}"
+                          ToolTipService.ShowOnDisabled="True"
+                          Style="{StaticResource DarkCheckBoxStyle}"
+                          Margin="0,0,0,6"/>
+                <CheckBox Content="{DynamicResource Str_Game_PurgeOnStartLabel}"
+                          IsChecked="{Binding SelectedGamePurgeOnStart}"
+                          ToolTip="{DynamicResource Str_Game_PurgeOnStartTip}"
                           ToolTipService.ShowOnDisabled="True"
                           Style="{StaticResource DarkCheckBoxStyle}"/>
             </StackPanel>

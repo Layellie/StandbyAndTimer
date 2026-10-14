@@ -13,14 +13,14 @@ public class StandbyReadingTests
         try
         {
             foreach (var c in counters) c.NextValue();
-            double fromCounters = counters.Sum(c => (double)c.NextValue());
+            double fromCountersMb = counters.Sum(c => (double)c.NextValue()) / (1024 * 1024);
 
-            Assert.True(MemoryMonitorService.TryReadStandbyBytes(new long[22], out long native));
+            Assert.True(MemoryLists.TryRead(out var lists));
 
             // Both are live readings a moment apart: allow 2 % (or 64 MB).
-            double tolerance = Math.Max(64 * 1024 * 1024, fromCounters * 0.02);
-            Assert.InRange(native, fromCounters - tolerance, fromCounters + tolerance);
-            Assert.True(native > 0);
+            double tolerance = Math.Max(64, fromCountersMb * 0.02);
+            Assert.InRange(lists.StandbyMb, fromCountersMb - tolerance, fromCountersMb + tolerance);
+            Assert.True(lists.StandbyMb > 0);
         }
         finally
         {
@@ -29,6 +29,13 @@ public class StandbyReadingTests
     }
 
     [Fact]
-    public void A_too_small_buffer_is_refused_not_overrun() =>
-        Assert.False(MemoryMonitorService.TryReadStandbyBytes(new long[5], out _));
+    public void The_lists_are_consistent()
+    {
+        Assert.True(MemoryLists.TryRead(out var lists));
+
+        Assert.Equal(8, lists.StandbyByPriorityMb.Length);
+        Assert.Equal(lists.StandbyByPriorityMb[0], lists.StandbyLowMb);
+        Assert.True(lists.StandbyLowMb <= lists.StandbyMb);
+        Assert.True(lists.ModifiedMb >= 0 && lists.FreeAndZeroMb >= 0);
+    }
 }
