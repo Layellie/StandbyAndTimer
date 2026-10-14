@@ -76,6 +76,7 @@
     <sys:String x:Key="Str_Settings_Downloading">Downloading… {0}%</sys:String>
     <sys:String x:Key="Str_Settings_LaunchingInstaller">Launching installer…</sys:String>
     <sys:String x:Key="Str_Settings_DownloadFailed">Download failed</sys:String>
+    <sys:String x:Key="Str_Settings_UpdateNoHash">This release cannot be verified (no SHA-256): download it from the release page</sys:String>
     <sys:String x:Key="Str_Settings_ExportOk">Settings exported</sys:String>
     <sys:String x:Key="Str_Settings_ImportOk">Settings imported</sys:String>
     <sys:String x:Key="Str_Settings_ImportFail">Import failed</sys:String>
