@@ -121,8 +121,41 @@
             <overlays:WizardOverlay Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="19"/>
             <overlays:SystemOverlay Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="18"/>
             <overlays:PurgeHistoryOverlay Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="18"/>
-            <overlays:DownloadsOverlay      DataContext="{Binding Maintenance}" Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="18"/>
-            <overlays:CleanupHistoryOverlay DataContext="{Binding Maintenance}" Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="18"/>
+            <!-- The two Maintenance dialogs are built when opened and dropped when
+                 closed (Content + template set only while visible): built at
+                 start-up they cost ~30 ms before the window was on screen. -->
+            <ContentControl Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="18" Focusable="False">
+                <ContentControl.Style>
+                    <Style TargetType="ContentControl">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Maintenance.IsDownloadsVisible}" Value="True">
+                                <Setter Property="Content" Value="{Binding Maintenance}"/>
+                                <Setter Property="ContentTemplate">
+                                    <Setter.Value>
+                                        <DataTemplate><overlays:DownloadsOverlay/></DataTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ContentControl.Style>
+            </ContentControl>
+            <ContentControl Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="18" Focusable="False">
+                <ContentControl.Style>
+                    <Style TargetType="ContentControl">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Maintenance.IsHistoryVisible}" Value="True">
+                                <Setter Property="Content" Value="{Binding Maintenance}"/>
+                                <Setter Property="ContentTemplate">
+                                    <Setter.Value>
+                                        <DataTemplate><overlays:CleanupHistoryOverlay/></DataTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ContentControl.Style>
+            </ContentControl>
             <overlays:GlobalTimerPromptOverlay Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="19"/>
             <overlays:CloseConfirmationOverlay x:Name="CloseDialog"
                                                Grid.Row="0" Grid.RowSpan="3"
