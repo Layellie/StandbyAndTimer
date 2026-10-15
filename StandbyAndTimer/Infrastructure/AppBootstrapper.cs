@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using StandbyAndTimer.Core.Interfaces;
 using StandbyAndTimer.Services;
 using StandbyAndTimer.Services.Logging;
+using StandbyAndTimer.Services.Maintenance;
 using StandbyAndTimer.Services.Tray;
 using StandbyAndTimer.ViewModels;
 
@@ -30,6 +31,19 @@ internal static class AppBootstrapper
         services.AddSingleton<ILogTailReader,              LogTailReader>();
         services.AddSingleton<IGlobalTimerSetting,         GlobalTimerSetting>();
         services.AddSingleton<IPurgeStatsStore,            PurgeStatsStore>();
+
+        // Maintenance tab. Row order = registration order.
+        services.AddSingleton<ICleanupTarget>(_ => CleanupTargets.NvidiaShader());
+        services.AddSingleton<ICleanupTarget>(_ => CleanupTargets.AmdShader());
+        services.AddSingleton<ICleanupTarget>(_ => CleanupTargets.UserTemp());
+        services.AddSingleton<ICleanupTarget>(_ => CleanupTargets.WindowsTemp());
+        services.AddSingleton<ICleanupTarget>(_ => CleanupTargets.WindowsUpdate());
+        services.AddSingleton<ICleanupTarget, RecycleBinTarget>();
+        services.AddSingleton<ICleanupStatsStore,  CleanupStatsStore>();
+        services.AddSingleton<ISystemInfoService,  SystemInfoService>();
+        services.AddSingleton<ISystemToolLauncher, SystemToolLauncher>();
+        services.AddSingleton<IDownloadsService,   DownloadsService>();
+        services.AddSingleton<MaintenanceViewModel>();
 
         // ── Presentation ─────────────────────────────────────────────────────
         services.AddSingleton<SettingsViewModel>();

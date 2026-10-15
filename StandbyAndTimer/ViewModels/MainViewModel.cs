@@ -79,6 +79,20 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public SettingsViewModel               Settings { get; }
     public SystemViewModel                 SystemSettings { get; }
 
+    /// <summary>The Maintenance tab (created by DI; inert in tests).</summary>
+    public MaintenanceViewModel Maintenance { get; }
+
+    // Main TabControl: Status | Maintenance | Settings (bound to SelectedIndex).
+    public const int StatusTab = 0, MaintenanceTab = 1, SettingsTab = 2;
+
+    [ObservableProperty] private int _selectedTab;
+
+    partial void OnSelectedTabChanged(int value)
+    {
+        if (Settings.IsOpen != (value == SettingsTab)) Settings.IsOpen = value == SettingsTab;
+        Maintenance.IsActive = value == MaintenanceTab;
+    }
+
     public string TimerButtonLabel => _localization.GetString(
         TimerActive ? "Str_Timer_Active" : "Str_Timer_Inactive");
 
@@ -112,7 +126,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         IGameDetectionService       gameDetection,
         SettingsViewModel           settingsViewModel,
         SystemViewModel?            systemViewModel = null,
-        IPurgeStatsStore?           purgeStats      = null)
+        IPurgeStatsStore?           purgeStats      = null,
+        MaintenanceViewModel?       maintenance     = null)
     {
         _timerService    = timerService;
         _purgeService    = purgeService;
@@ -142,6 +157,19 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _purgeStats = _purgeStore.Load();
         foreach (var r in _purgeStats.Recent) PurgeHistory.Add(RowFor(r));
         SystemSettings.SettingsChanged += (_, _) => PersistSettings();
+
+        Maintenance = maintenance ?? MaintenanceViewModel.Inert();
+        Maintenance.SettingsChanged += (_, _) => PersistSettings();
+        Maintenance.StatusRequested += (_, text) => StatusMessage = text;
+        Maintenance.AnyGameRunning  = () => _lastSnapshot?.AnyGameRunning == true;
+        // The Settings tab can also be opened from outside (tray "Settings"):
+        // keep the selected tab in step with Settings.IsOpen.
+        Settings.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName != nameof(SettingsViewModel.IsOpen)) return;
+            if (Settings.IsOpen && SelectedTab != SettingsTab)       SelectedTab = SettingsTab;
+            else if (!Settings.IsOpen && SelectedTab == SettingsTab) SelectedTab = StatusTab;
+        };
 
         _memoryService.SnapshotUpdated     += OnSnapshotUpdated;
         _purgeService.PurgeSucceeded       += OnPurgeSucceeded;
@@ -221,6 +249,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 s.TimerIdleOffEnabled, s.TimerIdleOffMinutes);
             SystemSettings.Initialize(s.GlobalTimerPromptAnswered, s.GlobalTimerSetByApp,
                               s.GlobalTimerChangedUtc, s.GlobalTimerBootValue);
+            Maintenance.Initialize(s.CleanupSelection);
         }
         SyncMonitorThresholds();
         SyncMonitorGames();
@@ -334,7 +363,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         GlobalTimerBootValue      = SystemSettings.GlobalTimerBootValue,
         FirstRunCompleted     = _firstRunCompleted,
         Games                 = [.. Games],
-        IgnoredGamePaths      = [.. _ignoredGamePaths]
+        IgnoredGamePaths      = [.. _ignoredGamePaths],
+        CleanupSelection      = Maintenance.SelectionText
     };
 
     // Local mirror of the persisted FirstRunCompleted flag so BuildCurrentSettings
