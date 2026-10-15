@@ -255,6 +255,63 @@ internal static class NativeMethods
         IntPtr prev,
         IntPtr relen);
 
+    // ── shell32.dll ──────────────────────────────────────────────────────────
+
+    /// <summary>Size and item count of the Recycle Bin (pszRootPath null = all drives).</summary>
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    internal static extern int SHQueryRecycleBin(string? pszRootPath, ref SHQUERYRBINFO pSHQueryRBInfo);
+
+    /// <summary>Empties the Recycle Bin (pszRootPath null = all drives).</summary>
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    internal static extern int SHEmptyRecycleBin(IntPtr hwnd, string? pszRootPath, uint dwFlags);
+
+    internal const uint SHERB_NOCONFIRMATION = 0x1;
+    internal const uint SHERB_NOPROGRESSUI   = 0x2;
+    internal const uint SHERB_NOSOUND        = 0x4;
+
+    /// <summary>Shell file operation; with FO_DELETE + FOF_ALLOWUNDO it moves to the Recycle Bin.</summary>
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    internal static extern int SHFileOperation(ref SHFILEOPSTRUCT lpFileOp);
+
+    internal const uint   FO_DELETE           = 0x3;
+    internal const ushort FOF_SILENT          = 0x0004;
+    internal const ushort FOF_NOCONFIRMATION  = 0x0010;
+    internal const ushort FOF_ALLOWUNDO       = 0x0040;
+    internal const ushort FOF_NOERRORUI       = 0x0400;
+    // Asks before an item that is too big for the Recycle Bin would be
+    // deleted for good: never delete a user's file permanently in silence.
+    internal const ushort FOF_WANTNUKEWARNING = 0x4000;
+
+    /// <summary>Known folder path (Downloads also when the user moved it). Free with CoTaskMemFree.</summary>
+    [DllImport("shell32.dll")]
+    internal static extern int SHGetKnownFolderPath([MarshalAs(UnmanagedType.LPStruct)] Guid rfid, uint dwFlags,
+                                                    IntPtr hToken, out IntPtr ppszPath);
+
+    internal static readonly Guid FOLDERID_Downloads = new("374DE290-123F-4565-9164-39C4925E467B");
+
+    // ── ole32.dll ────────────────────────────────────────────────────────────
+
+    [DllImport("ole32.dll")]
+    internal static extern void CoTaskMemFree(IntPtr pv);
+
+    // ── powrprof.dll ─────────────────────────────────────────────────────────
+
+    /// <summary>Active power scheme GUID; the returned pointer is freed with LocalFree.</summary>
+    [DllImport("powrprof.dll")]
+    internal static extern uint PowerGetActiveScheme(IntPtr userRootPowerKey, out IntPtr activePolicyGuid);
+
+    /// <summary>Friendly name of a scheme (UTF-16, size in bytes). Buffer null = size query.</summary>
+    [DllImport("powrprof.dll")]
+    internal static extern uint PowerReadFriendlyName(IntPtr rootPowerKey, ref Guid schemeGuid,
+                                                      IntPtr subGroupOfPowerSettingsGuid, IntPtr powerSettingGuid,
+                                                      IntPtr buffer, ref uint bufferSize);
+
+    [DllImport("kernel32.dll")]
+    internal static extern IntPtr LocalFree(IntPtr hMem);
+
+    /// <summary>NtQuerySystemInformation class: a chain of SYSTEM_PAGEFILE_INFORMATION entries.</summary>
+    internal const int SystemPageFileInformation = 18;
+
     // ── Structures ────────────────────────────────────────────────────────────
 
     [StructLayout(LayoutKind.Sequential)]
@@ -322,6 +379,27 @@ internal static class NativeMethods
         internal uint Version;
         internal uint ControlMask;
         internal uint StateMask;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct SHQUERYRBINFO
+    {
+        internal int  cbSize;
+        internal long i64Size;
+        internal long i64NumItems;
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    internal struct SHFILEOPSTRUCT
+    {
+        internal IntPtr hwnd;
+        internal uint   wFunc;
+        [MarshalAs(UnmanagedType.LPWStr)] internal string  pFrom;   // double-null terminated
+        [MarshalAs(UnmanagedType.LPWStr)] internal string? pTo;
+        internal ushort fFlags;
+        [MarshalAs(UnmanagedType.Bool)] internal bool fAnyOperationsAborted;
+        internal IntPtr hNameMappings;
+        [MarshalAs(UnmanagedType.LPWStr)] internal string? lpszProgressTitle;
     }
 
     // ── Constants ─────────────────────────────────────────────────────────────
