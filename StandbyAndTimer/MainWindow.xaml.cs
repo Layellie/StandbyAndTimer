@@ -139,10 +139,107 @@ public partial class MainWindow : Window
             Top  = (area.Height - ActualHeight) / 2;
         }
 
-        if (!IsVisible) Show();
+        if (!IsVisible) ShowCloaked();
         Activate();
     }
 
+    // ── Show without an empty frame ──────────────────────────────────────────
+    // Between Show() and the first frame reaching the screen, DWM shows the
+    // bare window: an empty dark grey box, measured 80-140 ms on a direct
+    // start and 130-160 ms when opening from the tray (the switch back from
+    // software to GPU rendering). Cloak the window until DWM really has its
+    // content. WPF's own signals don't fit: its "rendered" events come about
+    // 100 ms before the content is on screen, and the UI thread stays busy
+    // for ~200 ms inside Show() while the render thread already presents.
+    // So a background thread watches what DWM holds for the window (plain
+    // Win32 calls, no WPF objects) and uncloaks once the content is in.
+    // PrintWindow still waits for the UI thread, so the window appears when
+    // Show() is done, ~25 ms after the content could first be on screen
+    // (measured); the start-up work moved out of the way (window icon, tray)
+    // more than makes up for that on a direct start.
+
+    private const int UncloakPollMs     = 4;
+    private const int UncloakFallbackMs = 1000;
+    private int _showGeneration;
+
+    // Captures what DWM holds for the window into one reused bitmap and
+    // looks at the left and right gutters at mid-height (window background,
+    // outside every card): the theme AppBg there means the content is in.
+    // Any failure counts as "in", so this check never keeps the window hidden.
+    private sealed class ContentProbe(IntPtr hwnd, System.Windows.Media.Color appBg) : IDisposable
+    {
+        private System.Drawing.Bitmap? _bmp;
+
+        public bool ContentOnScreen()
+        {
+            if (!NativeMethods.GetWindowRect(hwnd, out var r)) return true;
+            int w = r.Right - r.Left, h = r.Bottom - r.Top;
+            if (w <= 16 || h <= 16) return true;
+            if (_bmp is null || _bmp.Width != w || _bmp.Height != h)
+            {
+                _bmp?.Dispose();
+                _bmp = new System.Drawing.Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            }
+            using (var g = System.Drawing.Graphics.FromImage(_bmp))
+            {
+                IntPtr hdc = g.GetHdc();
+                try { if (!NativeMethods.PrintWindow(hwnd, hdc, NativeMethods.PW_RENDERFULLCONTENT)) return true; }
+                finally { g.ReleaseHdc(hdc); }
+            }
+            return Near(_bmp.GetPixel(6, h / 2)) && Near(_bmp.GetPixel(w - 7, h / 2));
+        }
+
+        private bool Near(System.Drawing.Color c) =>
+            Math.Abs(c.R - appBg.R) <= 3 && Math.Abs(c.G - appBg.G) <= 3 && Math.Abs(c.B - appBg.B) <= 3;
+
+        public void Dispose() => _bmp?.Dispose();
+    }
+
+    /// <param name="onScreen">Runs on the UI thread once the window is visible.</param>
+    internal void ShowCloaked(Action? onScreen = null)
+    {
+        var hwnd = new WindowInteropHelper(this).EnsureHandle();
+        var appBg = (TryFindResource("AppBg") as SolidColorBrush)?.Color;
+        int on = 1;
+        if (appBg is null || NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_CLOAK, ref on, sizeof(int)) != 0)
+        {
+            Show();   // no colour to check, or DWM refused (RDP, old build): plain show, as before
+            if (onScreen is not null) Dispatcher.BeginInvoke(DispatcherPriority.Background, onScreen);
+            return;
+        }
+
+        // A newer show (hide + show again quickly) owns the cloak from then on.
+        int generation = Interlocked.Increment(ref _showGeneration);
+        var color = appBg.Value;
+        var watcher = new Thread(() =>
+        {
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            int checks = 0;
+            bool inPlace = false;
+            using (var probe = new ContentProbe(hwnd, color))
+            {
+                while (clock.ElapsedMilliseconds < UncloakFallbackMs && Volatile.Read(ref _showGeneration) == generation)
+                {
+                    Thread.Sleep(UncloakPollMs);
+                    checks++;
+                    try { inPlace = probe.ContentOnScreen(); }
+                    catch { inPlace = true; }
+                    if (inPlace) break;
+                }
+            }
+            // A newer show owns the cloak now; onScreen still runs (it may set up the tray).
+            if (Volatile.Read(ref _showGeneration) == generation)
+            {
+                int off = 0;
+                _ = NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_CLOAK, ref off, sizeof(int));
+                Services.Logger.Info($"Window shown after {clock.ElapsedMilliseconds} ms " +
+                                     $"({(inPlace ? "content on screen" : "1 s fallback")}, {checks} checks)");
+            }
+            if (onScreen is not null) Dispatcher.BeginInvoke(DispatcherPriority.Background, onScreen);
+        }) { IsBackground = true, Name = "UncloakWatcher" };
+        watcher.Start();
+        Show();
+    }
 
     private void SetRenderMode(RenderMode mode)
     {

@@ -190,6 +190,13 @@ internal static class NativeMethods
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
+    /// <summary>Copies what DWM shows for a window into a DC (with PW_RENDERFULLCONTENT also for DirectX content), even while it is covered or cloaked.</summary>
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool PrintWindow(IntPtr hWnd, IntPtr hdc, uint flags);
+
+    internal const uint PW_RENDERFULLCONTENT = 0x00000002;
+
     /// <summary>Identifies the process that owns a window.</summary>
     [DllImport("user32.dll", SetLastError = true)]
     internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
@@ -220,6 +227,9 @@ internal static class NativeMethods
 
     /// <summary>DWMWA_WINDOW_CORNER_PREFERENCE (Windows 11+); value is a DWM_WINDOW_CORNER_PREFERENCE.</summary>
     internal const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
+
+    /// <summary>DWMWA_CLOAK (Windows 8+): value 1 keeps a shown window off the screen until set back to 0.</summary>
+    internal const int DWMWA_CLOAK = 13;
 
     /// <summary>DWMWCP_ROUND — the standard Windows 11 rounded window corners.</summary>
     internal const int DWMWCP_ROUND = 2;
