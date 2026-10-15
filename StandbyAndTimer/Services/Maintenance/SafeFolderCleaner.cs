@@ -26,8 +26,8 @@ internal static class SafeFolderCleaner
         {
             if (!Directory.Exists(root)) continue;
             found = true;
-            Walk(new DirectoryInfo(root), isRoot: true, keepNewerThan, nowUtc, delete: false, ct,
-                 onFile: f => { bytes += f.Length; files++; return true; });
+            Walk(new DirectoryInfo(root), isRoot: true, keepNewerThan, nowUtc, delete: false,
+                 onFile: f => { bytes += f.Length; files++; return true; }, ct);
         }
         return found ? new CleanupScan(true, bytes, files) : CleanupScan.NotFound;
     }
@@ -39,7 +39,7 @@ internal static class SafeFolderCleaner
         foreach (string root in roots)
         {
             if (!Directory.Exists(root)) continue;
-            Walk(new DirectoryInfo(root), isRoot: true, keepNewerThan, nowUtc, delete: true, ct, onFile: f =>
+            Walk(new DirectoryInfo(root), isRoot: true, keepNewerThan, nowUtc, delete: true, onFile: f =>
             {
                 long length = f.Length;
                 try
@@ -56,14 +56,14 @@ internal static class SafeFolderCleaner
                     skipped++;
                     return false;
                 }
-            });
+            }, ct);
         }
         return new CleanupResult(freed, deleted, skipped);
     }
 
     // Post-order walk. onFile returns whether the file is gone (clean) / counted (scan).
     private static void Walk(DirectoryInfo dir, bool isRoot, TimeSpan? keepNewerThan, DateTime nowUtc,
-                             bool delete, CancellationToken ct, Func<FileInfo, bool> onFile)
+                             bool delete, Func<FileInfo, bool> onFile, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
@@ -96,7 +96,7 @@ internal static class SafeFolderCleaner
 
             if (entry is DirectoryInfo sub)
             {
-                Walk(sub, isRoot: false, keepNewerThan, nowUtc, delete, ct, onFile);
+                Walk(sub, isRoot: false, keepNewerThan, nowUtc, delete, onFile, ct);
                 continue;
             }
 

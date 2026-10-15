@@ -36,7 +36,7 @@ internal sealed class RecycleBinTarget : ICleanupTarget
         var before = _query();
         if (before.i64NumItems == 0) return CleanupResult.Nothing;
         int hr = _empty();
-        if (hr != 0) throw new COMException("SHEmptyRecycleBin failed", hr);
+        Marshal.ThrowExceptionForHR(hr);
         var after = _query();
         return new CleanupResult(Math.Max(0, before.i64Size - after.i64Size),
                                  (int)Math.Max(0, before.i64NumItems - after.i64NumItems),
@@ -50,7 +50,7 @@ internal sealed class RecycleBinTarget : ICleanupTarget
     {
         var info = new NativeMethods.SHQUERYRBINFO { cbSize = Marshal.SizeOf<NativeMethods.SHQUERYRBINFO>() };
         int hr = NativeMethods.SHQueryRecycleBin(null, ref info);
-        if (hr != 0) throw new COMException("SHQueryRecycleBin failed", hr);
+        Marshal.ThrowExceptionForHR(hr);
         return info;
     }
 }

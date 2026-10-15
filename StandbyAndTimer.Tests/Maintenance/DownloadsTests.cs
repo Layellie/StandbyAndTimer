@@ -154,4 +154,28 @@ public sealed class DownloadsTests : IDisposable
         Assert.All(vm.Items, i => Assert.False(i.IsChecked));
         Assert.False(vm.MoveCommand.CanExecute(null));
     }
+
+    private sealed class HangingDownloads : IDownloadsService
+    {
+        public string? FolderPath => @"C:\Users\x\Downloads";
+        public Task<CleanupScan> ScanAsync(CancellationToken ct) => Task.FromResult(CleanupScan.NotFound);
+        public async Task<IReadOnlyList<DownloadEntry>> ListAsync(CancellationToken ct)
+        {
+            await Task.Delay(Timeout.Infinite, ct);
+            return [];
+        }
+        public Task<IReadOnlyList<DownloadEntry>> MoveToRecycleBinAsync(IReadOnlyList<DownloadEntry> entries) => Task.FromResult(entries);
+    }
+
+    [Fact]
+    public async Task Closing_the_dialog_cancels_a_listing_in_progress()
+    {
+        var vm = new DownloadsViewModel(new HangingDownloads(), new FakeLocalization(), (_, _, _) => { });
+
+        var load = vm.LoadAsync();
+        vm.Dispose();
+        await load.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.False(vm.IsLoading);
+    }
 }

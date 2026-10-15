@@ -216,4 +216,18 @@ public class MaintenanceViewModelTests
         Assert.False(vm.Rows[0].IsBlocked);
         Assert.Equal("Str_CleanTip_nvidia-shader", vm.Rows[0].Tip);
     }
+
+    [Fact]
+    public async Task Disposing_cancels_a_running_scan()
+    {
+        var slow = new FakeTarget("user-temp", Mb(10)) { ScanGate = new TaskCompletionSource() };
+        var (vm, _, _, _) = Make(slow);
+
+        var scan = vm.RefreshAsync();
+        vm.Dispose();
+        slow.ScanGate.SetResult();
+        await scan;
+
+        Assert.False(slow.ScanCompleted);
+    }
 }

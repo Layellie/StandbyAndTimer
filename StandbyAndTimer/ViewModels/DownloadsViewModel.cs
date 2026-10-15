@@ -22,7 +22,7 @@ public sealed partial class DownloadRow(DownloadEntry entry, string sizeText, st
 /// The Downloads dialog: largest first, tick what to send to the Recycle Bin.
 /// Exists only while the dialog is open (MaintenanceViewModel drops it).
 /// </summary>
-public sealed partial class DownloadsViewModel : ObservableObject
+public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
 {
     private readonly IDownloadsService _service;
     private readonly ILocalizationService _loc;
@@ -77,7 +77,12 @@ public sealed partial class DownloadsViewModel : ObservableObject
         }
     }
 
-    internal void Cancel() => _cts.Cancel();
+    /// <summary>The dialog closed: stops a listing still running.</summary>
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+    }
 
     private void OnRowChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {

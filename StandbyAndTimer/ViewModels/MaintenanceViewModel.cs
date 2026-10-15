@@ -51,7 +51,7 @@ public sealed record CleanupHistoryRow(CleanupRecord Record, string Time, string
 /// Nothing runs while the tab is not shown: scans start on selection (and
 /// Rescan / after a clean) and are cancelled when the tab is left.
 /// </summary>
-public sealed partial class MaintenanceViewModel : ObservableObject
+public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
 {
     private readonly ICleanupStatsStore _store;
     private readonly ISystemInfoService _info;
@@ -309,7 +309,7 @@ public sealed partial class MaintenanceViewModel : ObservableObject
     [RelayCommand]
     private void CloseDownloads()
     {
-        DownloadsDialog?.Cancel();
+        DownloadsDialog?.Dispose();
         DownloadsDialog = null;
         if (IsActive) _ = RefreshAsync(keepResults: true);
     }
@@ -393,6 +393,15 @@ public sealed partial class MaintenanceViewModel : ObservableObject
     /// <summary>"845 MB", "1.2 GB", "&lt; 1 MB", "0 MB".</summary>
     internal static string SizeText(long bytes) =>
         bytes > 0 && bytes < 1024 * 1024 ? "< 1 MB" : MainViewModel.FormatSize(bytes / (1024 * 1024));
+
+    /// <summary>App exit (the DI container disposes it): stops a running scan.</summary>
+    public void Dispose()
+    {
+        _scanCts?.Cancel();
+        _scanCts?.Dispose();
+        _scanCts = null;
+        DownloadsDialog?.Dispose();
+    }
 
     // ── Inert stand-ins ──────────────────────────────────────────────────────
 
