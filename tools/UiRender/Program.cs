@@ -78,6 +78,44 @@ public sealed class FakeGlobalTimer : IGlobalTimerSetting
     public DateTime LastBootUtc => DateTime.UtcNow.AddHours(-1);
 }
 
+// Maintenance rows with fixed sizes: one not found, one blocked by a game.
+public sealed class FakeCleanupTarget(string id, CleanupScan scan, bool blocked = false) : ICleanupTarget
+{
+    public string Id => id;
+    public bool BlockedWhileGameRuns => blocked;
+    public Task<CleanupScan> ScanAsync(CancellationToken ct) => Task.FromResult(scan);
+    public Task<CleanupResult> CleanAsync(CancellationToken ct) => Task.FromResult(new CleanupResult(scan.Bytes, scan.Files, 2));
+}
+
+public sealed class FakeSystemInfo : ISystemInfoService
+{
+    public PowerPlanInfo? GetPowerPlan() => new(Guid.Empty, "Ultimate Performance");
+    public IReadOnlyList<PageFileInfo> GetPageFiles() => [new("C:", 4096, 1210, true)];
+}
+
+// InMemoryCleanupStatsStore is internal to the app; UiRender cannot see internals.
+public sealed class MemCleanupStore : ICleanupStatsStore
+{
+    private CleanupStats _stats = new();
+    public CleanupStats Load() => _stats;
+    public void Save(CleanupStats stats) => _stats = stats;
+}
+
+public sealed class FakeDownloads : IDownloadsService
+{
+    private static readonly DownloadEntry[] Entries =
+    [
+        new(@"C:\Users\x\Downloads\Win11_24H2.iso", "Win11_24H2.iso", false, 5_800L << 20, new DateTime(2026, 9, 3)),
+        new(@"C:\Users\x\Downloads\SteamSetup.exe", "SteamSetup.exe", false, 2L << 20, new DateTime(2026, 10, 1)),
+        new(@"C:\Users\x\Downloads\screenshots", "screenshots", true, 640L << 20, new DateTime(2026, 10, 12)),
+        new(@"C:\Users\x\Downloads\driver_566.36.exe", "driver_566.36.exe", false, 712L << 20, new DateTime(2026, 8, 20)),
+    ];
+    public string? FolderPath => @"C:\Users\x\Downloads";
+    public Task<CleanupScan> ScanAsync(CancellationToken ct) => Task.FromResult(new CleanupScan(true, Entries.Sum(e => e.Bytes), Entries.Length));
+    public Task<IReadOnlyList<DownloadEntry>> ListAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<DownloadEntry>>(Entries);
+    public Task<IReadOnlyList<DownloadEntry>> MoveToRecycleBinAsync(IReadOnlyList<DownloadEntry> entries) => Task.FromResult<IReadOnlyList<DownloadEntry>>([]);
+}
+
 public static class Program
 {
     static T Null<T>() where T : class => DispatchProxy.Create<T, NullProxy>();
@@ -339,9 +377,33 @@ public static class Program
                                                Null<IUpdateService>(), Null<IThemeService>(), Null<ILogTailReader>());
         var systemVm = new SystemViewModel(new FakeGlobalTimer());
         systemVm.Initialize(promptAnswered: true, setByApp: true, changedUtc: DateTime.UtcNow, bootValue: false);
+        var maintenance = new MaintenanceViewModel(
+        [
+            new FakeCleanupTarget("nvidia-shader", new CleanupScan(true, 1_200L << 20, 3400), blocked: true),
+            new FakeCleanupTarget("amd-shader", CleanupScan.NotFound, blocked: true),
+            new FakeCleanupTarget("user-temp", new CleanupScan(true, 845L << 20, 1200)),
+            new FakeCleanupTarget("windows-temp", new CleanupScan(true, 120L << 20, 300)),
+            new FakeCleanupTarget("windows-update", new CleanupScan(true, 2_300L << 20, 40)),
+            new FakeCleanupTarget("recycle-bin", new CleanupScan(true, 310L << 20, 25)),
+        ], new MemCleanupStore(), new FakeSystemInfo(), Null<ISystemToolLauncher>(), new FakeDownloads(), loc);
         var vm = new MainViewModel(Null<ITimerResolutionService>(), Null<IStandbyPurgeService>(),
                                    Null<IMemoryMonitorService>(), Null<ISettingsService>(), loc,
-                                   Null<IGameDetectionService>(), settingsVm, systemVm);
+                                   Null<IGameDetectionService>(), settingsVm, systemVm, maintenance: maintenance);
+        // UiRender has no InternalsVisibleTo (only StandbyAndTimer.Tests does), so the
+        // internal members are reached by reflection, as the purge history sample already is.
+        const BindingFlags Any = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+        maintenance.Initialize(null);
+        typeof(MaintenanceViewModel).GetProperty("AnyGameRunning", Any)!.SetValue(maintenance, (Func<bool>)(() => true));   // NVIDIA row: blocked
+        typeof(MaintenanceViewModel).GetProperty("Now", Any)!.SetValue(maintenance, (Func<DateTime>)(() => new DateTime(2026, 10, 16, 22, 0, 0)));
+        var cleanupStats = (CleanupStats)typeof(MaintenanceViewModel).GetProperty("Stats", Any)!.GetValue(maintenance)!;
+        foreach (var (at, id, mb, skipped) in new[] {
+            (new DateTime(2026, 10, 9, 18, 0, 0), "windows-update", 2_100L, 0),
+            (new DateTime(2026, 10, 16, 20, 5, 0), "user-temp", 812L, 14),
+            (new DateTime(2026, 10, 16, 21, 40, 0), "nvidia-shader", 1_150L, 0) })
+            cleanupStats.Add(new CleanupRecord(at, id, mb << 20, skipped));
+        // RefreshAsync is internal: one helper for the renders below.
+        void RefreshMaintenance() =>
+            ((Task)typeof(MaintenanceViewModel).GetMethod("RefreshAsync", Any)!.Invoke(maintenance, [false])!).GetAwaiter().GetResult();
 
         // Sample data written straight to the backing fields: no OnXChanged
         // partials run, so nothing tries to persist.
@@ -600,6 +662,8 @@ public static class Program
             md[2] = new ResourceDictionary { Source = Pack($"Views/Strings/Strings.{lang}.xaml") };
             loc.SetLanguage(langEnum);
             vm.GetType().GetMethod("RelabelPurgeHistory", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(vm, null);   // rows + dates in this language
+            // FakeLoc raises no LanguageChanged: relabel the Maintenance rows the way the event would.
+            typeof(MaintenanceViewModel).GetMethod("Relabel", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(maintenance, null);
             SetField(settingsVm, "_selectedTheme", themeEnum);
             SetField(settingsVm, "_selectedLanguage", langEnum);
             // Idle-off picker: Custom (minutes box shown) in two themes, Off in the others.
@@ -668,6 +732,7 @@ public static class Program
                 {
                     // Settings tab (log viewer, combos), then each dialog.
                     foreach (var (page, show) in new (string, Action<bool>)[] {
+                        ("maintenance", v => { vm.SelectedTab = v ? MainViewModel.MaintenanceTab : MainViewModel.StatusTab; if (v) RefreshMaintenance(); }),
                         ("settings", v => settingsVm.IsOpen = v),
                         ("history",  v => vm.IsPurgeHistoryVisible = v),
                         ("system",   v => systemVm.IsOpen = v),
@@ -737,6 +802,14 @@ public static class Program
                     sv.ScrollToEnd(); Pump();
                     Save(root, Path.Combine(outDir, $"{tag}-4-about-end.png"));
                     sv.ScrollToHome(); Pump();
+
+                    // The guide's Maintenance tab.
+                    var guideTabs = Walk(root).OfType<StandbyAndTimer.Views.Overlays.AboutOverlay>().Single();
+                    var tc = Walk(guideTabs).OfType<TabControl>().Single();
+                    tc.SelectedIndex = 1; Pump();
+                    Save(root, Path.Combine(outDir, $"{tag}-4-about-maintenance.png"));
+                    failures += CheckLayout(root, $"{tag} about maintenance");
+                    tc.SelectedIndex = 0; Pump();
                 }
                 failures += CheckLayout(root, $"{tag} {name}");
                 SetField(vm, flag, false); raise.Invoke(vm, [prop]); Pump();
@@ -800,7 +873,7 @@ public static class Program
             // VM → View: IsOpen=true must select the Settings tab.
             settingsVm.IsOpen = true;
             Pump();
-            if (tabs.SelectedIndex != 1) { failures++; Log($"  FAIL IsOpen=true → SelectedIndex={tabs.SelectedIndex}, expected 1"); }
+            if (tabs.SelectedIndex != MainViewModel.SettingsTab) { failures++; Log($"  FAIL IsOpen=true → SelectedIndex={tabs.SelectedIndex}, expected {MainViewModel.SettingsTab}"); }
             else Log("  OK   IsOpen=true selects Settings tab");
             Save(root, Path.Combine(outDir, $"{tag}-2-settings.png"));
             failures += CheckLayout(root, tag + " settings");
@@ -875,6 +948,34 @@ public static class Program
             Pump();
             if (settingsVm.IsOpen) { failures++; Log("  FAIL SelectedIndex=0 left IsOpen=true"); }
             else Log("  OK   selecting Status tab sets IsOpen=false");
+
+            // Maintenance tab: lazily built page, rows from the fake targets.
+            vm.SelectedTab = MainViewModel.MaintenanceTab;
+            Pump();
+            RefreshMaintenance();
+            Pump();
+            Save(root, Path.Combine(outDir, $"{tag}-6-maintenance.png"));
+            failures += CheckLayout(root, tag + " maintenance");
+            failures += CheckToolTips(root, tag + " maintenance");
+            {
+                int rows = Walk(root).OfType<StandbyAndTimer.Views.MaintenancePanelView>().Count();
+                bool ok = rows == 1;
+                if (!ok) failures++;
+                Log($"  {(ok ? "OK  " : "FAIL")} [{tag}] maintenance page built once on selection ({rows})");
+            }
+            maintenance.OpenDownloadsCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+            maintenance.DownloadsDialog!.Items[0].IsChecked = true;
+            Pump();
+            Save(root, Path.Combine(outDir, $"{tag}-6-downloads.png"));
+            failures += CheckLayout(root, tag + " downloads");
+            maintenance.CloseDownloadsCommand.Execute(null);
+            maintenance.ShowHistoryCommand.Execute(null);
+            Pump();
+            Save(root, Path.Combine(outDir, $"{tag}-6-mhistory.png"));
+            failures += CheckLayout(root, tag + " maintenance history");
+            maintenance.CloseHistoryCommand.Execute(null);
+            vm.SelectedTab = MainViewModel.StatusTab;
+            Pump();
 
             // Theme/language must not have been written back by any binding.
             if (settingsVm.SelectedTheme != themeEnum || settingsVm.SelectedLanguage != langEnum)
