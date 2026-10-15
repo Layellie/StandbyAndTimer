@@ -14,7 +14,7 @@
         Background="{DynamicResource AppBg}"
         Foreground="{DynamicResource AppFg}"
         FontFamily="{StaticResource AppFont}"
-        FontSize="13" Icon="/app_icon.ico"
+        FontSize="13"
         UseLayoutRounding="True">
 
     <!-- UseLayoutRounding: snap every layout slot to whole pixels so centered

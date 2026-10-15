@@ -154,8 +154,9 @@ public partial class MainWindow : Window
     // So a background thread watches what DWM holds for the window (plain
     // Win32 calls, no WPF objects) and uncloaks once the content is in.
     // PrintWindow still waits for the UI thread, so the window appears when
-    // Show() is done: content on screen ~60 ms later than without the cloak
-    // (measured), but never the empty box.
+    // Show() is done, ~25 ms after the content could first be on screen
+    // (measured); the start-up work moved out of the way (window icon, tray)
+    // more than makes up for that on a direct start.
 
     private const int UncloakPollMs     = 4;
     private const int UncloakFallbackMs = 1000;
@@ -194,7 +195,8 @@ public partial class MainWindow : Window
         public void Dispose() => _bmp?.Dispose();
     }
 
-    internal void ShowCloaked()
+    /// <param name="onScreen">Runs on the UI thread once the window is visible.</param>
+    internal void ShowCloaked(Action? onScreen = null)
     {
         var hwnd = new WindowInteropHelper(this).EnsureHandle();
         var appBg = (TryFindResource("AppBg") as SolidColorBrush)?.Color;
@@ -202,6 +204,7 @@ public partial class MainWindow : Window
         if (appBg is null || NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_CLOAK, ref on, sizeof(int)) != 0)
         {
             Show();   // no colour to check, or DWM refused (RDP, old build): plain show, as before
+            if (onScreen is not null) Dispatcher.BeginInvoke(DispatcherPriority.Background, onScreen);
             return;
         }
 
@@ -224,11 +227,15 @@ public partial class MainWindow : Window
                     if (inPlace) break;
                 }
             }
-            if (Volatile.Read(ref _showGeneration) != generation) return;
-            int off = 0;
-            _ = NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_CLOAK, ref off, sizeof(int));
-            Services.Logger.Info($"Window shown after {clock.ElapsedMilliseconds} ms " +
-                                 $"({(inPlace ? "content on screen" : "1 s fallback")}, {checks} checks)");
+            // A newer show owns the cloak now; onScreen still runs (it may set up the tray).
+            if (Volatile.Read(ref _showGeneration) == generation)
+            {
+                int off = 0;
+                _ = NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_CLOAK, ref off, sizeof(int));
+                Services.Logger.Info($"Window shown after {clock.ElapsedMilliseconds} ms " +
+                                     $"({(inPlace ? "content on screen" : "1 s fallback")}, {checks} checks)");
+            }
+            if (onScreen is not null) Dispatcher.BeginInvoke(DispatcherPriority.Background, onScreen);
         }) { IsBackground = true, Name = "UncloakWatcher" };
         watcher.Start();
         Show();

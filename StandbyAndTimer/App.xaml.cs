@@ -154,9 +154,6 @@ public partial class App : Application
         _tray.TimerLockCycleRequested  += async (_, _) => { await _viewModel.ToggleTimerLockCommand.ExecuteAsync(null); RefreshTray(); };
 
         // ── 5. Build window and tray ──────────────────────────────────────────
-        // Tray: grey while the timer is off, the lime app icon while it is on.
-        _iconActive = AppIconLoader.LoadAppIcon();
-        _iconBase   = AppIconLoader.BuildIdleIcon(_iconActive);
         // Started hidden (auto-start): no GPU until the window is first
         // shown (MainWindow.ShowFromOffscreen switches back). Otherwise WPF
         // sets up Direct3D at start-up and the graphics driver keeps its
@@ -165,21 +162,40 @@ public partial class App : Application
         bool startHidden = e.Args.Contains("-hidden");
         if (startHidden)
             System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
-        // Window / taskbar icon: Icon="/app_icon.ico" in MainWindow.xaml, every size of the .ico.
+        // Window / taskbar icon: none set, so WPF takes the exe's own icon
+        // (every size, no decoding); Icon="/app_icon.ico" decoded all eight
+        // images first (~65 ms measured).
         _mainWindow = new MainWindow(_viewModel);
-        _tray.Initialize(_iconBase, _iconActive);
         // The saved theme was applied in step 4, before ThemeChanged was
         // subscribed, so hand the tray its starting palette explicitly.
         _tray.ApplyTheme(EffectiveTheme());
-        Mark("window + tray");
+        Mark("window");
+
+        // Tray icon + menu: ~60 ms on the UI thread (WinForms menu font on
+        // first use, icon variants). Set up once the window is on screen, or
+        // right away when starting hidden. Until then the tray service skips
+        // refreshes and balloons.
+        void InitTray()
+        {
+            if (_tray is null || _iconActive is not null) return;
+            // Tray: grey while the timer is off, the lime app icon while it is on.
+            _iconActive = AppIconLoader.LoadAppIcon();
+            _iconBase   = AppIconLoader.BuildIdleIcon(_iconActive);
+            _tray.Initialize(_iconBase, _iconActive);
+            RefreshTray();
+            Mark("tray");
+        }
 
         // Show the window FIRST so the user gets immediate visual feedback,
         // then kick off the (potentially-slow) viewmodel initialisation in
         // parallel.
         if (startHidden)
+        {
             _mainWindow.HideOffscreen();
+            InitTray();
+        }
         else
-            _mainWindow.ShowCloaked();
+            _mainWindow.ShowCloaked(onScreen: InitTray);
         Mark("window shown");
 
         // Background listener for second-launch "show me" pulses. Started
