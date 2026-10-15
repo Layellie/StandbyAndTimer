@@ -179,7 +179,7 @@ public partial class App : Application
         if (startHidden)
             _mainWindow.HideOffscreen();
         else
-            _mainWindow.Show();
+            _mainWindow.ShowCloaked();
         Mark("window shown");
 
         // Background listener for second-launch "show me" pulses. Started
