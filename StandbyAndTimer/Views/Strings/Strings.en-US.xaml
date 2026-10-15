@@ -308,4 +308,56 @@
     <sys:String x:Key="Str_IdleOff_Custom">Custom</sys:String>
     <sys:String x:Key="Str_IdleOff_CustomTip">Minutes (1-240)</sys:String>
 
+    <!-- ═══════════ Maintenance tab (3.0.0) ═══════════ -->
+    <sys:String x:Key="Str_Tab_Maintenance">Maintenance</sys:String>
+    <sys:String x:Key="Str_Maint_CleanupSection">CLEANUP</sys:String>
+    <sys:String x:Key="Str_Maint_WindowsSection">WINDOWS</sys:String>
+    <sys:String x:Key="Str_Clean_nvidia-shader">NVIDIA shader cache</sys:String>
+    <sys:String x:Key="Str_Clean_amd-shader">AMD shader cache</sys:String>
+    <sys:String x:Key="Str_Clean_user-temp">Temporary files (user)</sys:String>
+    <sys:String x:Key="Str_Clean_windows-temp">Windows temporary files</sys:String>
+    <sys:String x:Key="Str_Clean_windows-update">Windows Update leftovers</sys:String>
+    <sys:String x:Key="Str_Clean_recycle-bin">Recycle Bin</sys:String>
+    <sys:String x:Key="Str_Clean_downloads">Downloads</sys:String>
+    <sys:String x:Key="Str_CleanTip_nvidia-shader">Shaders NVIDIA drivers compiled for your games. Clean once after a driver update or if a game stutters because of a broken cache; games rebuild them and can stutter on first launch.</sys:String>
+    <sys:String x:Key="Str_CleanTip_amd-shader">Shaders AMD drivers compiled for your games. Clean once after a driver update or if a game stutters because of a broken cache; games rebuild them and can stutter on first launch.</sys:String>
+    <sys:String x:Key="Str_CleanTip_user-temp">Your temp folder. Files changed in the last 24 hours and files in use are left alone.</sys:String>
+    <sys:String x:Key="Str_CleanTip_windows-temp">Windows' temp folder. Files changed in the last 24 hours and files in use are left alone.</sys:String>
+    <sys:String x:Key="Str_CleanTip_windows-update">Update files Windows already downloaded and installed. Safe to clean; Windows downloads again what it still needs.</sys:String>
+    <sys:String x:Key="Str_CleanTip_recycle-bin">Empties the Recycle Bin on every drive. This cannot be undone.</sys:String>
+    <sys:String x:Key="Str_CleanTip_downloads">Your own files. Choose what to send to the Recycle Bin; nothing is deleted for good.</sys:String>
+    <sys:String x:Key="Str_Maint_Scanning">scanning…</sys:String>
+    <sys:String x:Key="Str_Maint_NotFound">not found</sys:String>
+    <sys:String x:Key="Str_Maint_ReadError">could not read</sys:String>
+    <sys:String x:Key="Str_Maint_BlockedGame">Close the game first: shader caches are in use while it runs.</sys:String>
+    <sys:String x:Key="Str_Maint_Cleaning">cleaning…</sys:String>
+    <sys:String x:Key="Str_Maint_ResultFreed">{0} freed</sys:String>
+    <sys:String x:Key="Str_Maint_ResultSkipped">{0} skipped</sys:String>
+    <sys:String x:Key="Str_Maint_ResultFailed">failed: {0}</sys:String>
+    <sys:String x:Key="Str_Maint_CleanSelected">Clean selected ({0})</sys:String>
+    <sys:String x:Key="Str_Maint_FreedSoFar">Freed so far: {0}  ›</sys:String>
+    <sys:String x:Key="Str_Maint_HistoryTip">Click to see the maintenance history</sys:String>
+    <sys:String x:Key="Str_Maint_Choose">Choose…</sys:String>
+    <sys:String x:Key="Str_Maint_Rescan">Rescan</sys:String>
+    <sys:String x:Key="Str_Maint_PowerPlan">Power plan</sys:String>
+    <sys:String x:Key="Str_Maint_PowerUnknown">unknown</sys:String>
+    <sys:String x:Key="Str_Maint_Change">Change</sys:String>
+    <sys:String x:Key="Str_Maint_PowerTip">The active Windows power plan. Change opens Windows' Power Options.</sys:String>
+    <sys:String x:Key="Str_Maint_VirtualMemory">Virtual memory</sys:String>
+    <sys:String x:Key="Str_Maint_PageFileFormat">{0} {1} · {2} · {3} in use</sys:String>
+    <sys:String x:Key="Str_Maint_SystemManaged">system managed</sys:String>
+    <sys:String x:Key="Str_Maint_Custom">custom size</sys:String>
+    <sys:String x:Key="Str_Maint_PageFileOff">off</sys:String>
+    <sys:String x:Key="Str_Maint_Adjust">Adjust</sys:String>
+    <sys:String x:Key="Str_Maint_AdjustTip">Opens Performance Options. There: Advanced → Virtual memory → Change.</sys:String>
+    <sys:String x:Key="Str_Maint_OptimizeDrives">Optimize drives</sys:String>
+    <sys:String x:Key="Str_Maint_OptimizeDrivesTip">Opens Windows' Optimize Drives: defragments HDDs, sends TRIM to SSDs.</sys:String>
+    <sys:String x:Key="Str_Maint_DiskCleanup">Disk Cleanup</sys:String>
+    <sys:String x:Key="Str_Maint_DiskCleanupTip">Opens Windows' Disk Cleanup, with more categories.</sys:String>
+    <sys:String x:Key="Str_Maint_Repair">Repair system files</sys:String>
+    <sys:String x:Key="Str_Maint_RepairConfirm">Takes 10–30 min. Press again</sys:String>
+    <sys:String x:Key="Str_Maint_RepairTip">Runs DISM, then SFC, in a console window. Only needed if Windows misbehaves; DISM needs internet.</sys:String>
+    <sys:String x:Key="Str_Status_CleanDone">Cleanup done: {0} freed</sys:String>
+    <sys:String x:Key="Str_Status_ToolFailed">Could not open {0}; details in the log</sys:String>
+
 </ResourceDictionary>

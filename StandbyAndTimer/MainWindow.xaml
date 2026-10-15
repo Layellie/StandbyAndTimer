@@ -34,7 +34,6 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Views/Styles/Theme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-            <conv:SettingsTabIndexConverter x:Key="SettingsTabIndexConv"/>
         </ResourceDictionary>
     </Window.Resources>
 
@@ -57,14 +56,15 @@
                             CloseRequested="OnTitleBarClose"/>
 
             <!-- ═══════════════════ TABBED CONTENT ═══════════════════
-                 Two fixed-size pages, neither scrolls. SelectedIndex is bound
-                 to Settings.IsOpen so "Settings page visible" keeps driving
-                 the log-tail refresh in SettingsViewModel. -->
+                 Three fixed-size pages, none scrolls. SelectedIndex is bound
+                 to MainViewModel.SelectedTab (0 Status, 1 Maintenance,
+                 2 Settings), which keeps Settings.IsOpen (log-tail refresh)
+                 and Maintenance.IsActive (scan on selection) in step. -->
             <TabControl Grid.Row="1"
                         Margin="14,12,14,0"
                         Style="{StaticResource SegmentTabControlStyle}"
                         ItemContainerStyle="{StaticResource SegmentTabItemStyle}"
-                        SelectedIndex="{Binding Settings.IsOpen, Mode=TwoWay, Converter={StaticResource SettingsTabIndexConv}}">
+                        SelectedIndex="{Binding SelectedTab, Mode=TwoWay}">
 
                 <TabItem Header="{DynamicResource Str_Tab_Status}">
                     <!-- Three columns: Timer + Memory | Purge | Game Mode.
@@ -96,6 +96,16 @@
                         <cards:StandbyPurgeCard Grid.Column="2"/>
                         <cards:GameModeCard Grid.Column="4" GameDropped="OnGameDropped" GameLaunchRequested="OnGameLaunchRequested"/>
                     </Grid>
+                </TabItem>
+
+                <!-- Built only while selected (ContentTemplate), DataContext =
+                     Content = MainViewModel.Maintenance. Costs nothing at start-up. -->
+                <TabItem Header="{DynamicResource Str_Tab_Maintenance}" Content="{Binding Maintenance}">
+                    <TabItem.ContentTemplate>
+                        <DataTemplate>
+                            <views:MaintenancePanelView/>
+                        </DataTemplate>
+                    </TabItem.ContentTemplate>
                 </TabItem>
 
                 <TabItem Header="{DynamicResource Str_Tab_Settings}">

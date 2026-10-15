@@ -394,7 +394,7 @@ public partial class App : Application
     private void ShowMainWindow() => _mainWindow?.ShowFromOffscreen();
 
     // Tray "Settings": surface the window and switch to the Settings tab.
-    // Settings.IsOpen is bound to the tab selection (and refreshes the logs).
+    // Settings.IsOpen keeps MainViewModel.SelectedTab on the Settings tab (and refreshes the logs).
     private void ShowSettings()
     {
         if (_mainWindow is null || _viewModel is null) return;

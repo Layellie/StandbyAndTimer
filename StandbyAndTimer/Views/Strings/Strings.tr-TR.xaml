@@ -308,4 +308,56 @@
     <sys:String x:Key="Str_IdleOff_Custom">Özel</sys:String>
     <sys:String x:Key="Str_IdleOff_CustomTip">Dakika (1-240)</sys:String>
 
+    <!-- ═══════════ Bakım sekmesi (3.0.0) ═══════════ -->
+    <sys:String x:Key="Str_Tab_Maintenance">Bakım</sys:String>
+    <sys:String x:Key="Str_Maint_CleanupSection">TEMİZLİK</sys:String>
+    <sys:String x:Key="Str_Maint_WindowsSection">WINDOWS</sys:String>
+    <sys:String x:Key="Str_Clean_nvidia-shader">NVIDIA shader önbelleği</sys:String>
+    <sys:String x:Key="Str_Clean_amd-shader">AMD shader önbelleği</sys:String>
+    <sys:String x:Key="Str_Clean_user-temp">Geçici dosyalar (kullanıcı)</sys:String>
+    <sys:String x:Key="Str_Clean_windows-temp">Windows geçici dosyaları</sys:String>
+    <sys:String x:Key="Str_Clean_windows-update">Windows Update artıkları</sys:String>
+    <sys:String x:Key="Str_Clean_recycle-bin">Geri Dönüşüm Kutusu</sys:String>
+    <sys:String x:Key="Str_Clean_downloads">İndirilenler</sys:String>
+    <sys:String x:Key="Str_CleanTip_nvidia-shader">NVIDIA sürücüsünün oyunların için derlediği shader'lar. Sürücü güncellemesinden sonra ya da bozuk önbellek yüzünden takılma varsa bir kez temizle; oyunlar yeniden derler ve ilk açılışta takılabilir.</sys:String>
+    <sys:String x:Key="Str_CleanTip_amd-shader">AMD sürücüsünün oyunların için derlediği shader'lar. Sürücü güncellemesinden sonra ya da bozuk önbellek yüzünden takılma varsa bir kez temizle; oyunlar yeniden derler ve ilk açılışta takılabilir.</sys:String>
+    <sys:String x:Key="Str_CleanTip_user-temp">Senin geçici dosya klasörün. Son 24 saatte değişen ve kullanımdaki dosyalara dokunulmaz.</sys:String>
+    <sys:String x:Key="Str_CleanTip_windows-temp">Windows'un geçici dosya klasörü. Son 24 saatte değişen ve kullanımdaki dosyalara dokunulmaz.</sys:String>
+    <sys:String x:Key="Str_CleanTip_windows-update">Windows'un indirip kurduğu güncelleme dosyaları. Temizlemek güvenli; gerekirse Windows yeniden indirir.</sys:String>
+    <sys:String x:Key="Str_CleanTip_recycle-bin">Tüm sürücülerdeki Geri Dönüşüm Kutusu'nu boşaltır. Geri alınamaz.</sys:String>
+    <sys:String x:Key="Str_CleanTip_downloads">Senin dosyaların. Geri Dönüşüm Kutusu'na gidecekleri sen seçersin; hiçbir şey kalıcı silinmez.</sys:String>
+    <sys:String x:Key="Str_Maint_Scanning">taranıyor…</sys:String>
+    <sys:String x:Key="Str_Maint_NotFound">bulunamadı</sys:String>
+    <sys:String x:Key="Str_Maint_ReadError">okunamadı</sys:String>
+    <sys:String x:Key="Str_Maint_BlockedGame">Önce oyunu kapat: oyun açıkken shader önbelleği kullanımda.</sys:String>
+    <sys:String x:Key="Str_Maint_Cleaning">temizleniyor…</sys:String>
+    <sys:String x:Key="Str_Maint_ResultFreed">{0} boşaltıldı</sys:String>
+    <sys:String x:Key="Str_Maint_ResultSkipped">{0} atlandı</sys:String>
+    <sys:String x:Key="Str_Maint_ResultFailed">başarısız: {0}</sys:String>
+    <sys:String x:Key="Str_Maint_CleanSelected">Seçilenleri temizle ({0})</sys:String>
+    <sys:String x:Key="Str_Maint_FreedSoFar">Şimdiye kadar boşaltılan: {0}  ›</sys:String>
+    <sys:String x:Key="Str_Maint_HistoryTip">Bakım geçmişini görmek için tıkla</sys:String>
+    <sys:String x:Key="Str_Maint_Choose">Seç…</sys:String>
+    <sys:String x:Key="Str_Maint_Rescan">Yenile</sys:String>
+    <sys:String x:Key="Str_Maint_PowerPlan">Güç planı</sys:String>
+    <sys:String x:Key="Str_Maint_PowerUnknown">bilinmiyor</sys:String>
+    <sys:String x:Key="Str_Maint_Change">Değiştir</sys:String>
+    <sys:String x:Key="Str_Maint_PowerTip">Etkin Windows güç planı. Değiştir, Windows'un Güç Seçenekleri'ni açar.</sys:String>
+    <sys:String x:Key="Str_Maint_VirtualMemory">Sanal bellek</sys:String>
+    <sys:String x:Key="Str_Maint_PageFileFormat">{0} {1} · {2} · {3} kullanımda</sys:String>
+    <sys:String x:Key="Str_Maint_SystemManaged">sistem yönetimli</sys:String>
+    <sys:String x:Key="Str_Maint_Custom">özel boyut</sys:String>
+    <sys:String x:Key="Str_Maint_PageFileOff">kapalı</sys:String>
+    <sys:String x:Key="Str_Maint_Adjust">Ayarla</sys:String>
+    <sys:String x:Key="Str_Maint_AdjustTip">Performans Seçenekleri açılır. Orada: Gelişmiş → Sanal bellek → Değiştir.</sys:String>
+    <sys:String x:Key="Str_Maint_OptimizeDrives">Sürücüleri iyileştir</sys:String>
+    <sys:String x:Key="Str_Maint_OptimizeDrivesTip">Windows'un Sürücüleri İyileştir aracını açar: HDD'yi birleştirir, SSD'ye TRIM gönderir.</sys:String>
+    <sys:String x:Key="Str_Maint_DiskCleanup">Disk Temizleme</sys:String>
+    <sys:String x:Key="Str_Maint_DiskCleanupTip">Windows'un Disk Temizleme aracını açar; daha fazla kategori var.</sys:String>
+    <sys:String x:Key="Str_Maint_Repair">Sistem dosyalarını onar</sys:String>
+    <sys:String x:Key="Str_Maint_RepairConfirm">10–30 dk sürer. Tekrar bas</sys:String>
+    <sys:String x:Key="Str_Maint_RepairTip">Bir konsol penceresinde önce DISM, sonra SFC çalışır. Sadece Windows sorun çıkarıyorsa gerekir; DISM internet ister.</sys:String>
+    <sys:String x:Key="Str_Status_CleanDone">Temizlik bitti: {0} boşaltıldı</sys:String>
+    <sys:String x:Key="Str_Status_ToolFailed">{0} açılamadı; ayrıntı log'da</sys:String>
+
 </ResourceDictionary>
