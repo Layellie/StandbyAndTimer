@@ -378,4 +378,22 @@
     <sys:String x:Key="Str_MHist_Recent">SON 20</sys:String>
     <sys:String x:Key="Str_MHist_Empty">Henüz bir şey temizlenmedi.</sys:String>
 
+    <sys:String x:Key="Str_About_TabGeneral">Genel</sys:String>
+    <sys:String x:Key="Str_About_TabMaintenance">Bakım</sys:String>
+    <sys:String x:Key="Str_HelpM_Intro">Bakım sekmesi disk alanı kaplayan ya da takılmaya yol açan şeyleri temizler ve Windows'un kendi araçlarını açar. Hiçbir şey kendiliğinden çalışmaz: neyi ne zaman temizleyeceğini sen seçersin.</sys:String>
+    <sys:String x:Key="Str_HelpM_CleanTitle">TEMİZLİK</sys:String>
+    <sys:String x:Key="Str_HelpM_Shader">Shader önbellekleri (NVIDIA, AMD): sürücü güncellemesinden sonra ya da bozuk önbellek yüzünden bir oyun takılıyorsa bir kez temizle. Düzenli temizlemek yanlış: her oyun shader'larını yeniden derler ve ilk açılışta takılır. Listedeki bir oyun açıkken temizlenemez.</sys:String>
+    <sys:String x:Key="Str_HelpM_Temp">Geçici dosyalar: ara sıra temizlemek güvenli. Son 24 saatte değişen ve kullanımdaki dosyalara dokunulmaz, böylece çalışan kurulumlar ve programlar bozulmaz.</sys:String>
+    <sys:String x:Key="Str_HelpM_Update">Windows Update artıkları: zaten kurulmuş güncelleme dosyaları. Temizlemek güvenli; Windows gerekeni yeniden indirir.</sys:String>
+    <sys:String x:Key="Str_HelpM_Bin">Geri Dönüşüm Kutusu: boşaltmak kalıcıdır. Gerekenleri önce geri al.</sys:String>
+    <sys:String x:Key="Str_HelpM_Downloads">İndirilenler: senin dosyaların. Seç… en büyükten başlayarak listeler; tiklediklerin Geri Dönüşüm Kutusu'na gider, oradan geri alabilirsin.</sys:String>
+    <sys:String x:Key="Str_HelpM_WindowsTitle">WINDOWS</sys:String>
+    <sys:String x:Key="Str_HelpM_Power">Güç planı ve sanal bellek, Windows'un şu an kullandığını gösterir. Değiştir ve Ayarla Windows'un kendi sayfalarını açar; uygulama orada bir şey değiştirmez.</sys:String>
+    <sys:String x:Key="Str_HelpM_Optimize">Sürücüleri iyileştir: Windows'un aracı. Hard diski birleştirir, SSD'ye TRIM gönderir (SSD asla birleştirilmez); ikisi için de güvenli.</sys:String>
+    <sys:String x:Key="Str_HelpM_DiskCleanup">Disk Temizleme: Windows'un kendi temizleyicisi, daha fazla kategoriyle (örneğin eski Windows kurulumları).</sys:String>
+    <sys:String x:Key="Str_HelpM_Repair">Sistem dosyalarını onar: önce DISM, sonra SFC çalışır. Sadece Windows sorun çıkarıyorsa gerekir (çökmeler, bozuk sistem uygulamaları); 10–30 dakika sürer ve DISM internet ister. Kayıt defteri onarımı yok: kayıt defteri temizleyicileri Windows'u hızlandırmaz, bozabilir.</sys:String>
+    <sys:String x:Key="Str_HelpM_NoteTitle">BİLMEKTE FAYDA VAR</sys:String>
+    <sys:String x:Key="Str_HelpM_Safety">Temizlik listedeki klasörlerin dışına çıkmaz, bağlantıları takip edip dışarı gitmez; klasörlerin kendisi silinmez. "Şimdiye kadar boşaltılan" yazısı neyin temizlendiğini gösteren geçmişi açar.</sys:String>
+    <sys:String x:Key="Str_HelpM_Account">Uygulama yönetici olarak çalıştığı için UAC'yi onaylayan hesabın temp ve İndirilenler klasörlerini temizler. Yönetici hesabında bunlar senin kendi klasörlerindir.</sys:String>
+
 </ResourceDictionary>

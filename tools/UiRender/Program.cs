@@ -617,7 +617,9 @@ public static class Program
             w.Show();
             Pump();
             var root = (FrameworkElement)w.Content;
-            var tabs = Walk(root).OfType<TabControl>().Single();
+            // The main tabs; the usage guide (AboutOverlay) has its own TabControl.
+            var aboutTabs = Walk(Walk(root).OfType<StandbyAndTimer.Views.Overlays.AboutOverlay>().Single()).OfType<TabControl>();
+            var tabs = Walk(root).OfType<TabControl>().Except(aboutTabs).Single();
 
             // Real on-screen capture (hardware render path, through DWM): the
             // offscreen RenderTargetBitmap path is software-only and cannot

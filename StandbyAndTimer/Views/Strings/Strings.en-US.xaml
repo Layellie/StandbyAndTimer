@@ -378,4 +378,22 @@
     <sys:String x:Key="Str_MHist_Recent">LAST 20</sys:String>
     <sys:String x:Key="Str_MHist_Empty">Nothing cleaned yet.</sys:String>
 
+    <sys:String x:Key="Str_About_TabGeneral">General</sys:String>
+    <sys:String x:Key="Str_About_TabMaintenance">Maintenance</sys:String>
+    <sys:String x:Key="Str_HelpM_Intro">The Maintenance tab cleans what costs disk space or causes stutter and opens Windows' own tools. Nothing runs by itself: you choose what to clean and when.</sys:String>
+    <sys:String x:Key="Str_HelpM_CleanTitle">CLEANUP</sys:String>
+    <sys:String x:Key="Str_HelpM_Shader">Shader caches (NVIDIA, AMD): clean them once after a driver update, or when a game stutters because of a broken cache. Cleaning them regularly is wrong: every game rebuilds its shaders and stutters on its first launch. They cannot be cleaned while a listed game runs.</sys:String>
+    <sys:String x:Key="Str_HelpM_Temp">Temporary files: safe to clean now and then. Files changed in the last 24 hours and files in use are left alone, so running installers and programs keep working.</sys:String>
+    <sys:String x:Key="Str_HelpM_Update">Windows Update leftovers: update files that are already installed. Safe to clean; Windows downloads again whatever it still needs.</sys:String>
+    <sys:String x:Key="Str_HelpM_Bin">Recycle Bin: emptying it is final. Restore what you need first.</sys:String>
+    <sys:String x:Key="Str_HelpM_Downloads">Downloads: your own files. Choose… lists them largest first; what you tick goes to the Recycle Bin, where you can restore it.</sys:String>
+    <sys:String x:Key="Str_HelpM_WindowsTitle">WINDOWS</sys:String>
+    <sys:String x:Key="Str_HelpM_Power">Power plan and virtual memory show what Windows uses now. Change and Adjust open Windows' own pages; the app changes nothing there.</sys:String>
+    <sys:String x:Key="Str_HelpM_Optimize">Optimize drives: Windows' tool. It defragments hard disks and sends TRIM to SSDs (SSDs are never defragmented), so it is safe for both.</sys:String>
+    <sys:String x:Key="Str_HelpM_DiskCleanup">Disk Cleanup: Windows' own cleaner, with more categories (for example old Windows installations).</sys:String>
+    <sys:String x:Key="Str_HelpM_Repair">Repair system files: runs DISM, then SFC. Only needed if Windows misbehaves (crashes, broken system apps); it takes 10–30 minutes and DISM needs internet. There is no registry repair: registry cleaners do not make Windows faster and can break it.</sys:String>
+    <sys:String x:Key="Str_HelpM_NoteTitle">GOOD TO KNOW</sys:String>
+    <sys:String x:Key="Str_HelpM_Safety">Cleaning never leaves the listed folders and never follows links out of them; the folders themselves are kept. "Freed so far" opens the history of what was cleaned.</sys:String>
+    <sys:String x:Key="Str_HelpM_Account">The app runs as administrator, so it cleans the temp and Downloads folders of the account that approved UAC. On an administrator account those are your own folders.</sys:String>
+
 </ResourceDictionary>
