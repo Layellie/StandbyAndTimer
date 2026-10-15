@@ -178,4 +178,22 @@ public sealed class DownloadsTests : IDisposable
 
         Assert.False(vm.IsLoading);
     }
+
+    // Dates follow the app's language, not the Windows culture (English UI on a Turkish Windows).
+    [Fact]
+    public async Task Dates_follow_the_app_language()
+    {
+        var saved = System.Globalization.CultureInfo.CurrentCulture;
+        System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("tr-TR");
+        try
+        {
+            var loc = new FakeLocalization { CurrentLanguage = Language.English };
+            var vm = new DownloadsViewModel(new FakeDownloads(E("a.iso", 1)), loc, (_, _, _) => { });
+
+            await vm.LoadAsync();
+
+            Assert.Equal("1 Sep 2026", vm.Items[0].DateText);
+        }
+        finally { System.Globalization.CultureInfo.CurrentCulture = saved; }
+    }
 }

@@ -55,7 +55,8 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         {
             if (_service.FolderPath is null) { Message = _loc.GetString("Str_Dl_NotFound"); return; }
             var list = await _service.ListAsync(_cts.Token);
-            var culture = CultureInfo.CurrentCulture;
+            // Month names in the app's language, as in the history dialogs.
+            var culture = CultureInfo.GetCultureInfo(_loc.CurrentLanguage == Language.Turkish ? "tr-TR" : "en-US");
             foreach (var e in list.OrderByDescending(e => e.Bytes))
             {
                 var row = new DownloadRow(e, MaintenanceViewModel.SizeText(e.Bytes), e.Modified.ToString("d MMM yyyy", culture));
