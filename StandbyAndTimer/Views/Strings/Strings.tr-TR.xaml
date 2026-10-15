@@ -338,6 +338,7 @@
     <sys:String x:Key="Str_Maint_FreedSoFar">Şimdiye kadar boşaltılan: {0}  ›</sys:String>
     <sys:String x:Key="Str_Maint_HistoryTip">Bakım geçmişini görmek için tıkla</sys:String>
     <sys:String x:Key="Str_Maint_Choose">Seç…</sys:String>
+    <sys:String x:Key="Str_Maint_DownloadsHint">Geri Dönüşüm Kutusu'na gidecekleri seç</sys:String>
     <sys:String x:Key="Str_Maint_Rescan">Yenile</sys:String>
     <sys:String x:Key="Str_Maint_PowerPlan">Güç planı</sys:String>
     <sys:String x:Key="Str_Maint_PowerUnknown">bilinmiyor</sys:String>

@@ -338,6 +338,7 @@
     <sys:String x:Key="Str_Maint_FreedSoFar">Freed so far: {0}  ›</sys:String>
     <sys:String x:Key="Str_Maint_HistoryTip">Click to see the maintenance history</sys:String>
     <sys:String x:Key="Str_Maint_Choose">Choose…</sys:String>
+    <sys:String x:Key="Str_Maint_DownloadsHint">Pick files to send to the Recycle Bin</sys:String>
     <sys:String x:Key="Str_Maint_Rescan">Rescan</sys:String>
     <sys:String x:Key="Str_Maint_PowerPlan">Power plan</sys:String>
     <sys:String x:Key="Str_Maint_PowerUnknown">unknown</sys:String>

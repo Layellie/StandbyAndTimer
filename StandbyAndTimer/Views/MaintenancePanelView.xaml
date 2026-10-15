@@ -35,15 +35,18 @@
 
         <Grid Grid.Row="0" Grid.Column="0">
             <TextBlock Text="{DynamicResource Str_Maint_CleanupSection}" Style="{StaticResource PageSectionLabelStyle}"/>
-            <!-- Rescan: the sizes are read once on selection; this reads them again. -->
+            <!-- Rescan: the sizes are read once on selection; this reads them again.
+                 Sized and pulled up like Settings' log Refresh, so the label row keeps
+                 its height and both cards line up with the other pages. -->
             <Button Content="{DynamicResource Str_Maint_Rescan}" Command="{Binding RescanCommand}"
-                    Style="{StaticResource GhostButtonStyle}" Height="22" MinWidth="64" FontSize="11" Padding="8,0"
-                    HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,0,4"/>
+                    Style="{StaticResource GhostButtonStyle}" Height="20" Padding="10,0" FontSize="10"
+                    HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-3,0,4"/>
         </Grid>
         <TextBlock Grid.Row="0" Grid.Column="2" Text="{DynamicResource Str_Maint_WindowsSection}" Style="{StaticResource PageSectionLabelStyle}"/>
 
         <!-- ═══════════════ LEFT: CLEANUP ═══════════════ -->
-        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource SettingsGroupStyle}">
+        <!-- Margin 0: the cards reach the page bottom like the Status and Settings cards. -->
+        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource SettingsGroupStyle}" Margin="0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>  <!-- rows -->
@@ -88,23 +91,26 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <Grid Grid.Row="1" Margin="0,3" Background="Transparent" ToolTip="{DynamicResource Str_CleanTip_downloads}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <!-- No tick for Downloads; an invisible check box keeps the name in line with the rows above. -->
-                    <CheckBox Style="{StaticResource DarkCheckBoxStyle}" Visibility="Hidden" Focusable="False" IsTabStop="False"
-                              VerticalAlignment="Center"/>
-                    <TextBlock Grid.Column="1" Text="{DynamicResource Str_Clean_downloads}"
-                               Style="{StaticResource SettingTitleStyle}" VerticalAlignment="Center" Margin="6,0,10,0"/>
-                    <TextBlock Grid.Column="2" Text="{Binding DownloadsSizeText}" Style="{StaticResource ValueTextStyle}" Margin="0,0,8,0"/>
-                    <Button Grid.Column="3" Content="{DynamicResource Str_Maint_Choose}"
-                            Command="{Binding OpenDownloadsCommand}"
-                            Style="{StaticResource GhostButtonStyle}" Height="26" Padding="10,0" MinWidth="64"/>
-                </Grid>
+                <!-- Downloads: the user's own files, so its own small section under a
+                     divider: name and hint on the left, size and Choose on the right. -->
+                <StackPanel Grid.Row="1">
+                    <Border Height="1" Margin="0,6,0,6" Background="{DynamicResource SeparatorBrush}"/>
+                    <Grid Background="Transparent" ToolTip="{DynamicResource Str_CleanTip_downloads}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
+                            <TextBlock Text="{DynamicResource Str_Clean_downloads}" Style="{StaticResource SettingTitleStyle}"/>
+                            <TextBlock Text="{DynamicResource Str_Maint_DownloadsHint}" Style="{StaticResource ValueTextStyle}" FontSize="11"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" Text="{Binding DownloadsSizeText}" Style="{StaticResource ValueTextStyle}" Margin="0,0,10,0"/>
+                        <Button Grid.Column="2" Content="{DynamicResource Str_Maint_Choose}"
+                                Command="{Binding OpenDownloadsCommand}"
+                                Style="{StaticResource GhostButtonStyle}" Height="26" Padding="10,0" MinWidth="72" VerticalAlignment="Center"/>
+                    </Grid>
+                </StackPanel>
 
                 <Button Grid.Row="3" Margin="0,8,0,0" Height="32"
                         Content="{Binding CleanButtonText}"
@@ -123,48 +129,51 @@
         </Border>
 
         <!-- ═══════════════ RIGHT: WINDOWS ═══════════════ -->
-        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource SettingsGroupStyle}">
-            <StackPanel>
-                <Grid Margin="0,2,0,4" Background="Transparent" ToolTip="{DynamicResource Str_Maint_PowerTip}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
-                        <TextBlock Text="{DynamicResource Str_Maint_PowerPlan}" Style="{StaticResource SettingTitleStyle}"/>
-                        <TextBlock Text="{Binding PowerPlanText}" Style="{StaticResource ValueTextStyle}"/>
-                    </StackPanel>
-                    <Button Grid.Column="1" Content="{DynamicResource Str_Maint_Change}"
-                            Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.PowerOptions}"
-                            Style="{StaticResource GhostButtonStyle}" Height="26" Padding="10,0" MinWidth="72" VerticalAlignment="Center"/>
-                </Grid>
-
-                <Grid Margin="0,4" Background="Transparent" ToolTip="{DynamicResource Str_Maint_AdjustTip}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
-                        <TextBlock Text="{DynamicResource Str_Maint_VirtualMemory}" Style="{StaticResource SettingTitleStyle}"/>
-                        <TextBlock Text="{Binding PageFileText}" Style="{StaticResource ValueTextStyle}" TextWrapping="Wrap" TextTrimming="None"/>
-                    </StackPanel>
-                    <Button Grid.Column="1" Content="{DynamicResource Str_Maint_Adjust}"
-                            Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.VirtualMemory}"
-                            Style="{StaticResource GhostButtonStyle}" Height="26" Padding="10,0" MinWidth="72" VerticalAlignment="Center"/>
-                </Grid>
-
-                <Border Height="1" Margin="0,8,0,4" Background="{DynamicResource SeparatorBrush}"/>
-
-                <Button Content="{DynamicResource Str_Maint_OptimizeDrives}" ToolTip="{DynamicResource Str_Maint_OptimizeDrivesTip}"
-                        Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.OptimizeDrives}"
-                        Style="{StaticResource ToolButtonStyle}"/>
-                <Button Content="{DynamicResource Str_Maint_DiskCleanup}" ToolTip="{DynamicResource Str_Maint_DiskCleanupTip}"
-                        Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.DiskCleanup}"
-                        Style="{StaticResource ToolButtonStyle}"/>
-                <Button Content="{Binding RepairButtonText}" ToolTip="{DynamicResource Str_Maint_RepairTip}"
-                        Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.RepairSystemFiles}"
-                        Style="{StaticResource ToolButtonStyle}"/>
-            </StackPanel>
+        <!-- Info on top, Windows' tools at the bottom, empty space between. -->
+        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource SettingsGroupStyle}" Margin="0">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Bottom">
+                    <Border Height="1" Margin="0,0,0,4" Background="{DynamicResource SeparatorBrush}"/>
+                    <Button Content="{DynamicResource Str_Maint_OptimizeDrives}" ToolTip="{DynamicResource Str_Maint_OptimizeDrivesTip}"
+                            Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.OptimizeDrives}"
+                            Style="{StaticResource ToolButtonStyle}"/>
+                    <Button Content="{DynamicResource Str_Maint_DiskCleanup}" ToolTip="{DynamicResource Str_Maint_DiskCleanupTip}"
+                            Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.DiskCleanup}"
+                            Style="{StaticResource ToolButtonStyle}"/>
+                    <Button Content="{Binding RepairButtonText}" ToolTip="{DynamicResource Str_Maint_RepairTip}"
+                            Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.RepairSystemFiles}"
+                            Style="{StaticResource ToolButtonStyle}"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Top">
+                    <Grid Margin="0,2,0,4" Background="Transparent" ToolTip="{DynamicResource Str_Maint_PowerTip}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
+                            <TextBlock Text="{DynamicResource Str_Maint_PowerPlan}" Style="{StaticResource SettingTitleStyle}"/>
+                            <TextBlock Text="{Binding PowerPlanText}" Style="{StaticResource ValueTextStyle}"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="{DynamicResource Str_Maint_Change}"
+                                Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.PowerOptions}"
+                                Style="{StaticResource GhostButtonStyle}" Height="26" Padding="10,0" MinWidth="72" VerticalAlignment="Center"/>
+                    </Grid>
+    
+                    <Grid Margin="0,4" Background="Transparent" ToolTip="{DynamicResource Str_Maint_AdjustTip}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
+                            <TextBlock Text="{DynamicResource Str_Maint_VirtualMemory}" Style="{StaticResource SettingTitleStyle}"/>
+                            <TextBlock Text="{Binding PageFileText}" Style="{StaticResource ValueTextStyle}" TextWrapping="Wrap" TextTrimming="None"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="{DynamicResource Str_Maint_Adjust}"
+                                Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.VirtualMemory}"
+                                Style="{StaticResource GhostButtonStyle}" Height="26" Padding="10,0" MinWidth="72" VerticalAlignment="Center"/>
+                    </Grid>
+                </StackPanel>
+            </DockPanel>
         </Border>
     </Grid>
 </UserControl>
