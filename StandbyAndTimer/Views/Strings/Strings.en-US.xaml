@@ -360,4 +360,22 @@
     <sys:String x:Key="Str_Status_CleanDone">Cleanup done: {0} freed</sys:String>
     <sys:String x:Key="Str_Status_ToolFailed">Could not open {0}; details in the log</sys:String>
 
+    <sys:String x:Key="Str_Dl_Title">Downloads</sys:String>
+    <sys:String x:Key="Str_Dl_Subtitle">Chosen items go to the Recycle Bin, where you can restore them</sys:String>
+    <sys:String x:Key="Str_Dl_All">Select all</sys:String>
+    <sys:String x:Key="Str_Dl_None">Select none</sys:String>
+    <sys:String x:Key="Str_Dl_Selected">{0} selected · {1}</sys:String>
+    <sys:String x:Key="Str_Dl_Move">Move to Recycle Bin</sys:String>
+    <sys:String x:Key="Str_Dl_Loading">Reading the folder…</sys:String>
+    <sys:String x:Key="Str_Dl_Empty">Nothing in Downloads.</sys:String>
+    <sys:String x:Key="Str_Dl_NotFound">Downloads folder not found.</sys:String>
+    <sys:String x:Key="Str_Dl_Moved">{0} moved to the Recycle Bin</sys:String>
+    <sys:String x:Key="Str_Dl_Failed">{0} items could not be moved</sys:String>
+    <sys:String x:Key="Str_Dl_Close">Close</sys:String>
+    <sys:String x:Key="Str_MHist_Title">Maintenance history</sys:String>
+    <sys:String x:Key="Str_MHist_Subtitle">What the Maintenance tab cleaned; kept across restarts</sys:String>
+    <sys:String x:Key="Str_MHist_Count">{0} cleanups</sys:String>
+    <sys:String x:Key="Str_MHist_Recent">LAST 20</sys:String>
+    <sys:String x:Key="Str_MHist_Empty">Nothing cleaned yet.</sys:String>
+
 </ResourceDictionary>
