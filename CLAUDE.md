@@ -62,6 +62,10 @@ Services/                   ← implementations; the only layer that touches Win
   UpdateService             ← GitHub releases/latest, SHA-256 verified download to {app}\updates
   Tray/                     ← WinForms NotifyIcon + themed ContextMenuStrip (TrayMenuPalette)
   ThemeService / LocalizationService ← swap ResourceDictionary slot 1 (palette) / slot 2 (strings)
+  Maintenance/              ← Maintenance tab: ICleanupTarget rows (folder targets, Recycle Bin),
+                              SafeFolderCleaner (the only code that deletes files: never follows
+                              links, skips files in use), Downloads, power plan / page files,
+                              Windows tool launcher, cleanup-history.json
 
 Infrastructure/AppBootstrapper.cs ← Microsoft.Extensions.DependencyInjection, all singletons
 
@@ -70,6 +74,8 @@ ViewModels/
   SettingsViewModel         ← Settings tab (also export / import, updates, hotkey rebinding)
   SystemViewModel           ← System settings panel behind the Administrator badge (settings that
                               change Windows) + the one-time GlobalTimer question
+  MaintenanceViewModel      ← Maintenance tab: scans only while the tab is shown, clean selected,
+                              history, Windows tools; DownloadsViewModel lives while its dialog is open
 
 Views/
   Styles/Theme.xaml         ← control styles; Palette.{Dark,Black,Light,White}.xaml hold the colours
