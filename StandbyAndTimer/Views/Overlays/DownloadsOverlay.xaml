@@ -38,8 +38,8 @@
 
                 <Grid Grid.Row="1" Margin="0,0,0,6">
                     <StackPanel Orientation="Horizontal">
-                        <Button Content="{DynamicResource Str_Dl_All}"  Command="{Binding SelectAllCommand}"  Style="{StaticResource GhostButtonStyle}" Height="26" MinWidth="80" Margin="0,0,6,0"/>
-                        <Button Content="{DynamicResource Str_Dl_None}" Command="{Binding SelectNoneCommand}" Style="{StaticResource GhostButtonStyle}" Height="26" MinWidth="80"/>
+                        <Button Content="{DynamicResource Str_Dl_All}"  Command="{Binding SelectAllCommand}"  Style="{StaticResource GhostButtonStyle}" Height="26" Padding="10,0" MinWidth="80" Margin="0,0,6,0"/>
+                        <Button Content="{DynamicResource Str_Dl_None}" Command="{Binding SelectNoneCommand}" Style="{StaticResource GhostButtonStyle}" Height="26" Padding="10,0" MinWidth="80"/>
                     </StackPanel>
                     <TextBlock Text="{Binding SelectedText}" FontSize="12" Foreground="{DynamicResource AppFgDim}"
                                HorizontalAlignment="Right" VerticalAlignment="Center"/>

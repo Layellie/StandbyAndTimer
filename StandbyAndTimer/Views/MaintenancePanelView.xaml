@@ -37,7 +37,7 @@
             <TextBlock Text="{DynamicResource Str_Maint_CleanupSection}" Style="{StaticResource PageSectionLabelStyle}"/>
             <!-- Rescan: the sizes are read once on selection; this reads them again. -->
             <Button Content="{DynamicResource Str_Maint_Rescan}" Command="{Binding RescanCommand}"
-                    Style="{StaticResource GhostButtonStyle}" Height="22" MinWidth="64" FontSize="11"
+                    Style="{StaticResource GhostButtonStyle}" Height="22" MinWidth="64" FontSize="11" Padding="8,0"
                     HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,0,4"/>
         </Grid>
         <TextBlock Grid.Row="0" Grid.Column="2" Text="{DynamicResource Str_Maint_WindowsSection}" Style="{StaticResource PageSectionLabelStyle}"/>
@@ -68,9 +68,19 @@
                                           Style="{StaticResource DarkCheckBoxStyle}"
                                           VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="1" Text="{Binding Name}"
-                                           Style="{StaticResource SettingTitleStyle}"
                                            TextTrimming="CharacterEllipsis"
-                                           VerticalAlignment="Center" Margin="6,0,10,0"/>
+                                           VerticalAlignment="Center" Margin="6,0,10,0">
+                                    <!-- Not found / blocked by a game: dimmed like its disabled check box. -->
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource SettingTitleStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding CanClean}" Value="False">
+                                                    <Setter Property="Opacity" Value="0.5"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
                                 <TextBlock Grid.Column="2" Text="{Binding DisplayText}"
                                            Style="{StaticResource ValueTextStyle}" MaxWidth="190"/>
                             </Grid>
@@ -80,17 +90,20 @@
 
                 <Grid Grid.Row="1" Margin="0,3" Background="Transparent" ToolTip="{DynamicResource Str_CleanTip_downloads}">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="22"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
+                    <!-- No tick for Downloads; an invisible check box keeps the name in line with the rows above. -->
+                    <CheckBox Style="{StaticResource DarkCheckBoxStyle}" Visibility="Hidden" Focusable="False" IsTabStop="False"
+                              VerticalAlignment="Center"/>
                     <TextBlock Grid.Column="1" Text="{DynamicResource Str_Clean_downloads}"
-                               Style="{StaticResource SettingTitleStyle}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                               Style="{StaticResource SettingTitleStyle}" VerticalAlignment="Center" Margin="6,0,10,0"/>
                     <TextBlock Grid.Column="2" Text="{Binding DownloadsSizeText}" Style="{StaticResource ValueTextStyle}" Margin="0,0,8,0"/>
                     <Button Grid.Column="3" Content="{DynamicResource Str_Maint_Choose}"
                             Command="{Binding OpenDownloadsCommand}"
-                            Style="{StaticResource GhostButtonStyle}" Height="26" MinWidth="64"/>
+                            Style="{StaticResource GhostButtonStyle}" Height="26" Padding="10,0" MinWidth="64"/>
                 </Grid>
 
                 <Button Grid.Row="3" Margin="0,8,0,0" Height="32"
@@ -123,7 +136,7 @@
                     </StackPanel>
                     <Button Grid.Column="1" Content="{DynamicResource Str_Maint_Change}"
                             Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.PowerOptions}"
-                            Style="{StaticResource GhostButtonStyle}" Height="26" MinWidth="72" VerticalAlignment="Center"/>
+                            Style="{StaticResource GhostButtonStyle}" Height="26" Padding="10,0" MinWidth="72" VerticalAlignment="Center"/>
                 </Grid>
 
                 <Grid Margin="0,4" Background="Transparent" ToolTip="{DynamicResource Str_Maint_AdjustTip}">
@@ -137,7 +150,7 @@
                     </StackPanel>
                     <Button Grid.Column="1" Content="{DynamicResource Str_Maint_Adjust}"
                             Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.VirtualMemory}"
-                            Style="{StaticResource GhostButtonStyle}" Height="26" MinWidth="72" VerticalAlignment="Center"/>
+                            Style="{StaticResource GhostButtonStyle}" Height="26" Padding="10,0" MinWidth="72" VerticalAlignment="Center"/>
                 </Grid>
 
                 <Border Height="1" Margin="0,8,0,4" Background="{DynamicResource SeparatorBrush}"/>
