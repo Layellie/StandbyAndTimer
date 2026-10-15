@@ -13,33 +13,36 @@ namespace StandbyAndTimer.Services.Maintenance;
 /// </summary>
 internal sealed class DownloadsService : IDownloadsService
 {
-    private readonly string? _folder;
+    private readonly Lazy<string?> _folderLookup;
     private readonly Func<string, bool> _recycle;
 
-    // DI uses this one (it only sees public constructors).
-    public DownloadsService() : this(FindDownloads()) { }
+    // DI uses this one (it only sees public constructors). DI builds it at
+    // start-up, so the shell lookup waits for the first use of the tab.
+    public DownloadsService() : this(FindDownloads) { }
 
     // Tests: a temp folder, and a fake recycler (true = moved).
-    internal DownloadsService(string? folder, Func<string, bool>? recycle = null)
+    internal DownloadsService(string? folder, Func<string, bool>? recycle = null) : this(() => folder, recycle) { }
+
+    internal DownloadsService(Func<string?> findFolder, Func<string, bool>? recycle = null)
     {
-        _folder  = folder is not null && Directory.Exists(folder) ? folder : null;
-        _recycle = recycle ?? SendToRecycleBin;
+        _folderLookup = new Lazy<string?>(() => findFolder() is { } f && Directory.Exists(f) ? f : null);
+        _recycle      = recycle ?? SendToRecycleBin;
     }
 
-    public string? FolderPath => _folder;
+    public string? FolderPath => _folderLookup.Value;
 
     public async Task<CleanupScan> ScanAsync(CancellationToken ct)
     {
-        if (_folder is null) return CleanupScan.NotFound;
+        if (FolderPath is null) return CleanupScan.NotFound;
         var list = await ListAsync(ct).ConfigureAwait(false);
         return new CleanupScan(true, list.Sum(e => e.Bytes), list.Count);
     }
 
     public Task<IReadOnlyList<DownloadEntry>> ListAsync(CancellationToken ct) => Task.Run<IReadOnlyList<DownloadEntry>>(() =>
     {
-        if (_folder is null) return [];
+        if (FolderPath is not { } folder) return [];
         var list = new List<DownloadEntry>();
-        foreach (var info in new DirectoryInfo(_folder).EnumerateFileSystemInfos())
+        foreach (var info in new DirectoryInfo(folder).EnumerateFileSystemInfos())
         {
             ct.ThrowIfCancellationRequested();
             FileAttributes a;

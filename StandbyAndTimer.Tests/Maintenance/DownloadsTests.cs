@@ -85,6 +85,21 @@ public sealed class DownloadsTests : IDisposable
         Assert.Equal(CleanupScan.NotFound, await svc.ScanAsync(default));
     }
 
+    // DI builds the service at start-up: the shell lookup must wait for first use.
+    [Fact]
+    public async Task The_folder_is_looked_up_on_first_use_not_at_construction()
+    {
+        Make("a.bin", 1);
+        int lookups = 0;
+
+        var svc = new DownloadsService(() => { lookups++; return _dir; });
+        Assert.Equal(0, lookups);
+
+        await svc.ListAsync(default);
+        Assert.Equal(_dir, svc.FolderPath);
+        Assert.Equal(1, lookups);
+    }
+
     // ── DownloadsViewModel ───────────────────────────────────────────────────
 
     private sealed class FakeDownloads(params DownloadEntry[] entries) : IDownloadsService
