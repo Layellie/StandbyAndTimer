@@ -391,6 +391,9 @@ public static class Program
             new FakeCleanupTarget("windows-update", new CleanupScan(true, 2_300L << 20, 40)),
             new FakeCleanupTarget("delivery-optimization", new CleanupScan(true, 1_300L << 20, 30)),
             new FakeCleanupTarget("crash-dumps", new CleanupScan(true, 410L << 20, 12)),
+            new FakeCleanupTarget("system-crash-dumps", new CleanupScan(true, 2_100L << 20, 4)),
+            new FakeCleanupTarget("windows-logs", new CleanupScan(true, 640L << 20, 90)),
+            new FakeCleanupTarget("windows-old", new CleanupScan(true, 18_500L << 20, 98_000)),
             new FakeCleanupTarget("recycle-bin", new CleanupScan(true, 310L << 20, 25)),
         ], new MemCleanupStore(), new FakeSystemInfo(), Null<ISystemToolLauncher>(), new FakeDownloads(), loc);
         var vm = new MainViewModel(Null<ITimerResolutionService>(), Null<IStandbyPurgeService>(),
@@ -678,6 +681,7 @@ public static class Program
             SetField(settingsVm, "_timerIdleOffMinutes", 25);
             SetField(settingsVm, "_isOpen", false);
             SetField(vm, "_statusMessage", loc.GetString("Str_Status_Ready"));
+            SetField(vm, "_refreshRateText", "144 Hz");   // the timer card's refresh rate (no display service here)
             SetField(vm, "_timerLock", theme is "Light" or "Black" ? TimerLockMode.InGame : TimerLockMode.Unlocked);   // show two lock states
 
             var w = new MainWindow(vm)
@@ -981,6 +985,21 @@ public static class Program
             Save(root, Path.Combine(outDir, $"{tag}-6-mhistory.png"));
             failures += CheckLayout(root, tag + " maintenance history");
             maintenance.CloseHistoryCommand.Execute(null);
+            maintenance.OpenShadersCommand.Execute(null);
+            Pump();
+            Save(root, Path.Combine(outDir, $"{tag}-6-shaders.png"));
+            failures += CheckLayout(root, tag + " shader caches");
+            maintenance.CloseShadersCommand.Execute(null);
+            Pump();
+            {
+                // The divider above Downloads and the one above Windows' tools line up (spec §10.5).
+                var page = Walk(root).OfType<StandbyAndTimer.Views.MaintenancePanelView>().Single();
+                double left  = ((FrameworkElement)page.FindName("CleanupDivider")).TranslatePoint(new Point(0, 0), root).Y;
+                double right = ((FrameworkElement)page.FindName("ToolsDivider")).TranslatePoint(new Point(0, 0), root).Y;
+                bool ok = Math.Abs(left - right) < 0.5;
+                if (!ok) failures++;
+                Log($"  {(ok ? "OK  " : "FAIL")} [{tag}] maintenance dividers line up ({left:0.#} / {right:0.#})");
+            }
             vm.SelectedTab = MainViewModel.StatusTab;
             Pump();
 

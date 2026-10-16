@@ -44,6 +44,9 @@ internal static class AppBootstrapper
         services.AddSingleton<ICleanupTarget>(_ => CleanupTargets.WindowsUpdate());
         services.AddSingleton<ICleanupTarget, DeliveryOptimizationTarget>();
         services.AddSingleton<ICleanupTarget>(_ => CleanupTargets.CrashDumps());
+        services.AddSingleton<ICleanupTarget>(_ => CleanupTargets.SystemCrashDumps());
+        services.AddSingleton<ICleanupTarget>(_ => CleanupTargets.WindowsLogs());
+        services.AddSingleton<ICleanupTarget, WindowsOldTarget>();
         services.AddSingleton<ICleanupTarget, RecycleBinTarget>();
         services.AddSingleton<ICleanupStatsStore,  CleanupStatsStore>();
         services.AddSingleton<ISystemInfoService,  SystemInfoService>();

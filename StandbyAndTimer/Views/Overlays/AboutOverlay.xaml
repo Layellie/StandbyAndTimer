@@ -225,6 +225,7 @@
                                 <ContentControl Content="{DynamicResource Str_HelpM_Downloads}" Style="{StaticResource HelpBulletStyle}"/>
                                 <ContentControl Content="{DynamicResource Str_HelpM_MoreCaches}" Style="{StaticResource HelpBulletStyle}"/>
                                 <ContentControl Content="{DynamicResource Str_HelpM_Leftovers}"  Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_WindowsOld}" Style="{StaticResource HelpBulletStyle}"/>
 
                                 <TextBlock Text="{DynamicResource Str_HelpM_WindowsTitle}" Style="{StaticResource HelpSectionStyle}"/>
                                 <ContentControl Content="{DynamicResource Str_HelpM_Power}"       Style="{StaticResource HelpBulletStyle}"/>

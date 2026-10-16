@@ -144,6 +144,22 @@
                 <ContentControl.Style>
                     <Style TargetType="ContentControl">
                         <Style.Triggers>
+                            <DataTrigger Binding="{Binding Maintenance.IsShadersVisible}" Value="True">
+                                <Setter Property="Content" Value="{Binding Maintenance}"/>
+                                <Setter Property="ContentTemplate">
+                                    <Setter.Value>
+                                        <DataTemplate><overlays:ShaderCachesOverlay/></DataTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ContentControl.Style>
+            </ContentControl>
+            <ContentControl Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="18" Focusable="False">
+                <ContentControl.Style>
+                    <Style TargetType="ContentControl">
+                        <Style.Triggers>
                             <DataTrigger Binding="{Binding Maintenance.IsHistoryVisible}" Value="True">
                                 <Setter Property="Content" Value="{Binding Maintenance}"/>
                                 <Setter Property="ContentTemplate">

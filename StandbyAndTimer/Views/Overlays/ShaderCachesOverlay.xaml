@@ -1,0 +1,66 @@
+<UserControl x:Class="StandbyAndTimer.Views.Overlays.ShaderCachesOverlay"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FontFamily="{StaticResource AppFont}" FontSize="13" FontWeight="SemiBold">
+
+    <!-- Shader caches chooser (DataContext = MaintenanceViewModel, spec §10.1):
+         each cache with its size and its own tick. The ticks are the cleanup
+         rows' own ticks, so "Clean selected" cleans exactly these. The dim
+         overlay closes it; clicks inside do not. -->
+    <Border Background="{DynamicResource ModalOverlayBrush}">
+        <Border.InputBindings>
+            <MouseBinding MouseAction="LeftClick" Command="{Binding CloseShadersCommand}"/>
+        </Border.InputBindings>
+        <Border HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="{DynamicResource Surface2Bg}" BorderBrush="{DynamicResource BorderColor}"
+                BorderThickness="1" CornerRadius="{StaticResource RadiusLarge}"
+                Padding="22,18,22,16" Width="440"
+                MouseLeftButtonDown="DialogMouseDown">
+            <StackPanel>
+                <StackPanel Margin="0,0,0,12">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="9" Height="9" Fill="{DynamicResource AccentPrimary}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="{DynamicResource Str_Clean_shader-caches}" FontSize="14" Foreground="{DynamicResource AppFg}"/>
+                    </StackPanel>
+                    <TextBlock Text="{DynamicResource Str_Shaders_Subtitle}" FontSize="12" FontWeight="Normal"
+                               Foreground="{DynamicResource AppFgDim}" Margin="17,0,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <Border Style="{StaticResource SettingsGroupStyle}" Margin="0" Padding="12,6">
+                    <ItemsControl ItemsSource="{Binding Shaders.Caches}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,4" Background="Transparent" ToolTip="{Binding Tip}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox IsChecked="{Binding IsChecked}" IsEnabled="{Binding CanClean}"
+                                              Style="{StaticResource DarkCheckBoxStyle}" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Name}" Margin="6,0,10,0"
+                                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource SettingTitleStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding CanClean}" Value="False">
+                                                        <Setter Property="Opacity" Value="0.5"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Grid.Column="2" Text="{Binding DisplayText}" FontSize="12"
+                                               Foreground="{DynamicResource AppFgDim}" VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Border>
+
+                <Button Content="{DynamicResource Str_Dl_Close}" Command="{Binding CloseShadersCommand}"
+                        Style="{StaticResource DarkButtonStyle}" HorizontalAlignment="Right" MinWidth="80" Height="30" Margin="0,14,0,0"/>
+            </StackPanel>
+        </Border>
+    </Border>
+</UserControl>
