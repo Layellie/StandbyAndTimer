@@ -341,8 +341,21 @@ public static class Program
         enc.Save(fs);
     }
 
+    // The tab highlight slides for 200 ms after a tab change: render the
+    // settled page, not a frame of the slide.
+    static void SettleAnimations(FrameworkElement fe)
+    {
+        for (int i = 0; i < 40 && Walk(fe).OfType<FrameworkElement>()
+                 .Any(e => e.RenderTransform is TranslateTransform t && t.HasAnimatedProperties); i++)
+        {
+            Pump();
+            System.Threading.Thread.Sleep(16);
+        }
+    }
+
     static void Save(FrameworkElement fe, string path)
     {
+        SettleAnimations(fe);
         var bmp = new RenderTargetBitmap((int)Math.Ceiling(fe.ActualWidth), (int)Math.Ceiling(fe.ActualHeight), 96, 96, PixelFormats.Pbgra32);
         bmp.Render(fe);
         var enc = new PngBitmapEncoder();
@@ -684,8 +697,9 @@ public static class Program
             SetField(vm, "_statusMessage", loc.GetString("Str_Status_Ready"));
             SetField(vm, "_refreshRateText", "144 Hz");   // the timer card's refresh rate (no display service here)
             // Two themes show the timer off: Windows' own 15.62 ms is the widest value next to the refresh rate.
-            SetField(vm, "_timerActive", theme is not ("Dark" or "Light"));
-            SetField(vm, "_actualTimerMs", theme is "Dark" or "Light" ? 15.625 : 0.5);
+            // Not Dark / Light: the README screenshots come from those and show the timer on.
+            SetField(vm, "_timerActive", theme is not ("Black" or "White"));
+            SetField(vm, "_actualTimerMs", theme is "Black" or "White" ? 15.625 : 0.5);
             SetField(vm, "_timerLock", theme is "Light" or "Black" ? TimerLockMode.InGame : TimerLockMode.Unlocked);   // show two lock states
 
             var w = new MainWindow(vm)
@@ -967,6 +981,18 @@ public static class Program
             // Maintenance tab: lazily built page, rows from the fake targets.
             vm.SelectedTab = MainViewModel.MaintenanceTab;
             Pump();
+            {
+                // The sliding highlight ends under the selected tab (200 ms slide).
+                for (int i = 0; i < 25; i++) { Pump(); System.Threading.Thread.Sleep(16); }
+                var pill = (FrameworkElement)tabs.Template.FindName("pill", tabs);
+                var host = (FrameworkElement)tabs.Template.FindName("host", tabs);
+                var item = (FrameworkElement)tabs.ItemContainerGenerator.ContainerFromIndex(MainViewModel.MaintenanceTab);
+                double pillX = ((System.Windows.Media.TranslateTransform)pill.RenderTransform).X;
+                double itemX = item.TranslatePoint(new Point(0, 0), host).X;
+                bool ok = Math.Abs(pillX - itemX) < 1 && Math.Abs(pill.ActualWidth - item.ActualWidth) < 1;
+                if (!ok) failures++;
+                Log($"  {(ok ? "OK  " : "FAIL")} [{tag}] tab highlight under the selected tab (pill {pillX:0.#}/{pill.ActualWidth:0.#}, tab {itemX:0.#}/{item.ActualWidth:0.#})");
+            }
             RefreshMaintenance();
             Pump();
             Save(root, Path.Combine(outDir, $"{tag}-6-maintenance.png"));

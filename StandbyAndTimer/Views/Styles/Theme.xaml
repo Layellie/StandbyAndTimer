@@ -1,6 +1,7 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:views="clr-namespace:StandbyAndTimer.Views">
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!--  STYLES                                                                -->
@@ -694,8 +695,30 @@
                                 CornerRadius="{StaticResource RadiusLarge}"
                                 Padding="3"
                                 Margin="0,0,0,12">
-                            <UniformGrid Rows="1" IsItemsHost="True"
-                                         KeyboardNavigation.TabIndex="1"/>
+                            <Grid>
+                                <!-- The selected tab's fill + accent bar as one piece
+                                     behind the headers: SegmentPill slides it to the
+                                     selected tab (200 ms, only while switching). -->
+                                <Border x:Name="pill"
+                                        Height="30"
+                                        HorizontalAlignment="Left"
+                                        Background="{DynamicResource AccentSubtle}"
+                                        CornerRadius="{StaticResource RadiusMedium}"
+                                        SnapsToDevicePixels="True"
+                                        IsHitTestVisible="False"
+                                        views:SegmentPill.Host="{Binding ElementName=host}"
+                                        views:SegmentPill.TabControl="{Binding RelativeSource={RelativeSource TemplatedParent}}">
+                                    <!-- AccentText, not the fill lime: on the light
+                                         theme the 2 px bar read yellow-green. -->
+                                    <Border Width="24" Height="2"
+                                            CornerRadius="1"
+                                            Background="{DynamicResource AccentText}"
+                                            VerticalAlignment="Bottom"
+                                            Margin="0,0,0,3"/>
+                                </Border>
+                                <UniformGrid x:Name="host" Rows="1" IsItemsHost="True"
+                                             KeyboardNavigation.TabIndex="1"/>
+                            </Grid>
                         </Border>
                         <ContentPresenter Grid.Row="1"
                                           x:Name="PART_SelectedContentHost"
@@ -734,19 +757,12 @@
                             CornerRadius="{StaticResource RadiusMedium}"
                             SnapsToDevicePixels="True">
                         <Grid>
+                            <!-- The selected fill and accent bar are the TabControl's
+                                 sliding highlight (SegmentPill), not drawn here. -->
                             <ContentPresenter ContentSource="Header"
                                               HorizontalAlignment="Center"
                                               VerticalAlignment="Center"
                                               RecognizesAccessKey="True"/>
-                            <!-- AccentText, not the fill lime: on the light
-                                 theme the 2 px bar read yellow-green. -->
-                            <Border x:Name="indicator"
-                                    Width="24" Height="2"
-                                    CornerRadius="1"
-                                    Background="{DynamicResource AccentText}"
-                                    VerticalAlignment="Bottom"
-                                    Margin="0,0,0,3"
-                                    Visibility="Collapsed"/>
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -759,8 +775,6 @@
                             <Setter Property="Foreground" Value="{DynamicResource AppFg}"/>
                         </MultiTrigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="bd"        Property="Background" Value="{DynamicResource AccentSubtle}"/>
-                            <Setter TargetName="indicator" Property="Visibility" Value="Visible"/>
                             <Setter Property="Foreground" Value="{DynamicResource AppFg}"/>
                             <Setter Property="FontWeight" Value="SemiBold"/>
                         </Trigger>
