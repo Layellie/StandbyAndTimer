@@ -382,9 +382,14 @@ public static class Program
         [
             new FakeCleanupTarget("nvidia-shader", new CleanupScan(true, 1_200L << 20, 3400), blocked: true),
             new FakeCleanupTarget("amd-shader", CleanupScan.NotFound, blocked: true),
+            new FakeCleanupTarget("directx-shader", new CleanupScan(true, 320L << 20, 900), blocked: true),
+            new FakeCleanupTarget("steam-shader", new CleanupScan(true, 2_400L << 20, 5200), blocked: true),
+            new FakeCleanupTarget("driver-leftovers", new CleanupScan(true, 1_100L << 20, 700)),
             new FakeCleanupTarget("user-temp", new CleanupScan(true, 845L << 20, 1200)),
             new FakeCleanupTarget("windows-temp", new CleanupScan(true, 120L << 20, 300)),
             new FakeCleanupTarget("windows-update", new CleanupScan(true, 2_300L << 20, 40)),
+            new FakeCleanupTarget("delivery-optimization", new CleanupScan(true, 1_300L << 20, 30)),
+            new FakeCleanupTarget("crash-dumps", new CleanupScan(true, 410L << 20, 12)),
             new FakeCleanupTarget("recycle-bin", new CleanupScan(true, 310L << 20, 25)),
         ], new MemCleanupStore(), new FakeSystemInfo(), Null<ISystemToolLauncher>(), new FakeDownloads(), loc);
         var vm = new MainViewModel(Null<ITimerResolutionService>(), Null<IStandbyPurgeService>(),

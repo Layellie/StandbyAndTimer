@@ -11,6 +11,17 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="TextTrimming"      Value="CharacterEllipsis"/>
         </Style>
+        <Style x:Key="GamingRowStyle" TargetType="Grid">
+            <Setter Property="Margin"     Value="0,2"/>
+            <Setter Property="Background" Value="Transparent"/>   <!-- the whole row shows the tooltip -->
+        </Style>
+        <Style x:Key="OpenButtonStyle" TargetType="Button" BasedOn="{StaticResource GhostButtonStyle}">
+            <Setter Property="Height"            Value="24"/>
+            <Setter Property="Padding"           Value="8,0"/>
+            <Setter Property="FontSize"          Value="11"/>
+            <Setter Property="MinWidth"          Value="56"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
         <Style x:Key="ToolButtonStyle" TargetType="Button" BasedOn="{StaticResource GhostButtonStyle}">
             <Setter Property="Height"                     Value="30"/>
             <Setter Property="Margin"                     Value="0,4,0,0"/>
@@ -60,7 +71,8 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <!-- Transparent background: the whole row shows the tooltip. -->
-                            <Grid Margin="0,3" Background="Transparent" ToolTip="{Binding Tip}">
+                            <!-- 2 px apart: eleven rows fit the fixed window (spec §9.2; 2.5 px was 11 px too tall). -->
+                            <Grid Margin="0,2" Background="Transparent" ToolTip="{Binding Tip}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
@@ -158,7 +170,7 @@
                                 Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.PowerOptions}"
                                 Style="{StaticResource GhostButtonStyle}" Height="26" Padding="10,0" MinWidth="72" VerticalAlignment="Center"/>
                     </Grid>
-    
+
                     <Grid Margin="0,4" Background="Transparent" ToolTip="{DynamicResource Str_Maint_AdjustTip}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -171,6 +183,54 @@
                         <Button Grid.Column="1" Content="{DynamicResource Str_Maint_Adjust}"
                                 Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.VirtualMemory}"
                                 Style="{StaticResource GhostButtonStyle}" Height="26" Padding="10,0" MinWidth="72" VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <!-- Gaming settings (spec §9.3): name, state, and Open for
+                         Windows' own page. The app changes nothing here. -->
+                    <Border Height="1" Margin="0,6,0,4" Background="{DynamicResource SeparatorBrush}"/>
+                    <Grid Style="{StaticResource GamingRowStyle}" ToolTip="{DynamicResource Str_Maint_HagsTip}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Str_Maint_Hags}" Style="{StaticResource SettingTitleStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="1" Text="{Binding HagsText}" Style="{StaticResource ValueTextStyle}" Margin="8,0,10,0"/>
+                        <Button Grid.Column="2" Content="{DynamicResource Str_Maint_Open}" Style="{StaticResource OpenButtonStyle}"
+                                Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.GraphicsSettings}"/>
+                    </Grid>
+                    <Grid Style="{StaticResource GamingRowStyle}" ToolTip="{DynamicResource Str_Maint_RecordingTip}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Str_Maint_Recording}" Style="{StaticResource SettingTitleStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="1" Text="{Binding RecordingText}" Style="{StaticResource ValueTextStyle}" Margin="8,0,10,0"/>
+                        <Button Grid.Column="2" Content="{DynamicResource Str_Maint_Open}" Style="{StaticResource OpenButtonStyle}"
+                                Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.CaptureSettings}"/>
+                    </Grid>
+                    <Grid Style="{StaticResource GamingRowStyle}" ToolTip="{DynamicResource Str_Maint_MemoryIntegrityTip}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Str_Maint_MemoryIntegrity}" Style="{StaticResource SettingTitleStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="1" Text="{Binding MemoryIntegrityText}" Style="{StaticResource ValueTextStyle}" Margin="8,0,10,0"/>
+                        <Button Grid.Column="2" Content="{DynamicResource Str_Maint_Open}" Style="{StaticResource OpenButtonStyle}"
+                                Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.CoreIsolation}"/>
+                    </Grid>
+                    <Grid Style="{StaticResource GamingRowStyle}" ToolTip="{DynamicResource Str_Maint_GameModeTip}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Str_Maint_GameMode}" Style="{StaticResource SettingTitleStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="1" Text="{Binding GameModeText}" Style="{StaticResource ValueTextStyle}" Margin="8,0,10,0"/>
+                        <Button Grid.Column="2" Content="{DynamicResource Str_Maint_Open}" Style="{StaticResource OpenButtonStyle}"
+                                Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.GameModeSettings}"/>
                     </Grid>
                 </StackPanel>
             </DockPanel>

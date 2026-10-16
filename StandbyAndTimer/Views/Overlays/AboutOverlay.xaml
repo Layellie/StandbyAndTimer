@@ -223,12 +223,15 @@
                                 <ContentControl Content="{DynamicResource Str_HelpM_Update}"    Style="{StaticResource HelpBulletStyle}"/>
                                 <ContentControl Content="{DynamicResource Str_HelpM_Bin}"       Style="{StaticResource HelpBulletStyle}"/>
                                 <ContentControl Content="{DynamicResource Str_HelpM_Downloads}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_MoreCaches}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_Leftovers}"  Style="{StaticResource HelpBulletStyle}"/>
 
                                 <TextBlock Text="{DynamicResource Str_HelpM_WindowsTitle}" Style="{StaticResource HelpSectionStyle}"/>
                                 <ContentControl Content="{DynamicResource Str_HelpM_Power}"       Style="{StaticResource HelpBulletStyle}"/>
                                 <ContentControl Content="{DynamicResource Str_HelpM_Optimize}"    Style="{StaticResource HelpBulletStyle}"/>
                                 <ContentControl Content="{DynamicResource Str_HelpM_DiskCleanup}" Style="{StaticResource HelpBulletStyle}"/>
                                 <ContentControl Content="{DynamicResource Str_HelpM_Repair}"      Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_Gaming}"      Style="{StaticResource HelpBulletStyle}"/>
 
                                 <TextBlock Text="{DynamicResource Str_HelpM_NoteTitle}" Style="{StaticResource HelpSectionStyle}"/>
                                 <ContentControl Content="{DynamicResource Str_HelpM_Safety}"  Style="{StaticResource HelpBulletStyle}"/>
