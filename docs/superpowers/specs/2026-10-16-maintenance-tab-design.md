@@ -342,3 +342,58 @@ The release is blocked unless all of these hold:
 2. The user tests it; fixes follow as `beta2…` as needed.
 3. On the user's approval, `3.0.0` ships as the normal release, with the README and
    screenshots updated (`UiRender --docs` adds the Maintenance tab).
+
+## 9. Additions after the first install (decided 2026-10-16)
+
+The user installed the first build, asked for layout fixes (done: cards line up
+with the other pages, Windows' tools at the bottom of their card, Downloads as
+its own section) and chose these additions.
+
+### 9.1 New cleanup rows
+
+New ids, persisted, never renamed; appended after the existing ones.
+
+| Id | Locations | Rules |
+|---|---|---|
+| `directx-shader` | `%LOCALAPPDATA%\D3DSCache` | Blocked while a listed game runs; not ticked by default |
+| `steam-shader` | `steamapps\shadercache` of every Steam library (`HKCU\Software\Valve\Steam\SteamPath`, `steamapps\libraryfolders.vdf`), read at each scan | Blocked while a listed game runs; not ticked by default |
+| `driver-leftovers` | `C:\NVIDIA`, `C:\AMD` (system drive) — extracted driver installers | Not ticked by default |
+| `delivery-optimization` | `%SystemRoot%\ServiceProfiles\NetworkService\AppData\Local\Microsoft\Windows\DeliveryOptimization\Cache` (readable elevated) | Cleaned with Windows' own `Delete-DeliveryOptimizationCache -Force` (powershell.exe from System32, fixed arguments), not by deleting files; freed = size before − size after. Not ticked by default |
+| `crash-dumps` | `%LOCALAPPDATA%\CrashDumps`, `%LOCALAPPDATA%\Microsoft\Windows\WER\ReportArchive`, `…\ReportQueue`, `%ProgramData%\Microsoft\Windows\WER\ReportArchive`, `…\ReportQueue` | Not ticked by default |
+
+Row order: NVIDIA, AMD, DirectX, Steam shader caches; driver leftovers; user
+temp, Windows temp, Windows Update, Delivery Optimization; crash dumps; Recycle
+Bin.
+
+A saved `CleanupSelection` keeps its meaning: the new ids are unticked for
+existing users; fresh installs get the §2 defaults.
+
+### 9.2 Every row stays visible
+
+The user decided against hiding rows that are not on this PC: every row is
+always shown, a target with no folders shows "not found" as before. To fit
+eleven rows in the fixed window the row spacing goes from 3 px to 2.5 px
+(2 px if 2.5 does not fit); UiRender checks it.
+
+### 9.3 New Windows rows
+
+One line each: name, state, and a button that opens Windows' own page. The app
+changes nothing itself. Read each time the tab is selected (registry, under a
+millisecond).
+
+| Row | State from | Button opens |
+|---|---|---|
+| Hardware-accelerated GPU scheduling | `HKLM\SYSTEM\CurrentControlSet\Control\GraphicsDrivers\HwSchMode`: 2 on, 1 off, missing "Windows default" | `ms-settings:display-advancedgraphics` |
+| Background recording | `HKCU\Software\Microsoft\Windows\CurrentVersion\GameDVR`: `AppCaptureEnabled` ≠ 0 and `HistoricalCaptureEnabled` = 1 → on; else off | `ms-settings:gaming-captures` |
+| Memory integrity | `HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity\Enabled`: 1 on, else off | `windowsdefender://coreisolation` |
+| Game Mode | `HKCU\Software\Microsoft\GameBar\AutoGameModeEnabled`: 0 off, else on (Windows' default) | `ms-settings:gaming-gamemode` |
+
+The pages open through `%SystemRoot%\explorer.exe <fixed URI>`; the tooltips
+say what each setting costs or protects (memory integrity is a security
+feature: the tooltip says so and the app never suggests turning it off).
+
+### 9.4 Not added
+
+- A registry cleaner: Windows has none of its own, and third-party ones do not
+  help (§1).
+- Prefetch cleaning, DNS flushing, "RAM cleaners".
