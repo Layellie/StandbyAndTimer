@@ -79,9 +79,31 @@ internal static class CleanupTargets
             return SteamShaderRoots(steam, ReadLibraryFolders(steam));
         }, blockedWhileGameRuns: true);
 
-    /// <summary>Driver installers that NVIDIA and AMD extract to the system drive and leave there.</summary>
-    public static FolderCleanupTarget DriverLeftovers() =>
-        new(CleanupTargetIds.DriverLeftovers, [Path.Combine(SystemDrive, "NVIDIA"), Path.Combine(SystemDrive, "AMD")]);
+    /// <summary>Logs keep the files written in the last 24 hours (today's troubleshooting).</summary>
+    internal static readonly TimeSpan LogKeepWindow = TimeSpan.FromHours(24);
+
+    /// <summary>
+    /// Driver installers that NVIDIA and AMD extract to the system drive and
+    /// leave there, and the driver packages the NVIDIA app downloaded and kept.
+    /// </summary>
+    public static FolderCleanupTarget DriverLeftovers() => new(CleanupTargetIds.DriverLeftovers,
+    [
+        Path.Combine(SystemDrive, "NVIDIA"),
+        Path.Combine(SystemDrive, "AMD"),
+        Path.Combine(Common, "NVIDIA Corporation", "Downloader"),
+    ]);
+
+    /// <summary>Blue-screen dumps (MEMORY.DMP is a file root) and GPU driver reset reports.</summary>
+    public static FolderCleanupTarget SystemCrashDumps() => new(CleanupTargetIds.SystemCrashDumps,
+    [
+        Path.Combine(Windows, "MEMORY.DMP"),
+        Path.Combine(Windows, "Minidump"),
+        Path.Combine(Windows, "LiveKernelReports"),
+    ]);
+
+    /// <summary>Servicing logs that can grow to GBs after a broken update.</summary>
+    public static FolderCleanupTarget WindowsLogs() =>
+        new(CleanupTargetIds.WindowsLogs, [Path.Combine(Windows, "Logs", "CBS"), Path.Combine(Windows, "Logs", "DISM")], LogKeepWindow);
 
     public static FolderCleanupTarget UserTemp() =>
         new(CleanupTargetIds.UserTemp, [Path.TrimEndingDirectorySeparator(Path.GetTempPath())], TempKeepWindow);

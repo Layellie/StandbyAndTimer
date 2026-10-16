@@ -144,4 +144,39 @@ public sealed class SafeFolderCleanerTests : IDisposable
 
         Assert.Throws<OperationCanceledException>(() => SafeFolderCleaner.Scan([root], null, Now, cts.Token));
     }
+
+    // ── File roots (MEMORY.DMP) ─────────────────────────────────────────────
+
+    [Fact]
+    public void A_file_root_is_counted_and_deleted_with_the_same_rules()
+    {
+        string dump = File_("MEMORY.DMP", 700);
+        string fresh = File_("fresh.dmp", 30, Now.AddHours(-1));
+
+        var scan = SafeFolderCleaner.Scan([dump, fresh], TimeSpan.FromHours(24), Now, default);
+        var result = SafeFolderCleaner.Clean([dump, fresh], TimeSpan.FromHours(24), Now, default);
+
+        Assert.Equal(new Core.Models.CleanupScan(true, 700, 1), scan);
+        Assert.Equal(new Core.Models.CleanupResult(700, 1, 0), result);
+        Assert.False(File.Exists(dump));
+        Assert.True(File.Exists(fresh));
+    }
+
+    [Fact]
+    public void A_file_root_that_is_a_link_is_never_followed()
+    {
+        string target = File_("outside/real.dmp", 100);
+        string link = Path.Combine(_dir, "MEMORY.DMP");
+        try { File.CreateSymbolicLink(link, target); }
+        catch (IOException) { return; }                 // no symlink rights on this machine: nothing to test
+        catch (UnauthorizedAccessException) { return; }
+
+        var scan = SafeFolderCleaner.Scan([link], null, Now, default);
+        var result = SafeFolderCleaner.Clean([link], null, Now, default);
+
+        Assert.Equal(0, scan.Bytes);
+        Assert.Equal(Core.Models.CleanupResult.Nothing, result);
+        Assert.True(File.Exists(target));
+        File.Delete(link);
+    }
 }

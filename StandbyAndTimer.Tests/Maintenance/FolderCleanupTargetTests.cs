@@ -131,12 +131,41 @@ public sealed class FolderCleanupTargetTests : IDisposable
 
         Assert.Equal(CleanupTargetIds.DriverLeftovers, CleanupTargets.DriverLeftovers().Id);
         Assert.False(CleanupTargets.DriverLeftovers().BlockedWhileGameRuns);
-        Assert.Equal([Path.Combine(drive, "NVIDIA"), Path.Combine(drive, "AMD")], CleanupTargets.DriverLeftovers().Roots);
+        Assert.Equal([Path.Combine(drive, "NVIDIA"), Path.Combine(drive, "AMD"), Path.Combine(common, "NVIDIA Corporation", "Downloader")],
+                     CleanupTargets.DriverLeftovers().Roots);
 
         Assert.Equal(CleanupTargetIds.CrashDumps, CleanupTargets.CrashDumps().Id);
         Assert.False(CleanupTargets.CrashDumps().BlockedWhileGameRuns);
         Assert.Contains(Path.Combine(local, "CrashDumps"), CleanupTargets.CrashDumps().Roots);
         Assert.Contains(Path.Combine(common, "Microsoft", "Windows", "WER", "ReportArchive"), CleanupTargets.CrashDumps().Roots);
         Assert.Contains(Path.Combine(local, "Microsoft", "Windows", "WER", "ReportQueue"), CleanupTargets.CrashDumps().Roots);
+    }
+
+    [Fact]
+    public void Round_two_targets_have_their_ids_locations_and_rules()
+    {
+        string windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+        string common = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+
+        Assert.Equal(CleanupTargetIds.SystemCrashDumps, CleanupTargets.SystemCrashDumps().Id);
+        Assert.Equal([Path.Combine(windows, "MEMORY.DMP"), Path.Combine(windows, "Minidump"), Path.Combine(windows, "LiveKernelReports")],
+                     CleanupTargets.SystemCrashDumps().Roots);
+
+        Assert.Equal(CleanupTargetIds.WindowsLogs, CleanupTargets.WindowsLogs().Id);
+        Assert.Equal([Path.Combine(windows, "Logs", "CBS"), Path.Combine(windows, "Logs", "DISM")], CleanupTargets.WindowsLogs().Roots);
+
+        Assert.Contains(Path.Combine(common, "NVIDIA Corporation", "Downloader"), CleanupTargets.DriverLeftovers().Roots);
+    }
+
+    [Fact]
+    public async Task Windows_logs_keep_todays_files()
+    {
+        string root = Path.Combine(_dir, "CBS");
+        Directory.CreateDirectory(root);
+        File.WriteAllBytes(Path.Combine(root, "CBS.log"), new byte[10]);   // written just now
+        var t = new FolderCleanupTarget("x", [root], CleanupTargets.TempKeepWindow);
+
+        Assert.Equal(0, (await t.ScanAsync(default)).Bytes);
+        Assert.Equal(CleanupTargets.TempKeepWindow, CleanupTargets.LogKeepWindow);
     }
 }

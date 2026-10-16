@@ -10,8 +10,10 @@ namespace StandbyAndTimer.Services.Maintenance;
 /// 2. files in use or denied are skipped and counted, never thrown;
 /// 3. optionally keeps files written within <c>keepNewerThan</c> (temp folders:
 ///    a running installer may still need them);
-/// 4. never deletes a root itself; empty sub-folders go, deepest first;
-/// 5. FreedBytes is the size of the files actually deleted.
+/// 4. never deletes a root folder itself; empty sub-folders go, deepest first;
+/// 5. FreedBytes is the size of the files actually deleted;
+/// 6. a root that is a file (MEMORY.DMP) is handled like a file inside a
+///    folder root; a root that is a link is neither followed nor deleted.
 /// Scan walks with the same rules, so it shows what a clean would remove.
 /// This is the only code in the app that deletes files.
 /// </summary>
@@ -23,12 +25,8 @@ internal static class SafeFolderCleaner
         long bytes = 0;
         int files = 0;
         foreach (string root in roots)
-        {
-            if (!Directory.Exists(root)) continue;
-            found = true;
-            Walk(new DirectoryInfo(root), isRoot: true, keepNewerThan, nowUtc, delete: false,
-                 onFile: f => { bytes += f.Length; files++; return true; }, ct);
-        }
+            found |= VisitRoot(root, keepNewerThan, nowUtc, delete: false,
+                               onFile: f => { bytes += f.Length; files++; return true; }, ct);
         return found ? new CleanupScan(true, bytes, files) : CleanupScan.NotFound;
     }
 
@@ -38,8 +36,7 @@ internal static class SafeFolderCleaner
         int deleted = 0, skipped = 0;
         foreach (string root in roots)
         {
-            if (!Directory.Exists(root)) continue;
-            Walk(new DirectoryInfo(root), isRoot: true, keepNewerThan, nowUtc, delete: true, onFile: f =>
+            VisitRoot(root, keepNewerThan, nowUtc, delete: true, onFile: f =>
             {
                 long length = f.Length;
                 try
@@ -59,6 +56,29 @@ internal static class SafeFolderCleaner
             }, ct);
         }
         return new CleanupResult(freed, deleted, skipped);
+    }
+
+    // A folder root is walked; a file root goes through the same file rules.
+    // Returns whether the root exists.
+    private static bool VisitRoot(string root, TimeSpan? keepNewerThan, DateTime nowUtc,
+                                  bool delete, Func<FileInfo, bool> onFile, CancellationToken ct)
+    {
+        if (Directory.Exists(root))
+        {
+            Walk(new DirectoryInfo(root), isRoot: true, keepNewerThan, nowUtc, delete, onFile, ct);
+            return true;
+        }
+        var file = new FileInfo(root);
+        if (!file.Exists) return false;
+        ct.ThrowIfCancellationRequested();
+        try
+        {
+            if (file.Attributes.HasFlag(FileAttributes.ReparsePoint)) return true;   // never through a link
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return true; }
+        if (keepNewerThan is { } keep && nowUtc - SafeWriteTime(file) < keep) return true;
+        onFile(file);
+        return true;
     }
 
     // Post-order walk. onFile returns whether the file is gone (clean) / counted (scan).
