@@ -236,6 +236,7 @@ public class MaintenanceViewModelTests
         public PowerPlanInfo? GetPowerPlan() => null;
         public IReadOnlyList<PageFileInfo> GetPageFiles() => [];
         public GamingInfo GetGamingInfo() => gaming;
+        public PowerMode GetPowerMode() => PowerMode.BestPerformance;
     }
 
     [Fact]
@@ -251,5 +252,6 @@ public class MaintenanceViewModelTests
         Assert.Equal("Str_Maint_On", vm.RecordingText);
         Assert.Equal("Str_Maint_Off", vm.MemoryIntegrityText);
         Assert.Equal("Str_Maint_On", vm.GameModeText);
+        Assert.Equal("Str_Maint_PowerBest", vm.PowerModeText);
     }
 }

@@ -306,6 +306,10 @@ internal static class NativeMethods
                                                       IntPtr subGroupOfPowerSettingsGuid, IntPtr powerSettingGuid,
                                                       IntPtr buffer, ref uint bufferSize);
 
+    /// <summary>Windows 10/11 power mode overlay now in effect (Settings → Power mode).</summary>
+    [DllImport("powrprof.dll")]
+    internal static extern uint PowerGetEffectiveOverlayScheme(out Guid effectiveOverlayGuid);
+
     [DllImport("kernel32.dll")]
     internal static extern IntPtr LocalFree(IntPtr hMem);
 

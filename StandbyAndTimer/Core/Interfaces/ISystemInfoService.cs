@@ -12,4 +12,7 @@ public interface ISystemInfoService
 
     /// <summary>GPU scheduling, background recording, memory integrity and Game Mode, from the registry.</summary>
     GamingInfo GetGamingInfo();
+
+    /// <summary>The power mode now in effect (for a laptop, of the current power source).</summary>
+    PowerMode GetPowerMode();
 }

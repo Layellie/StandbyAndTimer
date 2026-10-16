@@ -36,6 +36,7 @@ internal sealed class SystemToolLauncher : ISystemToolLauncher
             SystemTool.CaptureSettings  => "ms-settings:gaming-captures",
             SystemTool.CoreIsolation    => "windowsdefender://coreisolation",
             SystemTool.GameModeSettings => "ms-settings:gaming-gamemode",
+            SystemTool.PowerSettings    => "ms-settings:powersleep",
             _ => null,
         };
         if (uri is not null)

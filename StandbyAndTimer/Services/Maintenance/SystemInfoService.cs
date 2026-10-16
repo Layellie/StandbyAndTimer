@@ -114,6 +114,37 @@ internal sealed class SystemInfoService : ISystemInfoService
     private static string[] ReadPagingFilesSetting() =>
         ReadValue(Registry.LocalMachine, MemoryManagementKey, "PagingFiles") as string[] ?? [];
 
+    // ── Power mode (spec §9.3) ──────────────────────────────────────────────
+
+    private static readonly Guid BalancedPlan        = new("381b4222-f694-41f0-9685-ff5bb260df2e");
+    private static readonly Guid OverlayBestPerf     = new("ded574b5-45a0-4f42-8737-46345c09c238");
+    private static readonly Guid OverlayBestPowerEff = new("961cc777-2547-4f9d-8174-7d86181b8a7a");
+
+    public PowerMode GetPowerMode()
+    {
+        Guid? overlay = null;
+        try
+        {
+            if (NativeMethods.PowerGetEffectiveOverlayScheme(out Guid g) == 0) overlay = g;
+        }
+        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
+        {
+            Logger.Warn($"Power mode unreadable: {ex.Message}");
+        }
+        return PowerModeFrom(overlay, GetPowerPlan()?.Id);
+    }
+
+    /// <summary>Only the Balanced plan has power modes; Guid.Empty is Balanced's own mode.</summary>
+    internal static PowerMode PowerModeFrom(Guid? overlay, Guid? activePlan)
+    {
+        if (activePlan is { } plan && plan != BalancedPlan) return PowerMode.NotOnThisPlan;
+        if (overlay is not { } o || activePlan is null) return PowerMode.Unknown;
+        if (o == OverlayBestPerf)     return PowerMode.BestPerformance;
+        if (o == OverlayBestPowerEff) return PowerMode.BestPowerEfficiency;
+        if (o == Guid.Empty)          return PowerMode.Balanced;
+        return PowerMode.Unknown;
+    }
+
     // ── Gaming rows (spec §9.3): the registry values Windows' own pages write ──
 
     public GamingInfo GetGamingInfo() => new(

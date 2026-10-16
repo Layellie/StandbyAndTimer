@@ -12,7 +12,11 @@ public enum SystemTool
     OptimizeDrives, DiskCleanup, RepairSystemFiles, PowerOptions, VirtualMemory,
     // Windows pages behind the gaming rows (spec §9.3)
     GraphicsSettings, CaptureSettings, CoreIsolation, GameModeSettings,
+    PowerSettings,
 }
+
+/// <summary>Windows 11 power mode (Settings → System → Power), set on top of the Balanced plan.</summary>
+public enum PowerMode { Unknown, BestPowerEfficiency, Balanced, BestPerformance, NotOnThisPlan }
 
 /// <summary>Windows settings that matter in games. Hags null = not set (Windows' default).</summary>
 public sealed record GamingInfo(bool? Hags, bool BackgroundRecording, bool MemoryIntegrity, bool GameMode);

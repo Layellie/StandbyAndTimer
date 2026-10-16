@@ -387,6 +387,11 @@ millisecond).
 | Background recording | `HKCU\Software\Microsoft\Windows\CurrentVersion\GameDVR`: `AppCaptureEnabled` ≠ 0 and `HistoricalCaptureEnabled` = 1 → on; else off | `ms-settings:gaming-captures` |
 | Memory integrity | `HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity\Enabled`: 1 on, else off | `windowsdefender://coreisolation` |
 | Game Mode | `HKCU\Software\Microsoft\GameBar\AutoGameModeEnabled`: 0 off, else on (Windows' default) | `ms-settings:gaming-gamemode` |
+| Power mode (first of the rows, added after the second install) | `PowerGetEffectiveOverlayScheme` (powrprof): `ded574b5-…` best performance, `00000000-…` balanced, `961cc777-…` best power efficiency, else unknown. Only the Balanced plan has power modes: another active plan shows "not available on this plan". On a laptop it is the mode of the current power source. | `ms-settings:powersleep` |
+
+The classic power plan row stays: Windows 11 sets the mode on top of the
+plan, and the mode works only on the Balanced plan, so both are shown. The app
+changes neither (user's choice: the button opens Windows' page).
 
 The pages open through `%SystemRoot%\explorer.exe <fixed URI>`; the tooltips
 say what each setting costs or protects (memory integrity is a security

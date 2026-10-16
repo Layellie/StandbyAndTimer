@@ -105,6 +105,7 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string _recordingText       = "";
     [ObservableProperty] private string _memoryIntegrityText = "";
     [ObservableProperty] private string _gameModeText        = "";
+    [ObservableProperty] private string _powerModeText       = "";
     [ObservableProperty] private string _downloadsSizeText = "";
     [ObservableProperty] private string _cleanButtonText   = "";
     [ObservableProperty] private long   _selectedBytes;
@@ -252,6 +253,14 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
         }
         else
             HagsText = RecordingText = MemoryIntegrityText = GameModeText = _loc.GetString("Str_Maint_PowerUnknown");
+        PowerModeText = _loc.GetString(_info.GetPowerMode() switch
+        {
+            PowerMode.BestPerformance     => "Str_Maint_PowerBest",
+            PowerMode.Balanced            => "Str_Maint_PowerBalanced",
+            PowerMode.BestPowerEfficiency => "Str_Maint_PowerEfficient",
+            PowerMode.NotOnThisPlan       => "Str_Maint_PowerNotOnPlan",
+            _                             => "Str_Maint_PowerUnknown",
+        });
     }
 
     // ── Cleaning ─────────────────────────────────────────────────────────────
@@ -426,6 +435,7 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
         public PowerPlanInfo? GetPowerPlan() => null;
         public IReadOnlyList<PageFileInfo> GetPageFiles() => [];
         public GamingInfo GetGamingInfo() => new(null, false, false, true);
+        public PowerMode GetPowerMode() => PowerMode.Unknown;
     }
 
     private sealed class NoTools : ISystemToolLauncher

@@ -362,9 +362,15 @@
     <sys:String x:Key="Str_Maint_Off">Off</sys:String>
     <sys:String x:Key="Str_Maint_WindowsDefault">Windows default</sys:String>
     <sys:String x:Key="Str_Maint_Open">Open</sys:String>
+    <sys:String x:Key="Str_Maint_PowerMode">Power mode</sys:String>
+    <sys:String x:Key="Str_Maint_PowerModeTip">Windows 11's power mode, set on top of the Balanced plan (on a laptop: for the current power source). Best performance suits games. Open: Windows' Power settings.</sys:String>
+    <sys:String x:Key="Str_Maint_PowerBest">Best performance</sys:String>
+    <sys:String x:Key="Str_Maint_PowerBalanced">Balanced</sys:String>
+    <sys:String x:Key="Str_Maint_PowerEfficient">Best power efficiency</sys:String>
+    <sys:String x:Key="Str_Maint_PowerNotOnPlan">Not on this plan</sys:String>
     <sys:String x:Key="Str_HelpM_MoreCaches">DirectX and Steam shader caches: the same rule as the driver caches. Clean once after a driver update or when a game stutters, not regularly.</sys:String>
     <sys:String x:Key="Str_HelpM_Leftovers">Driver installer leftovers, the Delivery Optimization cache and crash dumps: files nothing needs any more. Safe to clean; the Delivery Optimization cache is emptied by Windows' own command.</sys:String>
-    <sys:String x:Key="Str_HelpM_Gaming">GPU scheduling, background recording, memory integrity and Game Mode show how Windows is set up for games; Open goes to Windows' own page. Background recording costs FPS while it is on. Memory integrity is a security feature: leaving it on is the safe choice.</sys:String>
+    <sys:String x:Key="Str_HelpM_Gaming">Power mode (Windows 11, on the Balanced plan; Best performance suits games), GPU scheduling, background recording, memory integrity and Game Mode show how Windows is set up for games; Open goes to Windows' own page. Background recording costs FPS while it is on. Memory integrity is a security feature: leaving it on is the safe choice.</sys:String>
     <sys:String x:Key="Str_Maint_Rescan">Rescan</sys:String>
     <sys:String x:Key="Str_Maint_PowerPlan">Power plan</sys:String>
     <sys:String x:Key="Str_Maint_PowerUnknown">unknown</sys:String>

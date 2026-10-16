@@ -128,4 +128,32 @@ public class SystemInfoTests
         Assert.Equal(uri, psi.Arguments);
         Assert.False(psi.UseShellExecute);
     }
+
+    private static readonly Guid Balanced = new("381b4222-f694-41f0-9685-ff5bb260df2e");
+
+    [Theory]
+    [InlineData("ded574b5-45a0-4f42-8737-46345c09c238", PowerMode.BestPerformance)]
+    [InlineData("00000000-0000-0000-0000-000000000000", PowerMode.Balanced)]
+    [InlineData("961cc777-2547-4f9d-8174-7d86181b8a7a", PowerMode.BestPowerEfficiency)]
+    [InlineData("11111111-2222-3333-4444-555555555555", PowerMode.Unknown)]
+    public void Power_mode_from_the_overlay_on_the_balanced_plan(string overlay, PowerMode expected) =>
+        Assert.Equal(expected, SystemInfoService.PowerModeFrom(new Guid(overlay), Balanced));
+
+    [Fact]
+    public void Power_modes_exist_only_on_the_balanced_plan()
+    {
+        var highPerformance = new Guid("8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c");
+
+        Assert.Equal(PowerMode.NotOnThisPlan, SystemInfoService.PowerModeFrom(new Guid("ded574b5-45a0-4f42-8737-46345c09c238"), highPerformance));
+        Assert.Equal(PowerMode.Unknown, SystemInfoService.PowerModeFrom(null, Balanced));
+        Assert.Equal(PowerMode.Unknown, SystemInfoService.PowerModeFrom(Guid.Empty, null));
+    }
+
+    [Fact]
+    public void Reads_this_machines_power_mode() =>
+        Assert.True(Enum.IsDefined(new SystemInfoService().GetPowerMode()));
+
+    [Fact]
+    public void Power_settings_open_through_explorer() =>
+        Assert.Equal("ms-settings:powersleep", SystemToolLauncher.StartInfoFor(SystemTool.PowerSettings).Arguments);
 }

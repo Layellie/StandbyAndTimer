@@ -2,7 +2,11 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:models="clr-namespace:StandbyAndTimer.Core.Models"
-             FontFamily="{StaticResource AppFont}" FontSize="13">
+             FontFamily="{StaticResource AppFont}" FontSize="13"
+             FontWeight="SemiBold">
+    <!-- SemiBold like the Status and Settings pages: they inherit it from the
+         selected tab item (SegmentTabItemStyle); this page is built from a
+         template, so it would not, and its text looked thin next to them. -->
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <Style x:Key="ValueTextStyle" TargetType="TextBlock">
@@ -188,6 +192,17 @@
                     <!-- Gaming settings (spec §9.3): name, state, and Open for
                          Windows' own page. The app changes nothing here. -->
                     <Border Height="1" Margin="0,6,0,4" Background="{DynamicResource SeparatorBrush}"/>
+                    <Grid Style="{StaticResource GamingRowStyle}" ToolTip="{DynamicResource Str_Maint_PowerModeTip}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Str_Maint_PowerMode}" Style="{StaticResource SettingTitleStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="1" Text="{Binding PowerModeText}" Style="{StaticResource ValueTextStyle}" Margin="8,0,10,0"/>
+                        <Button Grid.Column="2" Content="{DynamicResource Str_Maint_Open}" Style="{StaticResource OpenButtonStyle}"
+                                Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.PowerSettings}"/>
+                    </Grid>
                     <Grid Style="{StaticResource GamingRowStyle}" ToolTip="{DynamicResource Str_Maint_HagsTip}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>

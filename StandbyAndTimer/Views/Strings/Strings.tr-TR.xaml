@@ -362,9 +362,15 @@
     <sys:String x:Key="Str_Maint_Off">Kapalı</sys:String>
     <sys:String x:Key="Str_Maint_WindowsDefault">Windows varsayılanı</sys:String>
     <sys:String x:Key="Str_Maint_Open">Aç</sys:String>
+    <sys:String x:Key="Str_Maint_PowerMode">Güç modu</sys:String>
+    <sys:String x:Key="Str_Maint_PowerModeTip">Windows 11'in güç modu, Dengeli planın üstüne ayarlanır (dizüstünde: o anki güç kaynağı için). Oyunlar için En iyi performans uygundur. Aç: Windows'un Güç ayarları.</sys:String>
+    <sys:String x:Key="Str_Maint_PowerBest">En iyi performans</sys:String>
+    <sys:String x:Key="Str_Maint_PowerBalanced">Dengeli</sys:String>
+    <sys:String x:Key="Str_Maint_PowerEfficient">En iyi güç verimliliği</sys:String>
+    <sys:String x:Key="Str_Maint_PowerNotOnPlan">Bu planda yok</sys:String>
     <sys:String x:Key="Str_HelpM_MoreCaches">DirectX ve Steam shader önbellekleri: sürücü önbellekleriyle aynı kural. Sürücü güncellemesinden sonra ya da bir oyun takılıyorsa bir kez temizle, düzenli değil.</sys:String>
     <sys:String x:Key="Str_HelpM_Leftovers">Sürücü kurulum artıkları, Teslimat İyileştirme önbelleği ve çökme dökümleri: artık hiçbir şeyin ihtiyaç duymadığı dosyalar. Temizlemek güvenli; Teslimat İyileştirme önbelleğini Windows'un kendi komutu boşaltır.</sys:String>
-    <sys:String x:Key="Str_HelpM_Gaming">GPU zamanlaması, arka planda kayıt, bellek bütünlüğü ve Oyun Modu, Windows'un oyunlar için nasıl ayarlandığını gösterir; Aç, Windows'un kendi sayfasına götürür. Arka planda kayıt açıkken FPS'e mal olur. Bellek bütünlüğü bir güvenlik özelliğidir: açık bırakmak güvenli seçimdir.</sys:String>
+    <sys:String x:Key="Str_HelpM_Gaming">Güç modu (Windows 11, Dengeli planda; oyunlar için En iyi performans uygundur), GPU zamanlaması, arka planda kayıt, bellek bütünlüğü ve Oyun Modu, Windows'un oyunlar için nasıl ayarlandığını gösterir; Aç, Windows'un kendi sayfasına götürür. Arka planda kayıt açıkken FPS'e mal olur. Bellek bütünlüğü bir güvenlik özelliğidir: açık bırakmak güvenli seçimdir.</sys:String>
     <sys:String x:Key="Str_Maint_Rescan">Yenile</sys:String>
     <sys:String x:Key="Str_Maint_PowerPlan">Güç planı</sys:String>
     <sys:String x:Key="Str_Maint_PowerUnknown">bilinmiyor</sys:String>
@@ -372,7 +378,7 @@
     <sys:String x:Key="Str_Maint_PowerTip">Etkin Windows güç planı. Değiştir, Windows'un Güç Seçenekleri'ni açar.</sys:String>
     <sys:String x:Key="Str_Maint_VirtualMemory">Sanal bellek</sys:String>
     <sys:String x:Key="Str_Maint_PageFileFormat">{0} {1} · {2} · {3} kullanımda</sys:String>
-    <sys:String x:Key="Str_Maint_SystemManaged">sistem yönetimli</sys:String>
+    <sys:String x:Key="Str_Maint_SystemManaged">otomatik</sys:String>
     <sys:String x:Key="Str_Maint_Custom">özel boyut</sys:String>
     <sys:String x:Key="Str_Maint_PageFileOff">kapalı</sys:String>
     <sys:String x:Key="Str_Maint_Adjust">Ayarla</sys:String>
