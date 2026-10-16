@@ -320,6 +320,11 @@ internal static class NativeMethods
     [DllImport("kernel32.dll")]
     internal static extern IntPtr LocalFree(IntPtr hMem);
 
+    /// <summary>AC / battery state; BatteryFlag 128 = no system battery.</summary>
+    [DllImport("kernel32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool GetSystemPowerStatus(out SYSTEM_POWER_STATUS lpSystemPowerStatus);
+
     /// <summary>NtQuerySystemInformation class: a chain of SYSTEM_PAGEFILE_INFORMATION entries.</summary>
     internal const int SystemPageFileInformation = 18;
 
@@ -390,6 +395,17 @@ internal static class NativeMethods
         internal uint Version;
         internal uint ControlMask;
         internal uint StateMask;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct SYSTEM_POWER_STATUS
+    {
+        internal byte ACLineStatus;
+        internal byte BatteryFlag;
+        internal byte BatteryLifePercent;
+        internal byte SystemStatusFlag;
+        internal int  BatteryLifeTime;
+        internal int  BatteryFullLifeTime;
     }
 
     /// <summary>DEVMODEW, display variant of the union (220 bytes).</summary>

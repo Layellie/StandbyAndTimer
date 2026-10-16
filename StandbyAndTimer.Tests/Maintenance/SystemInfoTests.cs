@@ -156,4 +156,16 @@ public class SystemInfoTests
     [Fact]
     public void Power_settings_open_through_explorer() =>
         Assert.Equal("ms-settings:powersleep", SystemToolLauncher.StartInfoFor(SystemTool.PowerSettings).Arguments);
+
+    [Theory]
+    [InlineData("961cc777-2547-4f9d-8174-7d86181b8a7a", PowerMode.BetterBattery)]
+    [InlineData("00000000-0000-0000-0000-000000000000", PowerMode.BetterPerformance)]
+    [InlineData("ded574b5-45a0-4f42-8737-46345c09c238", PowerMode.BestPerformance)]
+    public void Windows_10_names_its_power_slider_steps_differently(string overlay, PowerMode expected) =>
+        Assert.Equal(expected, SystemInfoService.PowerModeFrom(new Guid(overlay), Balanced, isWindows10: true, hasBattery: true));
+
+    [Fact]
+    public void Windows_10_without_a_battery_has_no_power_slider() =>
+        Assert.Equal(PowerMode.NotAvailable,
+                     SystemInfoService.PowerModeFrom(Guid.Empty, Balanced, isWindows10: true, hasBattery: false));
 }

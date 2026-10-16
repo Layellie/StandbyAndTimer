@@ -16,7 +16,12 @@ public enum SystemTool
 }
 
 /// <summary>Windows 11 power mode (Settings → System → Power), set on top of the Balanced plan.</summary>
-public enum PowerMode { Unknown, BestPowerEfficiency, Balanced, BestPerformance, NotOnThisPlan }
+public enum PowerMode
+{
+    Unknown, BestPowerEfficiency, Balanced, BestPerformance, NotOnThisPlan,
+    // Windows 10's slider (battery-powered PCs only)
+    BetterBattery, BetterPerformance, NotAvailable,
+}
 
 /// <summary>Windows settings that matter in games. Hags null = not set (Windows' default).</summary>
 public sealed record GamingInfo(bool? Hags, bool BackgroundRecording, bool MemoryIntegrity, bool GameMode);

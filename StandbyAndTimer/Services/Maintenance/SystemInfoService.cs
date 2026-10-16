@@ -131,17 +131,24 @@ internal sealed class SystemInfoService : ISystemInfoService
         {
             Logger.Warn($"Power mode unreadable: {ex.Message}");
         }
-        return PowerModeFrom(overlay, GetPowerPlan()?.Id);
+        bool isWindows10 = Environment.OSVersion.Version.Build < 22000;
+        bool hasBattery = NativeMethods.GetSystemPowerStatus(out var status) && (status.BatteryFlag & 128) == 0;   // 128 = no battery
+        return PowerModeFrom(overlay, GetPowerPlan()?.Id, isWindows10, hasBattery);
     }
 
-    /// <summary>Only the Balanced plan has power modes; Guid.Empty is Balanced's own mode.</summary>
-    internal static PowerMode PowerModeFrom(Guid? overlay, Guid? activePlan)
+    /// <summary>
+    /// Only the Balanced plan has power modes; Guid.Empty is Balanced's own
+    /// mode. Windows 10 shows its slider only on battery-powered PCs, with
+    /// other names for the same three steps.
+    /// </summary>
+    internal static PowerMode PowerModeFrom(Guid? overlay, Guid? activePlan, bool isWindows10 = false, bool hasBattery = true)
     {
+        if (isWindows10 && !hasBattery) return PowerMode.NotAvailable;
         if (activePlan is { } plan && plan != BalancedPlan) return PowerMode.NotOnThisPlan;
         if (overlay is not { } o || activePlan is null) return PowerMode.Unknown;
         if (o == OverlayBestPerf)     return PowerMode.BestPerformance;
-        if (o == OverlayBestPowerEff) return PowerMode.BestPowerEfficiency;
-        if (o == Guid.Empty)          return PowerMode.Balanced;
+        if (o == OverlayBestPowerEff) return isWindows10 ? PowerMode.BetterBattery : PowerMode.BestPowerEfficiency;
+        if (o == Guid.Empty)          return isWindows10 ? PowerMode.BetterPerformance : PowerMode.Balanced;
         return PowerMode.Unknown;
     }
 

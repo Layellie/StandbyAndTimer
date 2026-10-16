@@ -368,6 +368,9 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
             PowerMode.Balanced            => "Str_Maint_PowerBalanced",
             PowerMode.BestPowerEfficiency => "Str_Maint_PowerEfficient",
             PowerMode.NotOnThisPlan       => "Str_Maint_PowerNotOnPlan",
+            PowerMode.BetterBattery       => "Str_Maint_PowerBetterBattery",
+            PowerMode.BetterPerformance   => "Str_Maint_PowerBetterPerf",
+            PowerMode.NotAvailable        => "Str_Maint_PowerNotAvailable",
             _                             => "Str_Maint_PowerUnknown",
         });
     }
