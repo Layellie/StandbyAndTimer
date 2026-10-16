@@ -95,6 +95,9 @@ public sealed partial class ShaderGroupViewModel : ObservableObject
 
 public sealed record CleanupHistoryRow(CleanupRecord Record, string Time, string What, string Freed);
 
+/// <summary>One bar of the history's all-time chart: short label, height in px, the largest one, tooltip.</summary>
+public sealed record TargetBar(string Label, double Height, bool IsTop, string Tip);
+
 /// <summary>
 /// The Maintenance tab. MainViewModel owns it: sets IsActive when the tab is
 /// selected or left, persists SelectionText, says whether a game runs.
@@ -517,12 +520,44 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
         .OrderByDescending(kv => kv.Value.FreedBytes)
         .Select(kv => $"{TargetName(kv.Key)} {SizeText(kv.Value.FreedBytes)} ({kv.Value.Count})"));
 
+    internal const double TargetBarMaxHeight = 40;
+
+    /// <summary>
+    /// All-time chart (like the purge history's week): one bar per item ever
+    /// cleaned, the shader caches as one bar, largest first; heights relative
+    /// to the largest, which is highlighted.
+    /// </summary>
+    public IReadOnlyList<TargetBar> TargetBars
+    {
+        get
+        {
+            var groups = Stats.ByTarget
+                .Where(kv => kv.Value.Count > 0)
+                .GroupBy(kv => ShaderIds.Contains(kv.Key) ? "shader" : kv.Key)
+                .Select(g => (Key: g.Key, Bytes: g.Sum(kv => kv.Value.FreedBytes), Count: g.Sum(kv => kv.Value.Count)))
+                .OrderByDescending(g => g.Bytes)
+                .ToList();
+            if (groups.Count == 0) return [];
+            long max = Math.Max(1, groups[0].Bytes);
+            return groups.Select((g, i) => new TargetBar(
+                _loc.GetString("Str_CleanShort_" + g.Key),
+                // An item that was cleaned never gets a bar too thin to see.
+                Math.Max(3, Math.Round(TargetBarMaxHeight * g.Bytes / max)),
+                i == 0,
+                string.Format(CultureInfo.CurrentCulture, _loc.GetString("Str_MHist_BarTip"),
+                    _loc.GetString(g.Key == "shader" ? "Str_Clean_shader-caches" : "Str_Clean_" + g.Key),
+                    SizeText(g.Bytes), CountText(g.Count))))
+                .ToList();
+        }
+    }
+
     private void RefreshHistory()
     {
         History.Clear();
         foreach (var r in Stats.Recent) History.Add(RowFor(r));
         foreach (var p in new[] { nameof(StatsTodayFreed), nameof(StatsTodayCount), nameof(StatsWeekFreed), nameof(StatsWeekCount),
-                                  nameof(StatsAllFreed), nameof(StatsAllCount), nameof(FreedSoFarText), nameof(ByTargetText) })
+                                  nameof(StatsAllFreed), nameof(StatsAllCount), nameof(FreedSoFarText), nameof(ByTargetText),
+                                  nameof(TargetBars) })
             OnPropertyChanged(p);
     }
 

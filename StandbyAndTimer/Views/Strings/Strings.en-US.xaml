@@ -424,6 +424,20 @@
     <sys:String x:Key="Str_MHist_Count">{0} cleanups</sys:String>
     <sys:String x:Key="Str_MHist_Recent">LAST 20</sys:String>
     <sys:String x:Key="Str_MHist_Empty">Nothing cleaned yet.</sys:String>
+    <sys:String x:Key="Str_MHist_ByItem">All time, by item</sys:String>
+    <sys:String x:Key="Str_MHist_BarTip">{0}: {1} · {2}</sys:String>
+    <sys:String x:Key="Str_CleanShort_shader">Shader</sys:String>
+    <sys:String x:Key="Str_CleanShort_driver-leftovers">Drivers</sys:String>
+    <sys:String x:Key="Str_CleanShort_user-temp">Temp</sys:String>
+    <sys:String x:Key="Str_CleanShort_windows-temp">Win temp</sys:String>
+    <sys:String x:Key="Str_CleanShort_windows-update">Update</sys:String>
+    <sys:String x:Key="Str_CleanShort_delivery-optimization">Delivery</sys:String>
+    <sys:String x:Key="Str_CleanShort_crash-dumps">Crashes</sys:String>
+    <sys:String x:Key="Str_CleanShort_system-crash-dumps">BSOD</sys:String>
+    <sys:String x:Key="Str_CleanShort_windows-logs">Logs</sys:String>
+    <sys:String x:Key="Str_CleanShort_windows-old">Win.old</sys:String>
+    <sys:String x:Key="Str_CleanShort_recycle-bin">Bin</sys:String>
+    <sys:String x:Key="Str_CleanShort_downloads">Downloads</sys:String>
 
     <sys:String x:Key="Str_About_TabGeneral">General</sys:String>
     <sys:String x:Key="Str_About_TabMaintenance">Maintenance</sys:String>

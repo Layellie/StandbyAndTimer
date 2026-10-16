@@ -356,4 +356,35 @@ public class MaintenanceViewModelTests
         Assert.Equal("845 MB", vm.Rows[0].DisplayText);      // the rescanned size, no result any more
         Assert.Null(vm.Rows[0].LastResult);
     }
+
+    // ── All-time chart in the history dialog ────────────────────────────────
+
+    [Fact]
+    public void The_all_time_chart_has_one_bar_per_cleaned_item_largest_first()
+    {
+        var store = new InMemoryCleanupStatsStore();
+        var stats = new CleanupStats();
+        var at = new DateTime(2026, 10, 16, 12, 0, 0);
+        stats.Add(new CleanupRecord(at, "user-temp", 800L << 20, 0));
+        stats.Add(new CleanupRecord(at, "user-temp", 200L << 20, 0));
+        stats.Add(new CleanupRecord(at, "nvidia-shader", 1_500L << 20, 0));
+        stats.Add(new CleanupRecord(at, "directx-shader", 500L << 20, 0));
+        stats.Add(new CleanupRecord(at, "recycle-bin", 100L << 20, 0));
+        store.Save(stats);
+        var vm = new MaintenanceViewModel([], store, NullProxy.Of<ISystemInfoService>(), new FakeTools(),
+                                          NullProxy.Of<IDownloadsService>(), new FakeLocalization());
+
+        var bars = vm.TargetBars;
+
+        Assert.Equal(["Str_CleanShort_shader", "Str_CleanShort_user-temp", "Str_CleanShort_recycle-bin"], bars.Select(b => b.Label));
+        Assert.True(bars[0].IsTop);
+        Assert.False(bars[1].IsTop);
+        Assert.Equal(MaintenanceViewModel.TargetBarMaxHeight, bars[0].Height);            // 2000 MB, the largest
+        Assert.Equal(MaintenanceViewModel.TargetBarMaxHeight / 2, bars[1].Height);        // 1000 MB
+        Assert.Equal(3, bars[2].Height);                                                  // tiny, but never invisible
+    }
+
+    [Fact]
+    public void No_cleanups_no_bars() =>
+        Assert.Empty(MaintenanceViewModel.Inert().TargetBars);
 }

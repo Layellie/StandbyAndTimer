@@ -87,8 +87,41 @@
                     </Border>
                 </Grid>
 
-                <TextBlock Grid.Row="2" Margin="2,10,0,0" Text="{Binding ByTargetText}" FontSize="11"
-                           Foreground="{DynamicResource AppFgDim}" TextWrapping="Wrap"/>
+                <!-- All time by item, drawn like the purge history's week chart:
+                     one bar per item ever cleaned, the largest highlighted. -->
+                <StackPanel Grid.Row="2" Margin="2,12,0,0">
+                    <TextBlock Text="{DynamicResource Str_MHist_ByItem}" FontSize="11" Foreground="{DynamicResource AppFgDim}" Margin="0,0,0,6"/>
+                    <ItemsControl x:Name="ItemChart" ItemsSource="{Binding TargetBars}" HorizontalAlignment="Left">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <!-- Transparent background: the whole column shows the tooltip. -->
+                                <StackPanel Width="42" Background="Transparent" ToolTip="{Binding Tip}">
+                                    <Grid Height="40">
+                                        <Border Height="2" VerticalAlignment="Bottom" Margin="7,0"
+                                                CornerRadius="1" Background="{DynamicResource BorderColor}"/>
+                                        <Border x:Name="Bar" Height="{Binding Height}" VerticalAlignment="Bottom" Margin="7,0"
+                                                CornerRadius="3,3,1,1" Background="{DynamicResource AccentPrimary}" Opacity="0.55"/>
+                                    </Grid>
+                                    <TextBlock x:Name="ItemLabel" Text="{Binding Label}" FontSize="10" FontWeight="Normal" Margin="0,4,0,0"
+                                               HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                               Foreground="{DynamicResource AppFgMuted}"/>
+                                </StackPanel>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsTop}" Value="True">
+                                        <Setter TargetName="Bar" Property="Opacity" Value="1"/>
+                                        <Setter TargetName="ItemLabel" Property="Foreground" Value="{DynamicResource AccentText}"/>
+                                        <Setter TargetName="ItemLabel" Property="FontWeight" Value="SemiBold"/>
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
 
                 <TextBlock Grid.Row="3" Text="{DynamicResource Str_MHist_Recent}" Style="{StaticResource PageSectionLabelStyle}" Margin="2,12,0,6"/>
 
