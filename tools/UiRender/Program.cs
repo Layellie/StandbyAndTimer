@@ -42,6 +42,7 @@ public sealed class FakeTimer : ITimerResolutionService
     public double Activate() { Activations++; IsActive = true; return 0.5; }
     public Task<double> ActivateAsync(CancellationToken ct = default) => Task.FromResult(Activate());
     public void Deactivate() { Deactivations++; IsActive = false; }
+    public double QueryCurrentMs() => IsActive ? 0.5 : 15.625;   // Windows' own value with the app's timer off
     public void Dispose() { }
 }
 
@@ -682,6 +683,9 @@ public static class Program
             SetField(settingsVm, "_isOpen", false);
             SetField(vm, "_statusMessage", loc.GetString("Str_Status_Ready"));
             SetField(vm, "_refreshRateText", "144 Hz");   // the timer card's refresh rate (no display service here)
+            // Two themes show the timer off: Windows' own 15.62 ms is the widest value next to the refresh rate.
+            SetField(vm, "_timerActive", theme is not ("Dark" or "Light"));
+            SetField(vm, "_actualTimerMs", theme is "Dark" or "Light" ? 15.625 : 0.5);
             SetField(vm, "_timerLock", theme is "Light" or "Black" ? TimerLockMode.InGame : TimerLockMode.Unlocked);   // show two lock states
 
             var w = new MainWindow(vm)

@@ -200,6 +200,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         // itself on every launch.
         if (TimerLock == TimerLockMode.Locked)
             await ActivateTimerInternalAsync(silent: true).ConfigureAwait(true);
+        ShowWindowsResolution();
 
         // Don't overwrite "Timer active — 0.50 ms" with "Ready".
         SetIdleStatus();
@@ -947,8 +948,18 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _timerService.Deactivate();
         TimerActive          = false;
         _timerStartedForGame = false;
+        ShowWindowsResolution();
         if (notify)
             TimerToggledNotification?.Invoke(this, new TimerToggledArgs(false, 0));
+    }
+
+    // With the app's timer off the card shows what Windows really runs at.
+    // ActualTimerMs used to change only while the timer ran: it read 0.00 from
+    // a start with the timer off (the in-game lock without a game) and kept a
+    // stale 0.50 after the timer went off.
+    private void ShowWindowsResolution()
+    {
+        if (!TimerActive) ActualTimerMs = _timerService.QueryCurrentMs();
     }
 
     // Idle status line: the live timer reading while the timer runs, else "Ready".

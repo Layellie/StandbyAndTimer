@@ -119,6 +119,11 @@ internal sealed class TimerResolutionService : ITimerResolutionService
         return actualUnits;
     }
 
+    public double QueryCurrentMs() =>
+        NativeMethods.NtQueryTimerResolution(out _, out _, out uint current) == 0 && current > 0
+            ? current / 10_000.0
+            : 0;
+
     public void Deactivate()
     {
         if (!IsActive) return;
