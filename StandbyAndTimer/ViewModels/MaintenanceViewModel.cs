@@ -382,6 +382,7 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
     [RelayCommand(CanExecute = nameof(CanCleanSelected))]
     private async Task CleanSelectedAsync()
     {
+        _resultCts?.Cancel();   // results of an earlier clean are replaced now
         IsCleaning = true;
         _scanCts?.Cancel();
         var stats = Stats;
@@ -414,6 +415,29 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
         }
         finally { IsCleaning = false; }
         await RefreshAsync(keepResults: true);
+        _ = ClearResultsLaterAsync();
+    }
+
+    // "6 MB freed" stays a few seconds, then the rows show their new size.
+    // A one-shot wait after a clean, not a timer; a newer clean restarts it.
+    private static readonly TimeSpan ResultShowTime = TimeSpan.FromSeconds(4);
+    private CancellationTokenSource? _resultCts;
+
+    /// <summary>The wait before results are cleared (tests replace it).</summary>
+    internal Func<TimeSpan, CancellationToken, Task> ResultDelay { get; set; } = Task.Delay;
+
+    private async Task ClearResultsLaterAsync()
+    {
+        _resultCts?.Cancel();
+        _resultCts?.Dispose();
+        var cts = _resultCts = new CancellationTokenSource();
+        try { await ResultDelay(ResultShowTime, cts.Token); }
+        catch (OperationCanceledException) { return; }
+        foreach (var row in Rows)
+        {
+            row.ResultText = "";
+            row.LastResult = null;
+        }
     }
 
     private string ResultText(CleanupResult r)
@@ -541,6 +565,9 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
         _scanCts?.Cancel();
         _scanCts?.Dispose();
         _scanCts = null;
+        _resultCts?.Cancel();
+        _resultCts?.Dispose();
+        _resultCts = null;
         DownloadsDialog?.Dispose();
     }
 

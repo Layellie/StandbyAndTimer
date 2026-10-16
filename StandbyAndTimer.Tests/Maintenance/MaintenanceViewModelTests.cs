@@ -332,4 +332,28 @@ public class MaintenanceViewModelTests
         vm.CloseShadersCommand.Execute(null);
         Assert.False(vm.IsShadersVisible);
     }
+
+    // ── After a clean: the result shows for a few seconds, then the new size ──
+
+    [Fact]
+    public async Task The_freed_result_gives_way_to_the_new_size_after_a_few_seconds()
+    {
+        var target = new FakeTarget("user-temp", Mb(845));
+        var (vm, _, _, _) = Make(target);
+        var delay = new TaskCompletionSource();
+        TimeSpan asked = default;
+        vm.ResultDelay = (span, ct) => { asked = span; return delay.Task.WaitAsync(ct); };
+        vm.Initialize("user-temp");
+        await vm.RefreshAsync();
+
+        await vm.CleanSelectedCommand.ExecuteAsync(null);
+        Assert.Contains("Str_Maint_ResultFreed", vm.Rows[0].DisplayText);
+        Assert.Equal(TimeSpan.FromSeconds(4), asked);
+
+        delay.SetResult();
+        await Task.Yield();
+
+        Assert.Equal("845 MB", vm.Rows[0].DisplayText);      // the rescanned size, no result any more
+        Assert.Null(vm.Rows[0].LastResult);
+    }
 }
