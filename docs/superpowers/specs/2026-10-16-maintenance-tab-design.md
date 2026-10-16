@@ -402,3 +402,58 @@ feature: the tooltip says so and the app never suggests turning it off).
 - A registry cleaner: Windows has none of its own, and third-party ones do not
   help (§1).
 - Prefetch cleaning, DNS flushing, "RAM cleaners".
+
+## 10. Second round of additions (decided 2026-10-16, after the second install)
+
+### 10.1 Shader caches become one row
+
+NVIDIA, AMD, DirectX and Steam shader caches are one row, **Shader caches**,
+with a **Choose…** button (like Downloads) that lists the four caches with
+their size and their own tick.
+
+- The four ids stay the persisted ids (`nvidia-shader`, `amd-shader`,
+  `directx-shader`, `steam-shader`); `CleanupSelection` stores the ticked ones
+  as before, so earlier choices keep their meaning. No new id.
+- The row's tick is three-state: all cleanable caches ticked / none / some.
+  Ticking it ticks every cache that can be cleaned; unticking clears all.
+- The row shows the size of the ticked caches, or of all found caches when
+  none is ticked; the tooltip lists each cache's size.
+- Blocked while a listed game runs (all four are).
+- Epic Games has no shared shader cache like Steam, so there is no Epic entry.
+
+### 10.2 New rows
+
+| Id | Locations | Rules |
+|---|---|---|
+| `system-crash-dumps` | `%SystemRoot%\MEMORY.DMP` (a file), `%SystemRoot%\Minidump`, `%SystemRoot%\LiveKernelReports` (GPU driver resets leave dumps here) | Not ticked by default. `SafeFolderCleaner` learns file roots: a root that is a file is counted and deleted with the same rules |
+| `windows-logs` | `%SystemRoot%\Logs\CBS`, `%SystemRoot%\Logs\DISM` | 24-hour rule (today's logs stay for troubleshooting); files in use skipped |
+| `windows-old` | `<system drive>\Windows.old` | Cleaned by Windows' own Disk Cleanup: the app sets `StateFlags9917 = 2` on the `VolumeCaches\Previous Installations` handler, runs `cleanmgr.exe /sagerun:9917` from System32, then removes the value again; freed = size before − after. Not ticked by default; the tooltip warns that going back to the previous Windows version is no longer possible afterwards |
+
+`driver-leftovers` also covers `%ProgramData%\NVIDIA Corporation\Downloader`
+(driver packages the NVIDIA app downloaded and kept).
+
+Order: Shader caches, driver leftovers, user temp, Windows temp, Windows
+Update, Delivery Optimization, crash dumps, system crash dumps, Windows logs,
+previous Windows installation, Recycle Bin: eleven rows, the most the card
+holds at 2 px spacing.
+
+### 10.3 Refresh rate on the Status page
+
+The timer card shows the primary display's current refresh rate (for example
+"144 Hz") to the right of the timer value, small and dim. It is read with
+`EnumDisplaySettings(ENUM_CURRENT_SETTINGS)` at start-up and again on
+`SystemEvents.DisplaySettingsChanged`; there is no polling. Unknown (0) hides
+it.
+
+### 10.4 Power mode on Windows 10
+
+Windows 10 has the power slider only on battery-powered PCs and names its
+steps differently: `961cc777-…` "Better battery", `00000000-…` "Better
+performance", `ded574b5-…` "Best performance". On Windows 10 (build < 22000)
+the row uses those names, and a PC without a battery shows "not available".
+
+### 10.5 Separators line up
+
+The divider above Downloads (left card) and the one above Windows' tools
+(right card) sit at the same height: the bottom parts of both cards are one
+`SharedSizeGroup` row, top-aligned.
