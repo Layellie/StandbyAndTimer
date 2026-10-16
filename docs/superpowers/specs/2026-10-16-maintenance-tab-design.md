@@ -457,3 +457,20 @@ the row uses those names, and a PC without a battery shows "not available".
 The divider above Downloads (left card) and the one above Windows' tools
 (right card) sit at the same height: the bottom parts of both cards are one
 `SharedSizeGroup` row, top-aligned.
+
+### 10.6 Small follow-ups (user feedback after installing)
+
+- **Results:** a clean's "X freed" stays 4 s, then the rows show their new
+  size. It is a one-shot wait after the user's clean (a newer clean restarts
+  it), not a timer; nothing runs otherwise.
+- **History chart:** the maintenance history shows all time by item as bars,
+  drawn like the purge history's week chart: one bar per item ever cleaned
+  (the shader caches as one bar), largest first and highlighted, short labels,
+  the full name, size and count in the tooltip.
+- **Tab highlight:** the selected tab's fill and accent bar are one piece that
+  slides to the new tab in 200 ms (the main tabs and the guide's tabs); it
+  runs only while switching and moves at once when Windows' animations are
+  off.
+- **Timer card while off:** the app's timer off, the card shows Windows' real
+  timer resolution (read at start-up and whenever the timer goes off) instead
+  of 0.00 or a stale value.
