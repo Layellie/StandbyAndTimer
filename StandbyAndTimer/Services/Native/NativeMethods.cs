@@ -255,6 +255,13 @@ internal static class NativeMethods
         IntPtr prev,
         IntPtr relen);
 
+    /// <summary>A display's mode; device null = the primary display, mode ENUM_CURRENT_SETTINGS = the current one.</summary>
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool EnumDisplaySettings(string? lpszDeviceName, int iModeNum, ref DEVMODE lpDevMode);
+
+    internal const int ENUM_CURRENT_SETTINGS = -1;
+
     // ── shell32.dll ──────────────────────────────────────────────────────────
 
     /// <summary>Size and item count of the Recycle Bin (pszRootPath null = all drives).</summary>
@@ -383,6 +390,42 @@ internal static class NativeMethods
         internal uint Version;
         internal uint ControlMask;
         internal uint StateMask;
+    }
+
+    /// <summary>DEVMODEW, display variant of the union (220 bytes).</summary>
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    internal struct DEVMODE
+    {
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] internal string dmDeviceName;
+        internal short dmSpecVersion;
+        internal short dmDriverVersion;
+        internal short dmSize;
+        internal short dmDriverExtra;
+        internal int   dmFields;
+        internal int   dmPositionX;
+        internal int   dmPositionY;
+        internal int   dmDisplayOrientation;
+        internal int   dmDisplayFixedOutput;
+        internal short dmColor;
+        internal short dmDuplex;
+        internal short dmYResolution;
+        internal short dmTTOption;
+        internal short dmCollate;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] internal string dmFormName;
+        internal short dmLogPixels;
+        internal int   dmBitsPerPel;
+        internal int   dmPelsWidth;
+        internal int   dmPelsHeight;
+        internal int   dmDisplayFlags;
+        internal int   dmDisplayFrequency;
+        internal int   dmICMMethod;
+        internal int   dmICMIntent;
+        internal int   dmMediaType;
+        internal int   dmDitherType;
+        internal int   dmReserved1;
+        internal int   dmReserved2;
+        internal int   dmPanningWidth;
+        internal int   dmPanningHeight;
     }
 
     [StructLayout(LayoutKind.Sequential)]

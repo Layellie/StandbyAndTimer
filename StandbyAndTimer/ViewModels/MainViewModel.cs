@@ -127,8 +127,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         SettingsViewModel           settingsViewModel,
         SystemViewModel?            systemViewModel = null,
         IPurgeStatsStore?           purgeStats      = null,
-        MaintenanceViewModel?       maintenance     = null)
+        MaintenanceViewModel?       maintenance     = null,
+        IDisplayInfoService?        display         = null)
     {
+        _display         = display;
         _timerService    = timerService;
         _purgeService    = purgeService;
         _memoryService   = memoryService;
@@ -184,6 +186,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         var settings = _settingsService.Load();
         ApplySettings(settings);
+
+        // Refresh rate on the timer card: read now and when Windows says the
+        // display mode changed. No polling.
+        UpdateRefreshRate();
+        Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
 
         System.Diagnostics.Process.GetCurrentProcess().PriorityClass =
             System.Diagnostics.ProcessPriorityClass.High;
@@ -1092,6 +1099,23 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _settingsService.Save(BuildCurrentSettings());
     }
 
+    // ── Refresh rate (timer card) ─────────────────────────────────────────────
+
+    private readonly IDisplayInfoService? _display;
+
+    /// <summary>"144 Hz" for the primary display, "" when unknown.</summary>
+    [ObservableProperty] private string _refreshRateText = "";
+
+    internal void UpdateRefreshRate()
+    {
+        int hz = _display?.GetRefreshRate() ?? 0;
+        RefreshRateText = hz > 0 ? hz.ToString(CultureInfo.InvariantCulture) + " Hz" : "";
+    }
+
+    // Raised on the SystemEvents thread: read again on the UI thread.
+    private void OnDisplaySettingsChanged(object? sender, EventArgs e) =>
+        Application.Current?.Dispatcher.InvokeAsync(UpdateRefreshRate);
+
     public void Dispose()
     {
         if (_disposed) return;
@@ -1104,6 +1128,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _localization.LanguageChanged      -= OnLanguageChanged;
         _timerService.ResolutionMeasured   -= OnTimerResolutionMeasured;
         _gameDetection.GameDetected        -= OnGameDetected;
+        Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
 
         _timerService.Dispose();
         _memoryService.Dispose();

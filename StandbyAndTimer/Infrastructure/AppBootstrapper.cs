@@ -31,6 +31,7 @@ internal static class AppBootstrapper
         services.AddSingleton<ILogTailReader,              LogTailReader>();
         services.AddSingleton<IGlobalTimerSetting,         GlobalTimerSetting>();
         services.AddSingleton<IPurgeStatsStore,            PurgeStatsStore>();
+        services.AddSingleton<IDisplayInfoService,         DisplayInfoService>();
 
         // Maintenance tab. Row order = registration order.
         services.AddSingleton<ICleanupTarget>(_ => CleanupTargets.NvidiaShader());
