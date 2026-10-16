@@ -79,6 +79,20 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public SettingsViewModel               Settings { get; }
     public SystemViewModel                 SystemSettings { get; }
 
+    /// <summary>The Maintenance tab (created by DI; inert in tests).</summary>
+    public MaintenanceViewModel Maintenance { get; }
+
+    // Main TabControl: Status | Maintenance | Settings (bound to SelectedIndex).
+    public const int StatusTab = 0, MaintenanceTab = 1, SettingsTab = 2;
+
+    [ObservableProperty] private int _selectedTab;
+
+    partial void OnSelectedTabChanged(int value)
+    {
+        if (Settings.IsOpen != (value == SettingsTab)) Settings.IsOpen = value == SettingsTab;
+        Maintenance.IsActive = value == MaintenanceTab;
+    }
+
     public string TimerButtonLabel => _localization.GetString(
         TimerActive ? "Str_Timer_Active" : "Str_Timer_Inactive");
 
@@ -112,8 +126,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         IGameDetectionService       gameDetection,
         SettingsViewModel           settingsViewModel,
         SystemViewModel?            systemViewModel = null,
-        IPurgeStatsStore?           purgeStats      = null)
+        IPurgeStatsStore?           purgeStats      = null,
+        MaintenanceViewModel?       maintenance     = null,
+        IDisplayInfoService?        display         = null)
     {
+        _display         = display;
         _timerService    = timerService;
         _purgeService    = purgeService;
         _memoryService   = memoryService;
@@ -143,6 +160,19 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         foreach (var r in _purgeStats.Recent) PurgeHistory.Add(RowFor(r));
         SystemSettings.SettingsChanged += (_, _) => PersistSettings();
 
+        Maintenance = maintenance ?? MaintenanceViewModel.Inert();
+        Maintenance.SettingsChanged += (_, _) => PersistSettings();
+        Maintenance.StatusRequested += (_, text) => StatusMessage = text;
+        Maintenance.AnyGameRunning  = () => _lastSnapshot?.AnyGameRunning == true;
+        // The Settings tab can also be opened from outside (tray "Settings"):
+        // keep the selected tab in step with Settings.IsOpen.
+        Settings.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName != nameof(SettingsViewModel.IsOpen)) return;
+            if (Settings.IsOpen && SelectedTab != SettingsTab)       SelectedTab = SettingsTab;
+            else if (!Settings.IsOpen && SelectedTab == SettingsTab) SelectedTab = StatusTab;
+        };
+
         _memoryService.SnapshotUpdated     += OnSnapshotUpdated;
         _purgeService.PurgeSucceeded       += OnPurgeSucceeded;
         _localization.LanguageChanged      += OnLanguageChanged;
@@ -157,6 +187,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         var settings = _settingsService.Load();
         ApplySettings(settings);
 
+        // Refresh rate on the timer card: read now and when Windows says the
+        // display mode changed. No polling.
+        UpdateRefreshRate();
+        Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
+
         System.Diagnostics.Process.GetCurrentProcess().PriorityClass =
             System.Diagnostics.ProcessPriorityClass.High;
 
@@ -165,6 +200,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         // itself on every launch.
         if (TimerLock == TimerLockMode.Locked)
             await ActivateTimerInternalAsync(silent: true).ConfigureAwait(true);
+        ShowWindowsResolution();
 
         // Don't overwrite "Timer active — 0.50 ms" with "Ready".
         SetIdleStatus();
@@ -221,6 +257,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 s.TimerIdleOffEnabled, s.TimerIdleOffMinutes);
             SystemSettings.Initialize(s.GlobalTimerPromptAnswered, s.GlobalTimerSetByApp,
                               s.GlobalTimerChangedUtc, s.GlobalTimerBootValue);
+            Maintenance.Initialize(s.CleanupSelection);
         }
         SyncMonitorThresholds();
         SyncMonitorGames();
@@ -334,7 +371,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         GlobalTimerBootValue      = SystemSettings.GlobalTimerBootValue,
         FirstRunCompleted     = _firstRunCompleted,
         Games                 = [.. Games],
-        IgnoredGamePaths      = [.. _ignoredGamePaths]
+        IgnoredGamePaths      = [.. _ignoredGamePaths],
+        CleanupSelection      = Maintenance.SelectionText
     };
 
     // Local mirror of the persisted FirstRunCompleted flag so BuildCurrentSettings
@@ -910,8 +948,18 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _timerService.Deactivate();
         TimerActive          = false;
         _timerStartedForGame = false;
+        ShowWindowsResolution();
         if (notify)
             TimerToggledNotification?.Invoke(this, new TimerToggledArgs(false, 0));
+    }
+
+    // With the app's timer off the card shows what Windows really runs at.
+    // ActualTimerMs used to change only while the timer ran: it read 0.00 from
+    // a start with the timer off (the in-game lock without a game) and kept a
+    // stale 0.50 after the timer went off.
+    private void ShowWindowsResolution()
+    {
+        if (!TimerActive) ActualTimerMs = _timerService.QueryCurrentMs();
     }
 
     // Idle status line: the live timer reading while the timer runs, else "Ready".
@@ -1062,6 +1110,23 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _settingsService.Save(BuildCurrentSettings());
     }
 
+    // ── Refresh rate (timer card) ─────────────────────────────────────────────
+
+    private readonly IDisplayInfoService? _display;
+
+    /// <summary>"144 Hz" for the primary display, "" when unknown.</summary>
+    [ObservableProperty] private string _refreshRateText = "";
+
+    internal void UpdateRefreshRate()
+    {
+        int hz = _display?.GetRefreshRate() ?? 0;
+        RefreshRateText = hz > 0 ? hz.ToString(CultureInfo.InvariantCulture) + " Hz" : "";
+    }
+
+    // Raised on the SystemEvents thread: read again on the UI thread.
+    private void OnDisplaySettingsChanged(object? sender, EventArgs e) =>
+        Application.Current?.Dispatcher.InvokeAsync(UpdateRefreshRate);
+
     public void Dispose()
     {
         if (_disposed) return;
@@ -1074,6 +1139,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _localization.LanguageChanged      -= OnLanguageChanged;
         _timerService.ResolutionMeasured   -= OnTimerResolutionMeasured;
         _gameDetection.GameDetected        -= OnGameDetected;
+        Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
 
         _timerService.Dispose();
         _memoryService.Dispose();

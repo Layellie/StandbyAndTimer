@@ -45,6 +45,9 @@ public sealed class FakeTimer : ITimerResolutionService
     public double Activate() { Activations++; IsActive = true; return 0.5; }
     public Task<double> ActivateAsync(CancellationToken ct = default) => Task.FromResult(Activate());
     public void Deactivate() { Deactivations++; IsActive = false; }
+    /// <summary>What Windows runs at without this app's request (tests set it).</summary>
+    public double CurrentMs { get; set; } = 15.625;
+    public double QueryCurrentMs() => IsActive ? 0.5 : CurrentMs;
     public void Dispose() { }
 }
 

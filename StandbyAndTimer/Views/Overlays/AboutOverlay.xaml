@@ -113,99 +113,134 @@
                                Margin="17,0,0,0"/>
                 </StackPanel>
 
-                <!-- Guide -->
-                <ScrollViewer Grid.Row="1"
-                              VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled"
-                              Focusable="False">
-                    <StackPanel Margin="0,0,14,0">
-                        <TextBlock Text="{DynamicResource Str_Help_Intro}" Style="{StaticResource HelpTextStyle}"
-                                   Foreground="{DynamicResource AppFgDim}" Margin="0,4,0,0"/>
+                <!-- Guide: General (the original guide) | Maintenance. -->
+                <TabControl Grid.Row="1" Margin="0,4,14,0"
+                            Style="{StaticResource SegmentTabControlStyle}"
+                            ItemContainerStyle="{StaticResource SegmentTabItemStyle}">
+                    <TabItem Header="{DynamicResource Str_About_TabGeneral}">
+                        <ScrollViewer
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      Focusable="False">
+                            <StackPanel Margin="0,0,14,0">
+                                <TextBlock Text="{DynamicResource Str_Help_Intro}" Style="{StaticResource HelpTextStyle}"
+                                           Foreground="{DynamicResource AppFgDim}" Margin="0,4,0,0"/>
+        
+                                <TextBlock Text="{DynamicResource Str_Help_TimerTitle}" Style="{StaticResource HelpSectionStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Timer1}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Timer2}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Timer3}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Timer4}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Timer5}" Style="{StaticResource HelpBulletStyle}"/>
+        
+                                <TextBlock Text="{DynamicResource Str_Help_StandbyTitle}" Style="{StaticResource HelpSectionStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Standby1}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Standby2}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Standby3}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Standby4}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Standby5}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Standby6}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Standby7}" Style="{StaticResource HelpBulletStyle}"/>
+        
+                                <!-- Recommended thresholds -->
+                                <TextBlock Text="{DynamicResource Str_About_ThresholdsTitle}"
+                                           Style="{StaticResource PageSectionLabelStyle}" Margin="2,6,0,6"/>
+                                <Border Background="{DynamicResource SurfaceBg}"
+                                        BorderBrush="{DynamicResource BorderColor}"
+                                        BorderThickness="1"
+                                        CornerRadius="{StaticResource RadiusMedium}"
+                                        Padding="12,8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{DynamicResource Str_About_ColRam}"  Style="{StaticResource AboutHeadStyle}" HorizontalAlignment="Left"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{DynamicResource Str_About_ColList}" Style="{StaticResource AboutHeadStyle}"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="{DynamicResource Str_About_ColFree}" Style="{StaticResource AboutHeadStyle}"/>
+        
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="4 GB"    Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="512 MB"  Style="{StaticResource AboutCellStyle}"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="2" Text="512 MB"  Style="{StaticResource AboutCellStyle}"/>
+        
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="8 GB"    Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="1024 MB" Style="{StaticResource AboutCellStyle}"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="2" Text="1024 MB" Style="{StaticResource AboutCellStyle}"/>
+        
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="16 GB"   Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
+                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="2048 MB" Style="{StaticResource AboutCellStyle}"/>
+                                        <TextBlock Grid.Row="3" Grid.Column="2" Text="1024 MB" Style="{StaticResource AboutCellStyle}"/>
+        
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="32 GB"   Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
+                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="4096 MB" Style="{StaticResource AboutCellStyle}"/>
+                                        <TextBlock Grid.Row="4" Grid.Column="2" Text="2048 MB" Style="{StaticResource AboutCellStyle}"/>
+        
+                                        <TextBlock Grid.Row="5" Grid.Column="0" Text="64 GB"   Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
+                                        <TextBlock Grid.Row="5" Grid.Column="1" Text="8192 MB" Style="{StaticResource AboutCellStyle}"/>
+                                        <TextBlock Grid.Row="5" Grid.Column="2" Text="2048 MB" Style="{StaticResource AboutCellStyle}"/>
+                                    </Grid>
+                                </Border>
+        
+                                <TextBlock Text="{DynamicResource Str_Help_GameTitle}" Style="{StaticResource HelpSectionStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Game1}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Game2}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Game3}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Game4}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Game5}" Style="{StaticResource HelpBulletStyle}"/>
+        
+                                <TextBlock Text="{DynamicResource Str_Help_KeysTitle}" Style="{StaticResource HelpSectionStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Keys1}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Keys2}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_Keys3}" Style="{StaticResource HelpBulletStyle}"/>
+        
+                                <TextBlock Text="{DynamicResource Str_Help_MoreTitle}" Style="{StaticResource HelpSectionStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_More1}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_More2}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_More3}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_More4}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_Help_More5}" Style="{StaticResource HelpBulletStyle}"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                    <TabItem Header="{DynamicResource Str_About_TabMaintenance}">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                            <StackPanel Margin="0,0,14,0">
+                                <TextBlock Text="{DynamicResource Str_HelpM_Intro}" Style="{StaticResource HelpTextStyle}"
+                                           Foreground="{DynamicResource AppFgDim}" Margin="0,4,0,0"/>
 
-                        <TextBlock Text="{DynamicResource Str_Help_TimerTitle}" Style="{StaticResource HelpSectionStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Timer1}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Timer2}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Timer3}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Timer4}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Timer5}" Style="{StaticResource HelpBulletStyle}"/>
+                                <TextBlock Text="{DynamicResource Str_HelpM_CleanTitle}" Style="{StaticResource HelpSectionStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_Shader}"    Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_Temp}"      Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_Update}"    Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_Bin}"       Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_Downloads}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_MoreCaches}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_Leftovers}"  Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_WindowsOld}" Style="{StaticResource HelpBulletStyle}"/>
 
-                        <TextBlock Text="{DynamicResource Str_Help_StandbyTitle}" Style="{StaticResource HelpSectionStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Standby1}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Standby2}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Standby3}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Standby4}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Standby5}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Standby6}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Standby7}" Style="{StaticResource HelpBulletStyle}"/>
+                                <TextBlock Text="{DynamicResource Str_HelpM_WindowsTitle}" Style="{StaticResource HelpSectionStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_Power}"       Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_Optimize}"    Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_DiskCleanup}" Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_Repair}"      Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_Gaming}"      Style="{StaticResource HelpBulletStyle}"/>
 
-                        <!-- Recommended thresholds -->
-                        <TextBlock Text="{DynamicResource Str_About_ThresholdsTitle}"
-                                   Style="{StaticResource PageSectionLabelStyle}" Margin="2,6,0,6"/>
-                        <Border Background="{DynamicResource SurfaceBg}"
-                                BorderBrush="{DynamicResource BorderColor}"
-                                BorderThickness="1"
-                                CornerRadius="{StaticResource RadiusMedium}"
-                                Padding="12,8">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{DynamicResource Str_About_ColRam}"  Style="{StaticResource AboutHeadStyle}" HorizontalAlignment="Left"/>
-                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{DynamicResource Str_About_ColList}" Style="{StaticResource AboutHeadStyle}"/>
-                                <TextBlock Grid.Row="0" Grid.Column="2" Text="{DynamicResource Str_About_ColFree}" Style="{StaticResource AboutHeadStyle}"/>
-
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="4 GB"    Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1" Text="512 MB"  Style="{StaticResource AboutCellStyle}"/>
-                                <TextBlock Grid.Row="1" Grid.Column="2" Text="512 MB"  Style="{StaticResource AboutCellStyle}"/>
-
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="8 GB"    Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="1024 MB" Style="{StaticResource AboutCellStyle}"/>
-                                <TextBlock Grid.Row="2" Grid.Column="2" Text="1024 MB" Style="{StaticResource AboutCellStyle}"/>
-
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="16 GB"   Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
-                                <TextBlock Grid.Row="3" Grid.Column="1" Text="2048 MB" Style="{StaticResource AboutCellStyle}"/>
-                                <TextBlock Grid.Row="3" Grid.Column="2" Text="1024 MB" Style="{StaticResource AboutCellStyle}"/>
-
-                                <TextBlock Grid.Row="4" Grid.Column="0" Text="32 GB"   Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
-                                <TextBlock Grid.Row="4" Grid.Column="1" Text="4096 MB" Style="{StaticResource AboutCellStyle}"/>
-                                <TextBlock Grid.Row="4" Grid.Column="2" Text="2048 MB" Style="{StaticResource AboutCellStyle}"/>
-
-                                <TextBlock Grid.Row="5" Grid.Column="0" Text="64 GB"   Style="{StaticResource AboutCellStyle}" HorizontalAlignment="Left"/>
-                                <TextBlock Grid.Row="5" Grid.Column="1" Text="8192 MB" Style="{StaticResource AboutCellStyle}"/>
-                                <TextBlock Grid.Row="5" Grid.Column="2" Text="2048 MB" Style="{StaticResource AboutCellStyle}"/>
-                            </Grid>
-                        </Border>
-
-                        <TextBlock Text="{DynamicResource Str_Help_GameTitle}" Style="{StaticResource HelpSectionStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Game1}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Game2}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Game3}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Game4}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Game5}" Style="{StaticResource HelpBulletStyle}"/>
-
-                        <TextBlock Text="{DynamicResource Str_Help_KeysTitle}" Style="{StaticResource HelpSectionStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Keys1}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Keys2}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_Keys3}" Style="{StaticResource HelpBulletStyle}"/>
-
-                        <TextBlock Text="{DynamicResource Str_Help_MoreTitle}" Style="{StaticResource HelpSectionStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_More1}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_More2}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_More3}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_More4}" Style="{StaticResource HelpBulletStyle}"/>
-                        <ContentControl Content="{DynamicResource Str_Help_More5}" Style="{StaticResource HelpBulletStyle}"/>
-                    </StackPanel>
-                </ScrollViewer>
+                                <TextBlock Text="{DynamicResource Str_HelpM_NoteTitle}" Style="{StaticResource HelpSectionStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_Safety}"  Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_Account}" Style="{StaticResource HelpBulletStyle}"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                </TabControl>
 
                 <!-- Footer: developer + close -->
                 <Grid Grid.Row="2" Margin="0,12,14,0">

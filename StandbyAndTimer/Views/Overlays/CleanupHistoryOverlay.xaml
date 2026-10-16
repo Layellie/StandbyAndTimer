@@ -1,0 +1,184 @@
+<UserControl x:Class="StandbyAndTimer.Views.Overlays.CleanupHistoryOverlay"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FontFamily="{StaticResource AppFont}" FontSize="13">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <Style x:Key="TileStyle" TargetType="Border" BasedOn="{StaticResource SettingsGroupStyle}">
+            <Setter Property="Margin"  Value="0"/>
+            <Setter Property="Padding" Value="12,8"/>
+        </Style>
+        <Style x:Key="TileLabel" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppFgDim}"/>
+        </Style>
+        <Style x:Key="TileValue" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="18"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentText}"/>
+            <Setter Property="Margin"     Value="0,2,0,0"/>
+        </Style>
+        <Style x:Key="TileCount" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="11"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppFgDim}"/>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- Maintenance history (DataContext = MaintenanceViewModel): totals for
+         today / 7 days / all time, per item, and the last 20 cleanups. Kept in
+         cleanup-history.json. The dim overlay closes it; clicks inside do not. -->
+    <Border Background="{DynamicResource ModalOverlayBrush}"
+            Visibility="{Binding IsHistoryVisible, Converter={StaticResource BoolToVis}}">
+        <Border.InputBindings>
+            <MouseBinding MouseAction="LeftClick" Command="{Binding CloseHistoryCommand}"/>
+        </Border.InputBindings>
+        <Border HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="{DynamicResource Surface2Bg}" BorderBrush="{DynamicResource BorderColor}"
+                BorderThickness="1" CornerRadius="{StaticResource RadiusLarge}"
+                Padding="22,18,22,16" Width="560" MaxHeight="476"
+                MouseLeftButtonDown="DialogMouseDown">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="9" Height="9" Fill="{DynamicResource AccentPrimary}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="{DynamicResource Str_MHist_Title}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource AppFg}"/>
+                    </StackPanel>
+                    <TextBlock Text="{DynamicResource Str_MHist_Subtitle}" FontSize="12" Foreground="{DynamicResource AppFgDim}" Margin="17,0,0,0"/>
+                </StackPanel>
+
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Style="{StaticResource TileStyle}">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Str_History_Today}" Style="{StaticResource TileLabel}"/>
+                            <TextBlock Text="{Binding StatsTodayFreed}" Style="{StaticResource TileValue}"/>
+                            <TextBlock Text="{Binding StatsTodayCount}" Style="{StaticResource TileCount}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="2" Style="{StaticResource TileStyle}">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Str_History_Week}" Style="{StaticResource TileLabel}"/>
+                            <TextBlock Text="{Binding StatsWeekFreed}" Style="{StaticResource TileValue}"/>
+                            <TextBlock Text="{Binding StatsWeekCount}" Style="{StaticResource TileCount}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="4" Style="{StaticResource TileStyle}">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Str_History_AllTime}" Style="{StaticResource TileLabel}"/>
+                            <TextBlock Text="{Binding StatsAllFreed}" Style="{StaticResource TileValue}"/>
+                            <TextBlock Text="{Binding StatsAllCount}" Style="{StaticResource TileCount}"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- All time by item, drawn like the purge history's week chart:
+                     one bar per item ever cleaned, the largest highlighted. -->
+                <StackPanel Grid.Row="2" Margin="2,12,0,0">
+                    <TextBlock Text="{DynamicResource Str_MHist_ByItem}" FontSize="11" Foreground="{DynamicResource AppFgDim}" Margin="0,0,0,6"/>
+                    <ItemsControl x:Name="ItemChart" ItemsSource="{Binding TargetBars}" HorizontalAlignment="Left">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <!-- Transparent background: the whole column shows the tooltip. -->
+                                <StackPanel Width="42" Background="Transparent" ToolTip="{Binding Tip}">
+                                    <Grid Height="40">
+                                        <Border Height="2" VerticalAlignment="Bottom" Margin="7,0"
+                                                CornerRadius="1" Background="{DynamicResource BorderColor}"/>
+                                        <Border x:Name="Bar" Height="{Binding Height}" VerticalAlignment="Bottom" Margin="7,0"
+                                                CornerRadius="3,3,1,1" Background="{DynamicResource AccentPrimary}" Opacity="0.55"/>
+                                    </Grid>
+                                    <TextBlock x:Name="ItemLabel" Text="{Binding Label}" FontSize="10" FontWeight="Normal" Margin="0,4,0,0"
+                                               HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                               Foreground="{DynamicResource AppFgMuted}"/>
+                                </StackPanel>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsTop}" Value="True">
+                                        <Setter TargetName="Bar" Property="Opacity" Value="1"/>
+                                        <Setter TargetName="ItemLabel" Property="Foreground" Value="{DynamicResource AccentText}"/>
+                                        <Setter TargetName="ItemLabel" Property="FontWeight" Value="SemiBold"/>
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <TextBlock Grid.Row="3" Text="{DynamicResource Str_MHist_Recent}" Style="{StaticResource PageSectionLabelStyle}" Margin="2,12,0,6"/>
+
+                <Border Grid.Row="4" Style="{StaticResource SettingsGroupStyle}" Margin="0" Padding="12,6">
+                    <Grid>
+                        <TextBlock Text="{DynamicResource Str_MHist_Empty}" FontSize="12" Foreground="{DynamicResource AppFgDim}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,10">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding History.Count}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                            <ItemsControl ItemsSource="{Binding History}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,3">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="96"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Time}" FontSize="12" Foreground="{DynamicResource AppFgDim}"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding What}" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding Freed}" FontSize="12" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource AccentText}" Margin="10,0,0,0"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <Grid Grid.Row="5" Margin="0,14,0,0">
+                    <Button Command="{Binding ResetHistoryCommand}" HorizontalAlignment="Left" MinWidth="120" Height="30">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource GhostButtonStyle}">
+                                <Setter Property="Content" Value="{DynamicResource Str_History_Reset}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsResetArmed}" Value="True">
+                                        <Setter Property="Content" Value="{DynamicResource Str_History_ResetConfirm}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Content="{DynamicResource Str_History_Close}" Command="{Binding CloseHistoryCommand}"
+                            Style="{StaticResource DarkButtonStyle}" HorizontalAlignment="Right" MinWidth="80" Height="30"/>
+                </Grid>
+            </Grid>
+        </Border>
+    </Border>
+</UserControl>

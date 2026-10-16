@@ -239,4 +239,63 @@ public sealed class SettingsServiceTests : IDisposable
         // Nothing changes on the way through a save.
         Assert.Equal(System.Text.Json.JsonSerializer.Serialize(first), System.Text.Json.JsonSerializer.Serialize(second));
     }
+    [Fact]
+    public void Cleanup_selection_round_trips_and_missing_stays_missing()
+    {
+        var s = _service.Load();
+        Assert.Null(s.CleanupSelection);            // 2.5.2 key or fresh install: defaults apply
+        _service.Save(s);
+        using (var key = Key())
+            Assert.Null(key.GetValue("CleanupSelection"));
+
+        s.CleanupSelection = "";                    // the user unticked everything
+        _service.Save(s);
+        Assert.Equal("", _service.Load().CleanupSelection);
+
+        s.CleanupSelection = "user-temp,nvidia-shader";
+        _service.Save(s);
+        Assert.Equal("user-temp,nvidia-shader", _service.Load().CleanupSelection);
+    }
+
+    [Fact]
+    public void Settings_stored_by_2_5_2_survive_an_update_unchanged()
+    {
+        string cs2 = Exe("cs2"), val = Exe("VALORANT");
+        // Value for value what 2.5.2 writes: every name SettingsService.Save
+        // wrote in 2.5.2, with the same value kinds. No CleanupSelection.
+        using (var key = Key())
+        {
+            foreach (var (n, v) in new[] { ("StandbyLimitMb", 2048), ("FreeLimitMb", 512),
+                                           ("IdleThresholdMinutes", 5), ("TimerIdleOffMinutes", 15) })
+                key.SetValue(n, v, RegistryValueKind.DWord);
+            foreach (var (n, v) in new[] {
+                ("AutoPurgeEnabled", "1"), ("GameModeEnabled", "1"), ("AutoStartEnabled", "1"),
+                ("TimerResolutionActive", "0"), ("TimerLocked", "0"), ("TimerLockMode", "InGame"),
+                ("AutoPurgeOnlyInGames", "0"), ("UpdateCheckEnabled", "1"), ("FirstRunCompleted", "1"),
+                ("NotifyOnPurge", "1"), ("NotifyOnTimerToggle", "0"), ("NotifyOnGameDetected", "1"),
+                ("AutoPurgeIdleOnly", "0"), ("LightPurge", "0"), ("DeepPurge", "1"),
+                ("TimerIdleOffEnabled", "1"), ("GlobalTimerPromptAnswered", "1"), ("GlobalTimerSetByApp", "1"),
+                ("GlobalTimerBootValue", "1"), ("GlobalTimerChangedUtc", "2026-09-30T18:12:45.1234567Z"),
+                ("PurgeHotkey", "Ctrl+Alt+P"), ("TimerHotkey", "Ctrl+Alt+T"), ("AutoPurgeHotkey", "Ctrl+Alt+O"),
+                ("Language", "Turkish"), ("Theme", "Black"),
+                ("GamePaths", cs2 + ";" + val), ("AutoGamePaths", val), ("IgnoredGamePaths", @"C:\Games\witcher3.exe"),
+                ("NoBoostGamePaths", cs2), ("NoAutoPurgeGamePaths", val), ("PurgeOnStartGamePaths", cs2) })
+                key.SetValue(n, v);
+        }
+        var before = Values();
+
+        var first = _service.Load();
+        _service.Save(first);                  // the updated app saves at exit
+
+        Assert.Null(first.CleanupSelection);   // not in a 2.5.2 key: the default ticks apply
+        Assert.Equal(before, Values());        // every value, name and kind unchanged, nothing added
+    }
+
+    private List<(string Name, RegistryValueKind Kind, string Value)> Values()
+    {
+        using var key = Key();
+        return key.GetValueNames().Order(StringComparer.Ordinal)
+                  .Select(n => (n, key.GetValueKind(n), Convert.ToString(key.GetValue(n), System.Globalization.CultureInfo.InvariantCulture)!))
+                  .ToList();
+    }
 }

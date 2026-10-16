@@ -1,0 +1,299 @@
+<UserControl x:Class="StandbyAndTimer.Views.MaintenancePanelView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:models="clr-namespace:StandbyAndTimer.Core.Models"
+             xmlns:vm="clr-namespace:StandbyAndTimer.ViewModels"
+             FontFamily="{StaticResource AppFont}" FontSize="13"
+             FontWeight="SemiBold">
+    <!-- SemiBold like the Status and Settings pages: they inherit it from the
+         selected tab item (SegmentTabItemStyle); this page is built from a
+         template, so it would not, and its text looked thin next to them. -->
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <Style x:Key="ValueTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize"          Value="12"/>
+            <Setter Property="Foreground"        Value="{DynamicResource AppFgDim}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextTrimming"      Value="CharacterEllipsis"/>
+        </Style>
+        <Style x:Key="GamingRowStyle" TargetType="Grid">
+            <Setter Property="Margin"     Value="0,2"/>
+            <Setter Property="Background" Value="Transparent"/>   <!-- the whole row shows the tooltip -->
+        </Style>
+        <Style x:Key="OpenButtonStyle" TargetType="Button" BasedOn="{StaticResource GhostButtonStyle}">
+            <Setter Property="Height"            Value="24"/>
+            <Setter Property="Padding"           Value="8,0"/>
+            <Setter Property="FontSize"          Value="11"/>
+            <Setter Property="MinWidth"          Value="56"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="ToolButtonStyle" TargetType="Button" BasedOn="{StaticResource GhostButtonStyle}">
+            <Setter Property="Height"                     Value="28"/>
+            <Setter Property="Padding"                    Value="10,0"/>
+            <Setter Property="Margin"                     Value="0,4,0,0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- Maintenance TAB page: same boxed layout as Settings. Left: cleanup
+         rows (tick, name, size / result), Downloads, Clean selected, freed so
+         far (opens the history). Right: power plan + virtual memory and
+         buttons that open Windows' own tools. No ScrollViewer: fits 760x520.
+         IsSharedSizeScope: the bottom parts of both cards share their height. -->
+    <Grid Grid.IsSharedSizeScope="True">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="12"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Grid.Column="0">
+            <TextBlock Text="{DynamicResource Str_Maint_CleanupSection}" Style="{StaticResource PageSectionLabelStyle}"/>
+            <!-- Rescan: the sizes are read once on selection; this reads them again.
+                 Sized and pulled up like Settings' log Refresh, so the label row keeps
+                 its height and both cards line up with the other pages. -->
+            <Button Content="{DynamicResource Str_Maint_Rescan}" Command="{Binding RescanCommand}"
+                    Style="{StaticResource GhostButtonStyle}" Height="20" Padding="10,0" FontSize="10"
+                    HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-3,0,4"/>
+        </Grid>
+        <TextBlock Grid.Row="0" Grid.Column="2" Text="{DynamicResource Str_Maint_WindowsSection}" Style="{StaticResource PageSectionLabelStyle}"/>
+
+        <!-- ═══════════════ LEFT: CLEANUP ═══════════════ -->
+        <!-- Margin 0: the cards reach the page bottom like the Status and Settings cards. -->
+        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource SettingsGroupStyle}" Margin="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>  <!-- rows -->
+                    <RowDefinition Height="*"/>
+                    <!-- Downloads, Clean, freed so far. Shares its height with the
+                         tools part of the Windows card, so both dividers line up. -->
+                    <RowDefinition Height="Auto" SharedSizeGroup="CardBottom"/>
+                </Grid.RowDefinitions>
+
+                <ItemsControl Grid.Row="0" ItemsSource="{Binding DisplayRows}" Focusable="False">
+                    <ItemsControl.Resources>
+                        <!-- The shader caches as one row: tick (all / none / some),
+                             size of the ticked caches, Choose… lists them one by one. -->
+                        <DataTemplate DataType="{x:Type vm:ShaderGroupViewModel}">
+                            <Grid Margin="0,2" Background="Transparent" ToolTip="{Binding Tip}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <CheckBox IsChecked="{Binding IsChecked}"
+                                          IsEnabled="{Binding CanClean}"
+                                          Style="{StaticResource DarkCheckBoxStyle}"
+                                          VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Name}"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" Margin="6,0,10,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource SettingTitleStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding CanClean}" Value="False">
+                                                    <Setter Property="Opacity" Value="0.5"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Grid.Column="2" Text="{Binding DisplayText}"
+                                           Style="{StaticResource ValueTextStyle}" MaxWidth="150" Margin="0,0,8,0"/>
+                                <Button Grid.Column="3" Content="{DynamicResource Str_Maint_Choose}"
+                                        Command="{Binding DataContext.OpenShadersCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        Style="{StaticResource GhostButtonStyle}" Height="20" Padding="8,0" FontSize="10"
+                                        VerticalAlignment="Center" Margin="0,-2"/>   <!-- -2: the row keeps the height of the others -->
+
+                            </Grid>
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:CleanupRowViewModel}">
+                            <!-- Transparent background: the whole row shows the tooltip. -->
+                            <!-- 2 px apart: eleven rows fit the fixed window (spec §9.2; 2.5 px was 11 px too tall). -->
+                            <Grid Margin="0,2" Background="Transparent" ToolTip="{Binding Tip}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <CheckBox IsChecked="{Binding IsChecked}"
+                                          IsEnabled="{Binding CanClean}"
+                                          Style="{StaticResource DarkCheckBoxStyle}"
+                                          VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Name}"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" Margin="6,0,10,0">
+                                    <!-- Not found / blocked by a game: dimmed like its disabled check box. -->
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource SettingTitleStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding CanClean}" Value="False">
+                                                    <Setter Property="Opacity" Value="0.5"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Grid.Column="2" Text="{Binding DisplayText}"
+                                           Style="{StaticResource ValueTextStyle}" MaxWidth="190"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.Resources>
+                </ItemsControl>
+
+                <!-- Downloads: the user's own files, so its own small section under a
+                     divider: name and hint on the left, size and Choose on the right. -->
+                <StackPanel Grid.Row="2" VerticalAlignment="Top">
+                    <Border x:Name="CleanupDivider" Height="1" Margin="0,6,0,6" Background="{DynamicResource SeparatorBrush}"/>
+                    <Grid Background="Transparent" ToolTip="{DynamicResource Str_CleanTip_downloads}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
+                            <TextBlock Text="{DynamicResource Str_Clean_downloads}" Style="{StaticResource SettingTitleStyle}"/>
+                            <TextBlock Text="{DynamicResource Str_Maint_DownloadsHint}" Style="{StaticResource ValueTextStyle}" FontSize="11"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" Text="{Binding DownloadsSizeText}" Style="{StaticResource ValueTextStyle}" Margin="0,0,10,0"/>
+                        <Button Grid.Column="2" Content="{DynamicResource Str_Maint_Choose}"
+                                Command="{Binding OpenDownloadsCommand}"
+                                Style="{StaticResource GhostButtonStyle}" Height="26" Padding="10,0" MinWidth="72" VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Button Margin="0,6,0,0" Height="32"
+                            Content="{Binding CleanButtonText}"
+                            Command="{Binding CleanSelectedCommand}"
+                            Style="{StaticResource DarkButtonStyle}"/>
+
+                    <TextBlock Margin="0,6,0,0" HorizontalAlignment="Center"
+                               Text="{Binding FreedSoFarText}" FontSize="11"
+                               Foreground="{DynamicResource AccentText}" Cursor="Hand"
+                               ToolTip="{DynamicResource Str_Maint_HistoryTip}">
+                        <TextBlock.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding ShowHistoryCommand}"/>
+                        </TextBlock.InputBindings>
+                    </TextBlock>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ═══════════════ RIGHT: WINDOWS ═══════════════ -->
+        <!-- Info on top, Windows' tools at the bottom, empty space between. -->
+        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource SettingsGroupStyle}" Margin="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto" SharedSizeGroup="CardBottom"/>
+                </Grid.RowDefinitions>
+                <!-- Same top margin as the divider above Downloads: the two line up. -->
+                <StackPanel Grid.Row="2" VerticalAlignment="Top">
+                    <Border x:Name="ToolsDivider" Height="1" Margin="0,6,0,2" Background="{DynamicResource SeparatorBrush}"/>
+                    <Button Content="{DynamicResource Str_Maint_OptimizeDrives}" ToolTip="{DynamicResource Str_Maint_OptimizeDrivesTip}"
+                            Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.OptimizeDrives}"
+                            Style="{StaticResource ToolButtonStyle}"/>
+                    <Button Content="{DynamicResource Str_Maint_DiskCleanup}" ToolTip="{DynamicResource Str_Maint_DiskCleanupTip}"
+                            Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.DiskCleanup}"
+                            Style="{StaticResource ToolButtonStyle}"/>
+                    <Button Content="{Binding RepairButtonText}" ToolTip="{DynamicResource Str_Maint_RepairTip}"
+                            Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.RepairSystemFiles}"
+                            Style="{StaticResource ToolButtonStyle}"/>
+                </StackPanel>
+                <StackPanel Grid.Row="0">
+                    <Grid Margin="0,2,0,4" Background="Transparent" ToolTip="{DynamicResource Str_Maint_PowerTip}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
+                            <TextBlock Text="{DynamicResource Str_Maint_PowerPlan}" Style="{StaticResource SettingTitleStyle}"/>
+                            <TextBlock Text="{Binding PowerPlanText}" Style="{StaticResource ValueTextStyle}"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="{DynamicResource Str_Maint_Change}"
+                                Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.PowerOptions}"
+                                Style="{StaticResource GhostButtonStyle}" Height="26" Padding="10,0" MinWidth="72" VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Grid Margin="0,4" Background="Transparent" ToolTip="{DynamicResource Str_Maint_AdjustTip}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
+                            <TextBlock Text="{DynamicResource Str_Maint_VirtualMemory}" Style="{StaticResource SettingTitleStyle}"/>
+                            <TextBlock Text="{Binding PageFileText}" Style="{StaticResource ValueTextStyle}" TextWrapping="Wrap" TextTrimming="None"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="{DynamicResource Str_Maint_Adjust}"
+                                Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.VirtualMemory}"
+                                Style="{StaticResource GhostButtonStyle}" Height="26" Padding="10,0" MinWidth="72" VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <!-- Gaming settings (spec §9.3): name, state, and Open for
+                         Windows' own page. The app changes nothing here. -->
+                    <Border Height="1" Margin="0,4,0,4" Background="{DynamicResource SeparatorBrush}"/>
+                    <Grid Style="{StaticResource GamingRowStyle}" ToolTip="{DynamicResource Str_Maint_PowerModeTip}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Str_Maint_PowerMode}" Style="{StaticResource SettingTitleStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="1" Text="{Binding PowerModeText}" Style="{StaticResource ValueTextStyle}" Margin="8,0,10,0"/>
+                        <Button Grid.Column="2" Content="{DynamicResource Str_Maint_Open}" Style="{StaticResource OpenButtonStyle}"
+                                Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.PowerSettings}"/>
+                    </Grid>
+                    <Grid Style="{StaticResource GamingRowStyle}" ToolTip="{DynamicResource Str_Maint_HagsTip}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Str_Maint_Hags}" Style="{StaticResource SettingTitleStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="1" Text="{Binding HagsText}" Style="{StaticResource ValueTextStyle}" Margin="8,0,10,0"/>
+                        <Button Grid.Column="2" Content="{DynamicResource Str_Maint_Open}" Style="{StaticResource OpenButtonStyle}"
+                                Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.GraphicsSettings}"/>
+                    </Grid>
+                    <Grid Style="{StaticResource GamingRowStyle}" ToolTip="{DynamicResource Str_Maint_RecordingTip}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Str_Maint_Recording}" Style="{StaticResource SettingTitleStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="1" Text="{Binding RecordingText}" Style="{StaticResource ValueTextStyle}" Margin="8,0,10,0"/>
+                        <Button Grid.Column="2" Content="{DynamicResource Str_Maint_Open}" Style="{StaticResource OpenButtonStyle}"
+                                Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.CaptureSettings}"/>
+                    </Grid>
+                    <Grid Style="{StaticResource GamingRowStyle}" ToolTip="{DynamicResource Str_Maint_MemoryIntegrityTip}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Str_Maint_MemoryIntegrity}" Style="{StaticResource SettingTitleStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="1" Text="{Binding MemoryIntegrityText}" Style="{StaticResource ValueTextStyle}" Margin="8,0,10,0"/>
+                        <Button Grid.Column="2" Content="{DynamicResource Str_Maint_Open}" Style="{StaticResource OpenButtonStyle}"
+                                Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.CoreIsolation}"/>
+                    </Grid>
+                    <Grid Style="{StaticResource GamingRowStyle}" ToolTip="{DynamicResource Str_Maint_GameModeTip}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource Str_Maint_GameMode}" Style="{StaticResource SettingTitleStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="1" Text="{Binding GameModeText}" Style="{StaticResource ValueTextStyle}" Margin="8,0,10,0"/>
+                        <Button Grid.Column="2" Content="{DynamicResource Str_Maint_Open}" Style="{StaticResource OpenButtonStyle}"
+                                Command="{Binding OpenToolCommand}" CommandParameter="{x:Static models:SystemTool.GameModeSettings}"/>
+                    </Grid>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

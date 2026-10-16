@@ -13,6 +13,13 @@ public interface ITimerResolutionService : IDisposable
     event EventHandler<double>? ResolutionMeasured;
 
     /// <summary>
+    /// The timer resolution Windows runs at right now, in ms (0 when it cannot
+    /// be read). With this app's timer off it is Windows' own value or what
+    /// another program asked for.
+    /// </summary>
+    double QueryCurrentMs();
+
+    /// <summary>
     /// Sets system timer resolution to 0.5 ms (5000 units) and boosts scheduling.
     /// Returns the actual achieved resolution in milliseconds.
     /// </summary>

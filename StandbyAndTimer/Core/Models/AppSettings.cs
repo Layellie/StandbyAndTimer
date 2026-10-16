@@ -72,4 +72,9 @@ public sealed class AppSettings
     // v2.2.0 — exes the user removed after fullscreen detection auto-added
     // them. Detection never re-adds these; adding one by hand clears it.
     public List<string> IgnoredGamePaths     { get; set; } = [];
+
+    // v3.0.0 — ticked Maintenance cleanup rows (comma-separated target ids,
+    // CleanupTargetIds). null = never saved: the default ticks apply; "" = the
+    // user unticked everything. A user preference, so an import takes it.
+    public string? CleanupSelection          { get; set; }
 }

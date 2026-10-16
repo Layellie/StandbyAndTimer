@@ -22,6 +22,9 @@ public class TestLogSetupTests
         Logger.Info("test log redirect check");
 
         Assert.StartsWith(TestLogSetup.Dir, Logger.LogFilePath, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("test log redirect check", File.ReadAllText(Logger.LogFilePath));
+        // Other tests log in parallel: read while they may be appending.
+        using var stream = new FileStream(Logger.LogFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using var reader = new StreamReader(stream);
+        Assert.Contains("test log redirect check", reader.ReadToEnd());
     }
 }
