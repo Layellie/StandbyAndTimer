@@ -64,4 +64,79 @@ public sealed class FolderCleanupTargetTests : IDisposable
         Assert.Equal([Path.Combine(windows, "Temp")], CleanupTargets.WindowsTemp().Roots);
         Assert.Equal([Path.Combine(windows, "SoftwareDistribution", "Download")], CleanupTargets.WindowsUpdate().Roots);
     }
+
+    [Fact]
+    public async Task Roots_are_read_at_each_scan()
+    {
+        Directory.CreateDirectory(Path.Combine(_dir, "a"));
+        File.WriteAllBytes(Path.Combine(_dir, "a", "1.bin"), new byte[10]);
+        IReadOnlyList<string> roots = [Path.Combine(_dir, "missing")];
+        var t = new FolderCleanupTarget("x", () => roots);
+
+        Assert.False((await t.ScanAsync(default)).Found);
+        roots = [Path.Combine(_dir, "a")];        // e.g. a Steam library added since
+        Assert.Equal(10, (await t.ScanAsync(default)).Bytes);
+    }
+
+    [Fact]
+    public void Steam_libraries_from_libraryfolders_vdf()
+    {
+        string vdf = """
+            "libraryfolders"
+            {
+                "0"
+                {
+                    "path"		"C:\Program Files (x86)\Steam"
+                    "label"		""
+                }
+                "1"
+                {
+                    "path"		"D:\SteamLibrary"
+                }
+                "2"
+                {
+                    "path"		"relative\nope"
+                    "path"
+                    garbage "path" "E:\Games"
+                }
+            }
+            """;
+
+        var roots = CleanupTargets.SteamShaderRoots("c:/program files (x86)/steam", vdf);
+
+        Assert.Equal([@"c:\program files (x86)\steam\steamapps\shadercache", @"D:\SteamLibrary\steamapps\shadercache"], roots);
+    }
+
+    [Fact]
+    public void Steam_roots_without_steam_or_its_library_file()
+    {
+        Assert.Empty(CleanupTargets.SteamShaderRoots(null, null));
+        Assert.Equal([@"C:\Steam\steamapps\shadercache"], CleanupTargets.SteamShaderRoots(@"C:\Steam", null));
+        Assert.Equal([@"C:\Steam\steamapps\shadercache"], CleanupTargets.SteamShaderRoots(@"C:\Steam", "{ not a vdf"));
+    }
+
+    [Fact]
+    public void New_targets_have_their_ids_locations_and_rules()
+    {
+        string local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        string common = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+        string drive = Path.GetPathRoot(Environment.SystemDirectory)!;
+
+        Assert.Equal(CleanupTargetIds.DirectXShader, CleanupTargets.DirectXShader().Id);
+        Assert.True(CleanupTargets.DirectXShader().BlockedWhileGameRuns);
+        Assert.Equal([Path.Combine(local, "D3DSCache")], CleanupTargets.DirectXShader().Roots);
+
+        Assert.Equal(CleanupTargetIds.SteamShader, CleanupTargets.SteamShader().Id);
+        Assert.True(CleanupTargets.SteamShader().BlockedWhileGameRuns);
+
+        Assert.Equal(CleanupTargetIds.DriverLeftovers, CleanupTargets.DriverLeftovers().Id);
+        Assert.False(CleanupTargets.DriverLeftovers().BlockedWhileGameRuns);
+        Assert.Equal([Path.Combine(drive, "NVIDIA"), Path.Combine(drive, "AMD")], CleanupTargets.DriverLeftovers().Roots);
+
+        Assert.Equal(CleanupTargetIds.CrashDumps, CleanupTargets.CrashDumps().Id);
+        Assert.False(CleanupTargets.CrashDumps().BlockedWhileGameRuns);
+        Assert.Contains(Path.Combine(local, "CrashDumps"), CleanupTargets.CrashDumps().Roots);
+        Assert.Contains(Path.Combine(common, "Microsoft", "Windows", "WER", "ReportArchive"), CleanupTargets.CrashDumps().Roots);
+        Assert.Contains(Path.Combine(local, "Microsoft", "Windows", "WER", "ReportQueue"), CleanupTargets.CrashDumps().Roots);
+    }
 }

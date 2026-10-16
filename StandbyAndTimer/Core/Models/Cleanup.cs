@@ -25,6 +25,12 @@ public static class CleanupTargetIds
     public const string WindowsUpdate = "windows-update";
     public const string RecycleBin    = "recycle-bin";
     public const string Downloads     = "downloads";   // history only
+    // 3.0.0 additions (spec §9.1)
+    public const string DirectXShader        = "directx-shader";
+    public const string SteamShader          = "steam-shader";
+    public const string DriverLeftovers      = "driver-leftovers";
+    public const string DeliveryOptimization = "delivery-optimization";
+    public const string CrashDumps           = "crash-dumps";
 
     /// <summary>Ticked when CleanupSelection was never saved.</summary>
     public static readonly IReadOnlyList<string> DefaultSelection = [UserTemp, WindowsTemp, WindowsUpdate];
