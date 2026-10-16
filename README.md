@@ -37,10 +37,10 @@ A small Windows app for gamers: it makes the system timer finer, frees memory Wi
 
 StandbyAndTimer runs in the system tray and does four separate jobs. You can use any of them on its own.
 
-- Windows normally ticks its system timer about every 15.6 ms. The app asks for 0.5 ms instead, which can make mouse input and frame timing in games more even.
+- Windows normally ticks its system timer about every 15.6 ms. The app asks for 0.5 ms instead, which can make mouse input and frame timing in games more even. The timer card shows the value Windows really runs at, and your display's refresh rate.
 - Windows keeps recently used files cached in RAM as "standby" memory. When free RAM runs low, this cache can cause stutters. The app clears it when you press the button, or by itself when free memory drops below a limit you set.
 - In Game Mode, the games in your list get High CPU priority and all CPU cores while they run. Drag a game's `.exe` into the list, or let the app add games it sees running fullscreen.
-- The Maintenance tab cleans shader caches, temp files, Windows Update leftovers and the Recycle Bin when you ask, sends chosen Downloads to the Recycle Bin, shows the power plan and virtual memory, and opens Windows' own tools (Optimize drives, Disk Cleanup, system file repair). Nothing there runs by itself.
+- The Maintenance tab cleans what you tick: shader caches (NVIDIA, AMD, DirectX, Steam), driver installer leftovers, temp files, Windows Update leftovers, the Delivery Optimization cache, crash dumps, Windows logs, the previous Windows installation (Windows.old) and the Recycle Bin. It sends chosen Downloads to the Recycle Bin, keeps a history with a chart, shows Windows' gaming settings (power plan and mode, virtual memory, GPU scheduling, background recording, memory integrity, Game Mode) with a button to Windows' own page for each, and opens Windows' tools (Optimize drives, Disk Cleanup, system file repair). It never leaves the listed folders, skips files in use, and nothing there runs by itself.
 
 ## How to use it
 
@@ -89,10 +89,10 @@ dotnet run --project StandbyAndTimer/StandbyAndTimer.csproj   # run as administr
 
 StandbyAndTimer sistem tepsisinde çalışır ve birbirinden bağımsız dört iş yapar. İstediğinizi tek başına kullanabilirsiniz.
 
-- Windows normalde sistem zamanlayıcısını yaklaşık 15,6 ms'de bir çalıştırır. Uygulama bunun yerine 0,5 ms ister; bu da oyunlarda fare tepkisini ve kare zamanlamasını daha düzenli hale getirebilir.
+- Windows normalde sistem zamanlayıcısını yaklaşık 15,6 ms'de bir çalıştırır. Uygulama bunun yerine 0,5 ms ister; bu da oyunlarda fare tepkisini ve kare zamanlamasını daha düzenli hale getirebilir. Timer kartı, Windows'un gerçekte çalıştığı değeri ve ekranınızın yenileme hızını gösterir.
 - Windows yakın zamanda kullanılan dosyaları RAM'de "standby" bellek olarak tutar. Boş RAM azaldığında bu önbellek takılmalara yol açabilir. Uygulama bu belleği siz butona bastığınızda ya da boş bellek belirlediğiniz sınırın altına düştüğünde kendiliğinden temizler.
 - Game Mode açıksa listedeki oyunlar, çalıştıkları sürece Yüksek CPU önceliği ve tüm işlemci çekirdeklerini alır. Oyunun `.exe` dosyasını listeye sürükleyebilir ya da uygulamanın tam ekranda çalışan oyunları kendisinin eklemesini bekleyebilirsiniz.
-- Bakım sekmesi, siz istediğinizde shader önbelleklerini, geçici dosyaları, Windows Update artıklarını ve Geri Dönüşüm Kutusu'nu temizler; İndirilenler'den seçtiklerinizi Geri Dönüşüm Kutusu'na taşır; güç planını ve sanal belleği gösterir; Windows'un kendi araçlarını (Sürücüleri iyileştir, Disk Temizleme, sistem dosyası onarımı) açar. Oradaki hiçbir şey kendiliğinden çalışmaz.
+- Bakım sekmesi, tiklediklerinizi temizler: shader önbellekleri (NVIDIA, AMD, DirectX, Steam), sürücü kurulum artıkları, geçici dosyalar, Windows Update artıkları, Teslimat İyileştirme önbelleği, çökme dökümleri, Windows günlükleri, eski Windows kurulumu (Windows.old) ve Geri Dönüşüm Kutusu. İndirilenler'den seçtiklerinizi Geri Dönüşüm Kutusu'na taşır, grafikli bir geçmiş tutar, Windows'un oyunla ilgili ayarlarını (güç planı ve modu, sanal bellek, GPU zamanlaması, arka planda kayıt, bellek bütünlüğü, Oyun Modu) her biri için Windows'un kendi sayfasını açan bir butonla gösterir ve Windows'un araçlarını (Sürücüleri iyileştir, Disk Temizleme, sistem dosyası onarımı) açar. Listedeki klasörlerin dışına çıkmaz, kullanımdaki dosyaları atlar; oradaki hiçbir şey kendiliğinden çalışmaz.
 
 ## Nasıl kullanılır?
 
