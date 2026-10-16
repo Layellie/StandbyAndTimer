@@ -29,6 +29,19 @@ internal sealed class SystemToolLauncher : ISystemToolLauncher
 
     internal static ProcessStartInfo StartInfoFor(SystemTool tool)
     {
+        // Windows' settings pages: a fixed URI handed to explorer.exe.
+        string? uri = tool switch
+        {
+            SystemTool.GraphicsSettings => "ms-settings:display-advancedgraphics",
+            SystemTool.CaptureSettings  => "ms-settings:gaming-captures",
+            SystemTool.CoreIsolation    => "windowsdefender://coreisolation",
+            SystemTool.GameModeSettings => "ms-settings:gaming-gamemode",
+            _ => null,
+        };
+        if (uri is not null)
+            return new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe"), uri)
+                   { UseShellExecute = false };
+
         string sys = Environment.SystemDirectory;
         (string exe, string args) = tool switch
         {

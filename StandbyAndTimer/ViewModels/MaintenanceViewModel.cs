@@ -101,6 +101,10 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
     private bool _isCleaning;
     [ObservableProperty] private string _powerPlanText     = "";
     [ObservableProperty] private string _pageFileText      = "";
+    [ObservableProperty] private string _hagsText            = "";
+    [ObservableProperty] private string _recordingText       = "";
+    [ObservableProperty] private string _memoryIntegrityText = "";
+    [ObservableProperty] private string _gameModeText        = "";
     [ObservableProperty] private string _downloadsSizeText = "";
     [ObservableProperty] private string _cleanButtonText   = "";
     [ObservableProperty] private long   _selectedBytes;
@@ -236,6 +240,18 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
                   f.Drive, MainViewModel.FormatSize(f.TotalMb),
                   _loc.GetString(f.SystemManaged ? "Str_Maint_SystemManaged" : "Str_Maint_Custom"),
                   MainViewModel.FormatSize(f.InUseMb))));
+
+        // Gaming rows: state only; the buttons open Windows' own pages.
+        string OnOff(bool on) => _loc.GetString(on ? "Str_Maint_On" : "Str_Maint_Off");
+        if (_info.GetGamingInfo() is { } gaming)
+        {
+            HagsText            = gaming.Hags is { } hags ? OnOff(hags) : _loc.GetString("Str_Maint_WindowsDefault");
+            RecordingText       = OnOff(gaming.BackgroundRecording);
+            MemoryIntegrityText = OnOff(gaming.MemoryIntegrity);
+            GameModeText        = OnOff(gaming.GameMode);
+        }
+        else
+            HagsText = RecordingText = MemoryIntegrityText = GameModeText = _loc.GetString("Str_Maint_PowerUnknown");
     }
 
     // ── Cleaning ─────────────────────────────────────────────────────────────
@@ -409,6 +425,7 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
     {
         public PowerPlanInfo? GetPowerPlan() => null;
         public IReadOnlyList<PageFileInfo> GetPageFiles() => [];
+        public GamingInfo GetGamingInfo() => new(null, false, false, true);
     }
 
     private sealed class NoTools : ISystemToolLauncher

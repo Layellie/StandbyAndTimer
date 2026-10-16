@@ -76,4 +76,56 @@ public class SystemInfoTests
         Assert.Equal(args, psi.Arguments);
         Assert.False(psi.UseShellExecute);
     }
+
+    // ── Gaming rows (spec §9.3) ─────────────────────────────────────────────
+
+    [Theory]
+    [InlineData(2, true)]
+    [InlineData(1, false)]
+    [InlineData(null, null)]
+    [InlineData(0, null)]
+    [InlineData("2", null)]
+    public void Hags_from_HwSchMode(object? raw, bool? expected) =>
+        Assert.Equal(expected, SystemInfoService.Hags(raw));
+
+    [Theory]
+    [InlineData(1, 1, true)]
+    [InlineData(null, 1, true)]     // captures are on unless turned off
+    [InlineData(0, 1, false)]
+    [InlineData(1, 0, false)]
+    [InlineData(null, null, false)]
+    public void Background_recording_from_GameDVR(object? appCapture, object? historical, bool expected) =>
+        Assert.Equal(expected, SystemInfoService.BackgroundRecording(appCapture, historical));
+
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(0, false)]
+    [InlineData(null, false)]
+    public void Memory_integrity_from_Enabled(object? raw, bool expected) =>
+        Assert.Equal(expected, SystemInfoService.MemoryIntegrity(raw));
+
+    [Theory]
+    [InlineData(0, false)]
+    [InlineData(1, true)]
+    [InlineData(null, true)]        // Windows' default is on
+    public void Game_mode_from_AutoGameModeEnabled(object? raw, bool expected) =>
+        Assert.Equal(expected, SystemInfoService.GameMode(raw));
+
+    [Fact]
+    public void Reads_this_machines_gaming_settings() =>
+        Assert.NotNull(new SystemInfoService().GetGamingInfo());
+
+    [Theory]
+    [InlineData(SystemTool.GraphicsSettings, "ms-settings:display-advancedgraphics")]
+    [InlineData(SystemTool.CaptureSettings, "ms-settings:gaming-captures")]
+    [InlineData(SystemTool.CoreIsolation, "windowsdefender://coreisolation")]
+    [InlineData(SystemTool.GameModeSettings, "ms-settings:gaming-gamemode")]
+    public void Windows_pages_open_through_explorer_with_a_fixed_uri(SystemTool tool, string uri)
+    {
+        var psi = SystemToolLauncher.StartInfoFor(tool);
+
+        Assert.Equal(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe"), psi.FileName);
+        Assert.Equal(uri, psi.Arguments);
+        Assert.False(psi.UseShellExecute);
+    }
 }

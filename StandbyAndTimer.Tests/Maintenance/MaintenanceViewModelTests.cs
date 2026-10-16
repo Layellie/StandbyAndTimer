@@ -230,4 +230,26 @@ public class MaintenanceViewModelTests
 
         Assert.False(slow.ScanCompleted);
     }
+
+    private sealed class GamingInfoFake(GamingInfo gaming) : ISystemInfoService
+    {
+        public PowerPlanInfo? GetPowerPlan() => null;
+        public IReadOnlyList<PageFileInfo> GetPageFiles() => [];
+        public GamingInfo GetGamingInfo() => gaming;
+    }
+
+    [Fact]
+    public async Task Windows_gaming_rows_show_their_state()
+    {
+        var vm = new MaintenanceViewModel([], new InMemoryCleanupStatsStore(),
+                                          new GamingInfoFake(new GamingInfo(null, true, false, true)),
+                                          new FakeTools(), NullProxy.Of<IDownloadsService>(), new FakeLocalization());
+
+        await vm.RefreshAsync();
+
+        Assert.Equal("Str_Maint_WindowsDefault", vm.HagsText);
+        Assert.Equal("Str_Maint_On", vm.RecordingText);
+        Assert.Equal("Str_Maint_Off", vm.MemoryIntegrityText);
+        Assert.Equal("Str_Maint_On", vm.GameModeText);
+    }
 }

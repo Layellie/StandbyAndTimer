@@ -111,16 +111,46 @@ internal sealed class SystemInfoService : ISystemInfoService
         return false;
     }
 
-    private static string[] ReadPagingFilesSetting()
+    private static string[] ReadPagingFilesSetting() =>
+        ReadValue(Registry.LocalMachine, MemoryManagementKey, "PagingFiles") as string[] ?? [];
+
+    // ── Gaming rows (spec §9.3): the registry values Windows' own pages write ──
+
+    public GamingInfo GetGamingInfo() => new(
+        Hags(ReadValue(Registry.LocalMachine, @"SYSTEM\CurrentControlSet\Control\GraphicsDrivers", "HwSchMode")),
+        BackgroundRecording(ReadValue(Registry.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\GameDVR", "AppCaptureEnabled"),
+                            ReadValue(Registry.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\GameDVR", "HistoricalCaptureEnabled")),
+        MemoryIntegrity(ReadValue(Registry.LocalMachine,
+            @"SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity", "Enabled")),
+        GameMode(ReadValue(Registry.CurrentUser, @"Software\Microsoft\GameBar", "AutoGameModeEnabled")));
+
+    /// <summary>HwSchMode: 2 on, 1 off; anything else means Windows decides (null).</summary>
+    internal static bool? Hags(object? hwSchMode) => hwSchMode switch
+    {
+        2 => true,    // a DWORD comes back as a boxed int; constant patterns check the type too
+        1 => false,
+        _ => null,
+    };
+
+    /// <summary>"Record what happened": captures not turned off and historical capture on.</summary>
+    internal static bool BackgroundRecording(object? appCapture, object? historical) =>
+        appCapture is not 0 && historical is 1;
+
+    internal static bool MemoryIntegrity(object? enabled) => enabled is 1;
+
+    /// <summary>Game Mode is on unless turned off (AutoGameModeEnabled = 0).</summary>
+    internal static bool GameMode(object? autoGameMode) => autoGameMode is not 0;
+
+    private static object? ReadValue(RegistryKey hive, string path, string name)
     {
         try
         {
-            using var key = Registry.LocalMachine.OpenSubKey(MemoryManagementKey);
-            return key?.GetValue("PagingFiles") as string[] ?? [];
+            using var key = hive.OpenSubKey(path);
+            return key?.GetValue(name);
         }
         catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or System.IO.IOException)
         {
-            return [];
+            return null;
         }
     }
 }

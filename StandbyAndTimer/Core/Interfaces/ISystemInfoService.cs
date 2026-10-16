@@ -9,4 +9,7 @@ public interface ISystemInfoService
 
     /// <summary>The page files in use (empty when there is none or it cannot be read).</summary>
     IReadOnlyList<PageFileInfo> GetPageFiles();
+
+    /// <summary>GPU scheduling, background recording, memory integrity and Game Mode, from the registry.</summary>
+    GamingInfo GetGamingInfo();
 }

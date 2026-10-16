@@ -91,6 +91,7 @@ public sealed class FakeSystemInfo : ISystemInfoService
 {
     public PowerPlanInfo? GetPowerPlan() => new(Guid.Empty, "Ultimate Performance");
     public IReadOnlyList<PageFileInfo> GetPageFiles() => [new("C:", 4096, 1210, true)];
+    public GamingInfo GetGamingInfo() => new(true, true, true, true);
 }
 
 // InMemoryCleanupStatsStore is internal to the app; UiRender cannot see internals.
