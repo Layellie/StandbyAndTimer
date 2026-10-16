@@ -37,10 +37,60 @@ public sealed partial class CleanupRowViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(DisplayText))]
     private string _resultText = "";
 
+    /// <summary>What the last clean of this row did (null: not cleaned, still cleaning, or failed).</summary>
+    [ObservableProperty] private CleanupResult? _lastResult;
+
     /// <summary>The last clean's result until the next plain scan, else the size.</summary>
     public string DisplayText => ResultText.Length > 0 ? ResultText : SizeText;
 
     public bool CanClean => Scan is { Found: true } && !IsBlocked;
+}
+
+/// <summary>
+/// The shader caches as one row (spec §10.1). The caches stay rows of their
+/// own (ids, ticks, cleaning); this only groups them. The tick ticks every
+/// cache that can be cleaned or none; some ticked shows as null.
+/// MaintenanceViewModel keeps Name, Tip and DisplayText current.
+/// </summary>
+public sealed partial class ShaderGroupViewModel : ObservableObject
+{
+    public ShaderGroupViewModel(IReadOnlyList<CleanupRowViewModel> caches)
+    {
+        Caches = caches;
+        foreach (var cache in caches)
+            cache.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName is nameof(CleanupRowViewModel.IsChecked) or nameof(CleanupRowViewModel.CanClean))
+                {
+                    OnPropertyChanged(nameof(IsChecked));
+                    OnPropertyChanged(nameof(CanClean));
+                    OnPropertyChanged(nameof(IsBlocked));
+                }
+            };
+    }
+
+    public IReadOnlyList<CleanupRowViewModel> Caches { get; }
+
+    [ObservableProperty] private string _name        = "";
+    [ObservableProperty] private string _tip         = "";
+    [ObservableProperty] private string _displayText = "";
+
+    public bool CanClean  => Caches.Any(c => c.CanClean);
+    public bool IsBlocked => Caches.Any(c => c.IsBlocked);
+
+    public bool? IsChecked
+    {
+        get
+        {
+            int cleanable = Caches.Count(c => c.CanClean);
+            int ticked    = Caches.Count(c => c.CanClean && c.IsChecked);
+            return ticked == 0 ? false : ticked == cleanable ? true : null;
+        }
+        set
+        {
+            foreach (var cache in Caches) cache.IsChecked = value == true && cache.CanClean;
+        }
+    }
 }
 
 public sealed record CleanupHistoryRow(CleanupRecord Record, string Time, string What, string Freed);
@@ -77,6 +127,14 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
             row.PropertyChanged += OnRowChanged;
             Rows.Add(row);
         }
+        // The shader caches show as one row where the first of them is.
+        var shaderRows = Rows.Where(r => ShaderIds.Contains(r.Id)).ToList();
+        if (shaderRows.Count > 0) Shaders = new ShaderGroupViewModel(shaderRows);
+        foreach (var row in Rows)
+        {
+            if (!ShaderIds.Contains(row.Id))   DisplayRows.Add(row);
+            else if (row == shaderRows[0])      DisplayRows.Add(Shaders!);
+        }
         Relabel();
         _loc.LanguageChanged += (_, _) => System.Windows.Application.Current?.Dispatcher.InvokeAsync(Relabel);
     }
@@ -87,6 +145,20 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<CleanupRowViewModel> Rows    { get; } = [];
     public ObservableCollection<CleanupHistoryRow>   History { get; } = [];
+
+    private static readonly HashSet<string> ShaderIds =
+        [CleanupTargetIds.NvidiaShader, CleanupTargetIds.AmdShader, CleanupTargetIds.DirectXShader, CleanupTargetIds.SteamShader];
+
+    /// <summary>What the cleanup card lists: the shader group in place of the four shader rows.</summary>
+    public ObservableCollection<object> DisplayRows { get; } = [];
+
+    /// <summary>The shader caches row and its chooser (null without shader targets).</summary>
+    public ShaderGroupViewModel? Shaders { get; }
+
+    [ObservableProperty] private bool _isShadersVisible;
+
+    [RelayCommand] private void OpenShaders()  => IsShadersVisible = true;
+    [RelayCommand] private void CloseShaders() => IsShadersVisible = false;
 
     public event EventHandler? SettingsChanged;
     public event EventHandler<string>? StatusRequested;
@@ -145,6 +217,43 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
             UpdateSelectedTotal();
         if (e.PropertyName == nameof(CleanupRowViewModel.IsChecked) && !_initializing)
             SettingsChanged?.Invoke(this, EventArgs.Empty);
+        if (sender is CleanupRowViewModel row && ShaderIds.Contains(row.Id))
+            UpdateShaderGroup();
+    }
+
+    // The group row's text: cleaning → failure → the summed result → scanning →
+    // the ticked caches' size, or every found cache's size when none is ticked.
+    private void UpdateShaderGroup()
+    {
+        if (Shaders is not { } group) return;
+        var caches = group.Caches;
+        string cleaning = _loc.GetString("Str_Maint_Cleaning");
+        string scanning = _loc.GetString("Str_Maint_Scanning");
+        string readError = _loc.GetString("Str_Maint_ReadError");
+
+        if (caches.Any(c => c.ResultText == cleaning))
+            group.DisplayText = cleaning;
+        else if (caches.FirstOrDefault(c => c.ResultText.Length > 0 && c.LastResult is null) is { } failed)
+            group.DisplayText = failed.ResultText;
+        else if (caches.Any(c => c.LastResult is not null))
+            group.DisplayText = ResultText(new CleanupResult(
+                caches.Sum(c => c.LastResult?.FreedBytes ?? 0), caches.Sum(c => c.LastResult?.Deleted ?? 0), caches.Sum(c => c.LastResult?.Skipped ?? 0)));
+        else if (caches.Any(c => c.SizeText == scanning))
+            group.DisplayText = scanning;
+        else if (caches.All(c => c.Scan is null && c.SizeText.Length == 0))
+            group.DisplayText = "";
+        else
+        {
+            var found  = caches.Where(c => c.Scan is { Found: true }).ToList();
+            var ticked = found.Where(c => c.IsChecked).ToList();
+            group.DisplayText = found.Count > 0 ? SizeText((ticked.Count > 0 ? ticked : found).Sum(c => c.Scan!.Bytes))
+                              : caches.Any(c => c.SizeText == readError) ? readError
+                              : _loc.GetString("Str_Maint_NotFound");
+        }
+
+        var lines = caches.Select(c => $"{c.Name}: {c.DisplayText}");
+        string head = group.IsBlocked ? _loc.GetString("Str_Maint_BlockedGame") : _loc.GetString("Str_CleanTip_shader-caches");
+        group.Tip = head + Environment.NewLine + Environment.NewLine + string.Join(Environment.NewLine, lines);
     }
 
     private void UpdateSelectedTotal()
@@ -191,7 +300,7 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
     private async Task ScanRowAsync(CleanupRowViewModel row, bool gameRunning, bool keepResults, CancellationToken ct)
     {
         row.IsBlocked = gameRunning && row.Target.BlockedWhileGameRuns;
-        if (!keepResults) row.ResultText = "";
+        if (!keepResults) { row.ResultText = ""; row.LastResult = null; }
         row.SizeText = _loc.GetString("Str_Maint_Scanning");
         try
         {
@@ -278,11 +387,13 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
         {
             foreach (var row in Rows.Where(r => r.IsChecked && r.CanClean).ToList())
             {
+                row.LastResult = null;
                 row.ResultText = _loc.GetString("Str_Maint_Cleaning");
                 try
                 {
                     var result = await row.Target.CleanAsync(CancellationToken.None);
                     total += result.FreedBytes;
+                    row.LastResult = result;
                     row.ResultText = ResultText(result);
                     if (result.Deleted > 0 || result.Skipped > 0 || result.FreedBytes > 0)
                         stats.Add(new CleanupRecord(Now(), row.Id, result.FreedBytes, result.Skipped));
@@ -410,6 +521,8 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
             r.Name = TargetName(r.Id);
             r.Tip  = _loc.GetString("Str_CleanTip_" + r.Id);
         }
+        if (Shaders is not null) Shaders.Name = _loc.GetString("Str_Clean_shader-caches");
+        UpdateShaderGroup();
         UpdateSelectedTotal();
         OnPropertyChanged(nameof(RepairButtonText));
         if (_stats is not null) RefreshHistory();

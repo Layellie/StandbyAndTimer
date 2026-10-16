@@ -254,4 +254,82 @@ public class MaintenanceViewModelTests
         Assert.Equal("Str_Maint_On", vm.GameModeText);
         Assert.Equal("Str_Maint_PowerBest", vm.PowerModeText);
     }
+
+    // ── Shader caches row (spec §10.1) ──────────────────────────────────────
+
+    private static (MaintenanceViewModel vm, FakeTarget nv, FakeTarget amd, FakeTarget dx) MakeShaders()
+    {
+        var nv = new FakeTarget("nvidia-shader", Mb(100), blockedWhileGameRuns: true);
+        var amd = new FakeTarget("amd-shader", CleanupScan.NotFound, blockedWhileGameRuns: true);
+        var dx = new FakeTarget("directx-shader", Mb(10), blockedWhileGameRuns: true);
+        var (vm, _, _, _) = Make(nv, amd, dx, new FakeTarget("user-temp", Mb(1)));
+        return (vm, nv, amd, dx);
+    }
+
+    [Fact]
+    public async Task The_shader_caches_are_one_row_first_in_the_list()
+    {
+        var (vm, _, _, _) = MakeShaders();
+        vm.Initialize("");
+        await vm.RefreshAsync();
+
+        var group = Assert.IsType<ShaderGroupViewModel>(vm.DisplayRows[0]);
+        Assert.Equal(3, group.Caches.Count);
+        Assert.Equal(2, vm.DisplayRows.Count);              // the group and user-temp
+        Assert.Same(group, vm.Shaders);
+    }
+
+    [Fact]
+    public async Task Ticking_the_shader_row_ticks_every_cache_that_can_be_cleaned()
+    {
+        var (vm, _, _, _) = MakeShaders();
+        vm.Initialize("");
+        await vm.RefreshAsync();
+
+        vm.Shaders!.IsChecked = true;
+
+        Assert.True(vm.Shaders.IsChecked);
+        Assert.Equal("nvidia-shader,directx-shader", vm.SelectionText);   // AMD is not found, so not ticked
+        vm.Rows.Single(r => r.Id == "directx-shader").IsChecked = false;
+        Assert.Null(vm.Shaders.IsChecked);                                // some
+        vm.Shaders.IsChecked = false;
+        Assert.Equal("", vm.SelectionText);
+    }
+
+    [Fact]
+    public async Task Only_the_caches_ticked_in_the_chooser_are_cleaned()
+    {
+        var (vm, nv, _, dx) = MakeShaders();
+        vm.Initialize("directx-shader");
+        await vm.RefreshAsync();
+
+        await vm.CleanSelectedCommand.ExecuteAsync(null);
+
+        Assert.Equal(0, nv.Cleaned);
+        Assert.Equal(1, dx.Cleaned);
+        Assert.Contains("Str_Maint_ResultFreed", vm.Shaders!.DisplayText);
+    }
+
+    [Fact]
+    public async Task The_shader_row_shows_the_ticked_size_or_everything_found()
+    {
+        var (vm, _, _, _) = MakeShaders();
+        vm.Initialize("");
+        await vm.RefreshAsync();
+        Assert.Equal("110 MB", vm.Shaders!.DisplayText);
+
+        vm.Rows.Single(r => r.Id == "directx-shader").IsChecked = true;
+        Assert.Equal("10 MB", vm.Shaders.DisplayText);
+    }
+
+    [Fact]
+    public void The_chooser_opens_and_closes()
+    {
+        var (vm, _, _, _) = MakeShaders();
+
+        vm.OpenShadersCommand.Execute(null);
+        Assert.True(vm.IsShadersVisible);
+        vm.CloseShadersCommand.Execute(null);
+        Assert.False(vm.IsShadersVisible);
+    }
 }
