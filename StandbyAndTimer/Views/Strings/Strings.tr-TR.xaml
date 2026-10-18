@@ -254,7 +254,7 @@
     <sys:String x:Key="Str_Crash_Copied">Detaylar panoya kopyalandı</sys:String>
 
     <!-- Log görüntüleyici -->
-    <sys:String x:Key="Str_Settings_LogsSection">Son loglar</sys:String>
+    <sys:String x:Key="Str_Settings_LogsSection">SON LOGLAR</sys:String>
     <sys:String x:Key="Str_Settings_LogsRefresh">Yenile</sys:String>
     <sys:String x:Key="Str_Settings_LogsEmpty">Henüz log girdisi yok.</sys:String>
 

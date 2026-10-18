@@ -254,7 +254,7 @@
     <sys:String x:Key="Str_Crash_Copied">Details copied to clipboard</sys:String>
 
     <!-- Logs viewer -->
-    <sys:String x:Key="Str_Settings_LogsSection">Recent logs</sys:String>
+    <sys:String x:Key="Str_Settings_LogsSection">RECENT LOGS</sys:String>
     <sys:String x:Key="Str_Settings_LogsRefresh">Refresh</sys:String>
     <sys:String x:Key="Str_Settings_LogsEmpty">No log entries yet.</sys:String>
 
