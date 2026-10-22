@@ -17,9 +17,23 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <StackPanel Grid.Row="0">
-                <TextBlock Text="{DynamicResource Str_Card_PurgeTitle}"
-                           Style="{StaticResource SectionLabelStyle}"
-                           Margin="0,0,0,8"/>
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{DynamicResource Str_Card_PurgeTitle}"
+                               Style="{StaticResource SectionLabelStyle}"
+                               VerticalAlignment="Center"/>
+                    <Button Grid.Column="1"
+                            Content="{DynamicResource Str_Purge_Recommend}"
+                            Command="{Binding ApplyRecommendedThresholdsCommand}"
+                            ToolTip="{DynamicResource Str_Purge_RecommendTip}"
+                            Style="{StaticResource GhostButtonStyle}"
+                            Height="20" Padding="7,0" FontSize="10"
+                            Margin="0,-3,0,-3"
+                            VerticalAlignment="Center"/>
+                </Grid>
 
                 <!-- Idle-only gate (sits ABOVE the master toggle).
                      Greyed when AUTO PURGE is off because the gate has no

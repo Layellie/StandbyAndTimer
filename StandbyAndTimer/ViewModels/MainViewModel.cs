@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -74,6 +75,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private GameEntry? _selectedGame;
     [ObservableProperty] private bool    _isAboutVisible;
     [ObservableProperty] private bool    _isWizardVisible;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsInstalledGamesVisible))]
+    private InstalledGamesViewModel? _installedGamesDialog;
+
+    public bool IsInstalledGamesVisible => InstalledGamesDialog is not null;
 
     public ObservableCollection<GameEntry> Games    { get; } = [];
     public SettingsViewModel               Settings { get; }
@@ -158,7 +164,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _purgeStore = purgeStats ?? new InMemoryPurgeStatsStore();
         _purgeStats = _purgeStore.Load();
         foreach (var r in _purgeStats.Recent) PurgeHistory.Add(RowFor(r));
-        SystemSettings.SettingsChanged += (_, _) => PersistSettings();
+        SystemSettings.SettingsChanged += (_, _) =>
+        {
+            SyncMonitorThresholds();
+            PersistSettings();
+        };
 
         Maintenance = maintenance ?? MaintenanceViewModel.Inert();
         Maintenance.SettingsChanged += (_, _) => PersistSettings();
@@ -256,7 +266,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 s.PurgeHotkey, s.TimerHotkey, s.AutoPurgeHotkey,
                 s.TimerIdleOffEnabled, s.TimerIdleOffMinutes);
             SystemSettings.Initialize(s.GlobalTimerPromptAnswered, s.GlobalTimerSetByApp,
-                              s.GlobalTimerChangedUtc, s.GlobalTimerBootValue);
+                              s.GlobalTimerChangedUtc, s.GlobalTimerBootValue,
+                              s.AutoPurgeCooldownEnabled, s.AutoPurgeCooldownSeconds);
             Maintenance.Initialize(s.CleanupSelection);
         }
         SyncMonitorThresholds();
@@ -268,13 +279,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     // LINQ + List allocation that GamePaths rebuilding would cost is wasted.
     private void SyncMonitorThresholds()
     {
-        _memoryService.StandbyLimitMb    = StandbyLimitMb;
-        _memoryService.FreeLimitMb       = FreeLimitMb;
-        _memoryService.AutoPurgeEnabled  = AutoPurgeEnabled;
-        _memoryService.AutoPurgeIdleOnly = AutoPurgeIdleOnly;
-        _memoryService.AutoPurgeOnlyInGames = AutoPurgeOnlyInGames;
-        _memoryService.IdleThresholdMs   = Math.Max(0, IdleThresholdMinutes) * 60_000;
-        _memoryService.GameModeEnabled   = GameModeEnabled;
+        _memoryService.StandbyLimitMb           = StandbyLimitMb;
+        _memoryService.FreeLimitMb              = FreeLimitMb;
+        _memoryService.AutoPurgeEnabled         = AutoPurgeEnabled;
+        _memoryService.AutoPurgeIdleOnly        = AutoPurgeIdleOnly;
+        _memoryService.AutoPurgeOnlyInGames     = AutoPurgeOnlyInGames;
+        _memoryService.IdleThresholdMs          = Math.Max(0, IdleThresholdMinutes) * 60_000;
+        _memoryService.AutoPurgeCooldownSeconds = SystemSettings.AutoPurgeCooldownEnabled ? SystemSettings.AutoPurgeCooldownSeconds : 0;
+        _memoryService.GameModeEnabled          = GameModeEnabled;
     }
 
     // Pushes the executable-path list to the monitor. Called only when the
@@ -369,6 +381,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         GlobalTimerSetByApp       = SystemSettings.GlobalTimerSetByApp,
         GlobalTimerChangedUtc     = SystemSettings.GlobalTimerChangedUtc,
         GlobalTimerBootValue      = SystemSettings.GlobalTimerBootValue,
+        AutoPurgeCooldownEnabled  = SystemSettings.AutoPurgeCooldownEnabled,
+        AutoPurgeCooldownSeconds  = SystemSettings.AutoPurgeCooldownSeconds,
         FirstRunCompleted     = _firstRunCompleted,
         Games                 = [.. Games],
         IgnoredGamePaths      = [.. _ignoredGamePaths],
@@ -558,7 +572,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private void OnPurgeSucceeded(object? sender, PurgeResult result) =>
         Application.Current.Dispatcher.InvokeAsync(() => RecordPurge(result));
 
-    /// <summary>Newest first, this session only (PurgeHistoryMax entries).</summary>
     /// <summary>The last purges (kept across restarts), newest first.</summary>
     public ObservableCollection<PurgeHistoryRow> PurgeHistory { get; } = [];
     internal const int PurgeHistoryMax = PurgeStats.RecentMax;
@@ -870,6 +883,32 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     // ── Commands ──────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Recommended (StandbyLimitMb, FreeLimitMb) for a given total RAM in MB,
+    /// matching the table in the About / Usage Guide.
+    /// </summary>
+    public static (int StandbyMb, int FreeMb) GetRecommendedThresholds(long totalRamMb) => totalRamMb switch
+    {
+        <= 0     => (2048, 1024),
+        <= 6144  => (512, 512),     // 4 GB
+        <= 12288 => (1024, 1024),   // 8 GB
+        <= 24576 => (2048, 1024),   // 16 GB
+        <= 49152 => (4096, 2048),   // 32 GB
+        _        => (8192, 2048),   // 64 GB+
+    };
+
+    [RelayCommand]
+    private void ApplyRecommendedThresholds()
+    {
+        var (standby, free) = GetRecommendedThresholds(TotalRamMb);
+        StandbyLimitMb = standby;
+        FreeLimitMb    = free;
+        PersistSettings();
+        StatusMessage  = string.Format(CultureInfo.CurrentCulture,
+            _localization.GetString("Str_Status_RecommendedApplied"), standby, free);
+        Logger.Info($"Applied recommended thresholds: Standby={standby} MB, Free={free} MB (TotalRam={TotalRamMb} MB)");
+    }
+
     [RelayCommand]
     private async Task ManualPurgeAsync()
     {
@@ -993,6 +1032,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     // Tests swap in a fake; the app starts games through the shell.
     internal Func<string, bool> StartGame { get; set; } = GameLauncher.StartUnelevated;
+    internal Func<string, bool> RevealGameInExplorer { get; set; } = DownloadsViewModel.OpenExplorerSelect;
+    internal Func<CancellationToken, Task<IReadOnlyList<InstalledGameCandidate>>> ScanInstalledGames { get; set; } = InstalledGamesScanner.ScanAsync;
 
     /// <summary>Double-click on a listed game: start it, not elevated (see GameLauncher).</summary>
     public void LaunchGame(GameEntry game)
@@ -1006,6 +1047,78 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         bool ok = StartGame(game.ExecutablePath);
         StatusMessage = string.Format(CultureInfo.CurrentCulture,
             _localization.GetString(ok ? "Str_Status_GameLaunching" : "Str_Status_GameLaunchFailed"), game.DisplayName);
+    }
+
+    [RelayCommand]
+    private void LaunchSelectedGame(GameEntry? game)
+    {
+        if ((game ?? SelectedGame) is { } target)
+            LaunchGame(target);
+    }
+
+    [RelayCommand]
+    private void OpenGameFolder(GameEntry? game)
+    {
+        if ((game ?? SelectedGame) is not { } target) return;
+        if (!File.Exists(target.ExecutablePath))
+        {
+            StatusMessage = string.Format(CultureInfo.CurrentCulture,
+                _localization.GetString("Str_Status_GameMissing"), target.DisplayName);
+            return;
+        }
+        RevealGameInExplorer(target.ExecutablePath);
+    }
+
+    [RelayCommand]
+    private void RemoveSpecificGame(GameEntry? game)
+    {
+        if ((game ?? SelectedGame) is not { } target) return;
+        SelectedGame = target;
+        RemoveGame();
+    }
+
+    [RelayCommand]
+    private async Task OpenInstalledGamesAsync()
+    {
+        var existing = new HashSet<string>(Games.Select(g => g.ExecutablePath), StringComparer.OrdinalIgnoreCase);
+        var dialog = new InstalledGamesViewModel(ScanInstalledGames, existing, _localization, OnInstalledGamesChosen);
+        InstalledGamesDialog = dialog;
+        await dialog.LoadAsync();
+    }
+
+    [RelayCommand]
+    private void CloseInstalledGames()
+    {
+        InstalledGamesDialog?.Dispose();
+        InstalledGamesDialog = null;
+    }
+
+    private void OnInstalledGamesChosen(IReadOnlyList<InstalledGameCandidate> candidates)
+    {
+        int added = 0;
+        foreach (var c in candidates)
+        {
+            if (string.IsNullOrWhiteSpace(c.ExecutablePath) || !File.Exists(c.ExecutablePath)) continue;
+            if (Games.Any(g => g.ExecutablePath.Equals(c.ExecutablePath, StringComparison.OrdinalIgnoreCase))) continue;
+
+            Games.Add(new GameEntry
+            {
+                DisplayName    = Path.GetFileNameWithoutExtension(c.ExecutablePath),
+                ExecutablePath = c.ExecutablePath
+            });
+            _ignoredGamePaths.Remove(c.ExecutablePath);
+            added++;
+        }
+
+        CloseInstalledGames();
+        if (added > 0)
+        {
+            SyncMonitorGames();
+            PersistSettings();
+            StatusMessage = string.Format(CultureInfo.CurrentCulture,
+                _localization.GetString("Str_Status_GamesScannedAdded"), added);
+            Logger.Info($"Added {added} game(s) from library scan");
+        }
     }
 
     public void AddGameFromPath(string path)
@@ -1141,6 +1254,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _gameDetection.GameDetected        -= OnGameDetected;
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
 
+        InstalledGamesDialog?.Dispose();
         _timerService.Dispose();
         _memoryService.Dispose();
         _gameDetection.Dispose();

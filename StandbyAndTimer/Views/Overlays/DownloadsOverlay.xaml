@@ -38,8 +38,10 @@
 
                 <Grid Grid.Row="1" Margin="0,0,0,6">
                     <StackPanel Orientation="Horizontal">
-                        <Button Content="{DynamicResource Str_Dl_All}"  Command="{Binding SelectAllCommand}"  Style="{StaticResource GhostButtonStyle}" Height="26" Padding="10,0" MinWidth="80" Margin="0,0,6,0"/>
-                        <Button Content="{DynamicResource Str_Dl_None}" Command="{Binding SelectNoneCommand}" Style="{StaticResource GhostButtonStyle}" Height="26" Padding="10,0" MinWidth="80"/>
+                        <Button Content="{DynamicResource Str_Dl_All}"        Command="{Binding SelectAllCommand}"        Style="{StaticResource GhostButtonStyle}" Height="26" Padding="8,0" Margin="0,0,5,0"/>
+                        <Button Content="{DynamicResource Str_Dl_None}"       Command="{Binding SelectNoneCommand}"       Style="{StaticResource GhostButtonStyle}" Height="26" Padding="8,0" Margin="0,0,5,0"/>
+                        <Button Content="{DynamicResource Str_Dl_Installers}" Command="{Binding SelectInstallersCommand}" ToolTip="{DynamicResource Str_Dl_InstallersTip}" Style="{StaticResource GhostButtonStyle}" Height="26" Padding="8,0" Margin="0,0,5,0"/>
+                        <Button Content="{DynamicResource Str_Dl_Old}"        Command="{Binding SelectOldCommand}"        ToolTip="{DynamicResource Str_Dl_OldTip}"        Style="{StaticResource GhostButtonStyle}" Height="26" Padding="8,0"/>
                     </StackPanel>
                     <TextBlock Text="{Binding SelectedText}" FontSize="12" Foreground="{DynamicResource AppFgDim}"
                                HorizontalAlignment="Right" VerticalAlignment="Center"/>
@@ -57,7 +59,15 @@
                                  HorizontalContentAlignment="Stretch">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid Margin="2,2">
+                                    <Grid Margin="2,2" Background="Transparent"
+                                          Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ListBox}}">
+                                        <Grid.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="{DynamicResource Str_Dl_ShowInFolder}"
+                                                          Command="{Binding PlacementTarget.Tag.ShowInFolderCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                            </ContextMenu>
+                                        </Grid.ContextMenu>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="20"/>

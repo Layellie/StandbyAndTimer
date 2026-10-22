@@ -6,14 +6,14 @@ namespace StandbyAndTimer.ViewModels;
 
 /// <summary>
 /// The "System settings" panel behind the title bar's Administrator badge:
-/// settings that change Windows itself (HKLM) rather than the app. New ones
-/// of that kind go here. First entry: apply the timer to all games
-/// (GlobalTimerResolutionRequests), also asked once at start-up.
+/// settings that change Windows itself (HKLM) or guard system-level behavior.
 /// </summary>
 public sealed partial class SystemViewModel : ObservableObject
 {
     private readonly IGlobalTimerSetting _globalTimer;
     private bool _isInitializing;
+
+    public const int CooldownMinSeconds = 5, CooldownMaxSeconds = 600, CooldownDefaultSeconds = 60;
 
     // Persisted through MainViewModel (AppSettings), like SettingsViewModel's.
     internal bool      PromptAnswered        { get; private set; }
@@ -26,6 +26,8 @@ public sealed partial class SystemViewModel : ObservableObject
     [ObservableProperty] private bool _globalTimerEnabled;
     [ObservableProperty] private bool _restartPending;
     [ObservableProperty] private bool _writeFailed;
+    [ObservableProperty] private bool _autoPurgeCooldownEnabled;
+    [ObservableProperty] private int  _autoPurgeCooldownSeconds = CooldownDefaultSeconds;
 
     public bool GlobalTimerSupported   => _globalTimer.IsSupported;
     public bool GlobalTimerUnsupported => !_globalTimer.IsSupported;
@@ -46,19 +48,25 @@ public sealed partial class SystemViewModel : ObservableObject
         public DateTime LastBootUtc => DateTime.UtcNow;
     }
 
-    public void Initialize(bool promptAnswered, bool setByApp, DateTime? changedUtc, bool bootValue)
+    public void Initialize(bool promptAnswered, bool setByApp, DateTime? changedUtc, bool bootValue,
+                           bool cooldownEnabled = false, int cooldownSeconds = CooldownDefaultSeconds)
     {
         using (new InitScope(v => _isInitializing = v))
         {
-            PromptAnswered        = promptAnswered;
-            GlobalTimerSetByApp   = setByApp;
-            GlobalTimerChangedUtc = changedUtc;
-            GlobalTimerEnabled    = _globalTimer.IsEnabled;   // the registry is the truth
+            PromptAnswered           = promptAnswered;
+            GlobalTimerSetByApp      = setByApp;
+            GlobalTimerChangedUtc    = changedUtc;
+            GlobalTimerEnabled       = _globalTimer.IsEnabled;   // the registry is the truth
             // No change since Windows started: what is set is what runs.
-            GlobalTimerBootValue  = ChangedThisBoot ? bootValue : GlobalTimerEnabled;
-            RestartPending        = ChangedThisBoot && GlobalTimerEnabled != GlobalTimerBootValue;
+            GlobalTimerBootValue     = ChangedThisBoot ? bootValue : GlobalTimerEnabled;
+            RestartPending           = ChangedThisBoot && GlobalTimerEnabled != GlobalTimerBootValue;
+            AutoPurgeCooldownEnabled = cooldownEnabled;
+            AutoPurgeCooldownSeconds = ClampCooldown(cooldownSeconds);
         }
     }
+
+    internal static int ClampCooldown(int seconds) =>
+        seconds <= 0 ? CooldownDefaultSeconds : Math.Clamp(seconds, CooldownMinSeconds, CooldownMaxSeconds);
 
     private bool ChangedThisBoot => GlobalTimerChangedUtc is { } t && t > _globalTimer.LastBootUtc;
 
@@ -109,6 +117,24 @@ public sealed partial class SystemViewModel : ObservableObject
         GlobalTimerChangedUtc = DateTime.UtcNow;
         GlobalTimerSetByApp = value;   // removed: nothing left to revert at uninstall
         RestartPending = value != GlobalTimerBootValue;
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    partial void OnAutoPurgeCooldownEnabledChanged(bool value)
+    {
+        if (_isInitializing) return;
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    partial void OnAutoPurgeCooldownSecondsChanged(int value)
+    {
+        int clamped = ClampCooldown(value);
+        if (clamped != value)
+        {
+            AutoPurgeCooldownSeconds = clamped;
+            return;
+        }
+        if (_isInitializing) return;
         SettingsChanged?.Invoke(this, EventArgs.Empty);
     }
 }

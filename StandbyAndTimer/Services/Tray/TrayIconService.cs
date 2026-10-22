@@ -1,6 +1,7 @@
 using System.Globalization;
 using StandbyAndTimer.Core.Interfaces;
 using StandbyAndTimer.Core.Models;
+using StandbyAndTimer.ViewModels;
 using WinForms = System.Windows.Forms;
 
 namespace StandbyAndTimer.Services.Tray;
@@ -23,6 +24,7 @@ internal sealed class TrayIconService : ITrayIconService
     private WinForms.ToolStripMenuItem? _settingsMenuItem;
     private WinForms.ToolStripMenuItem? _timerMenuItem;
     private WinForms.ToolStripMenuItem? _purgeMenuItem;
+    private WinForms.ToolStripMenuItem? _autoPurgeMenuItem;
     private WinForms.ToolStripMenuItem? _deepMenuItem;
     private WinForms.ToolStripMenuItem? _gameModeMenuItem;
     private WinForms.ToolStripMenuItem? _lockMenuItem;
@@ -40,6 +42,7 @@ internal sealed class TrayIconService : ITrayIconService
     public event EventHandler? ExitRequested;
     public event EventHandler? TimerToggleRequested;
     public event EventHandler? PurgeRequested;
+    public event EventHandler? AutoPurgeToggleRequested;
     public event EventHandler? DeepPurgeToggleRequested;
     public event EventHandler? GameModeToggleRequested;
     public event EventHandler? TimerLockCycleRequested;
@@ -86,23 +89,25 @@ internal sealed class TrayIconService : ITrayIconService
             Padding         = new WinForms.Padding(2),
         };
 
-        _showMenuItem     = new WinForms.ToolStripMenuItem();
-        _settingsMenuItem = new WinForms.ToolStripMenuItem();
-        _timerMenuItem    = new WinForms.ToolStripMenuItem();
-        _purgeMenuItem    = new WinForms.ToolStripMenuItem();
-        _deepMenuItem     = new WinForms.ToolStripMenuItem();
-        _gameModeMenuItem = new WinForms.ToolStripMenuItem();
-        _lockMenuItem     = new WinForms.ToolStripMenuItem();
-        _exitMenuItem     = new WinForms.ToolStripMenuItem();
+        _showMenuItem      = new WinForms.ToolStripMenuItem();
+        _settingsMenuItem  = new WinForms.ToolStripMenuItem();
+        _timerMenuItem     = new WinForms.ToolStripMenuItem();
+        _purgeMenuItem     = new WinForms.ToolStripMenuItem();
+        _autoPurgeMenuItem = new WinForms.ToolStripMenuItem();
+        _deepMenuItem      = new WinForms.ToolStripMenuItem();
+        _gameModeMenuItem  = new WinForms.ToolStripMenuItem();
+        _lockMenuItem      = new WinForms.ToolStripMenuItem();
+        _exitMenuItem      = new WinForms.ToolStripMenuItem();
 
-        _showMenuItem.Click     += (_, _) => ShowRequested?.Invoke(this, EventArgs.Empty);
-        _settingsMenuItem.Click += (_, _) => SettingsRequested?.Invoke(this, EventArgs.Empty);
-        _timerMenuItem.Click    += (_, _) => TimerToggleRequested?.Invoke(this, EventArgs.Empty);
-        _purgeMenuItem.Click    += (_, _) => PurgeRequested?.Invoke(this, EventArgs.Empty);
-        _deepMenuItem.Click     += (_, _) => DeepPurgeToggleRequested?.Invoke(this, EventArgs.Empty);
-        _gameModeMenuItem.Click += (_, _) => GameModeToggleRequested?.Invoke(this, EventArgs.Empty);
-        _lockMenuItem.Click     += (_, _) => TimerLockCycleRequested?.Invoke(this, EventArgs.Empty);
-        _exitMenuItem.Click     += (_, _) => ExitRequested?.Invoke(this, EventArgs.Empty);
+        _showMenuItem.Click      += (_, _) => ShowRequested?.Invoke(this, EventArgs.Empty);
+        _settingsMenuItem.Click  += (_, _) => SettingsRequested?.Invoke(this, EventArgs.Empty);
+        _timerMenuItem.Click     += (_, _) => TimerToggleRequested?.Invoke(this, EventArgs.Empty);
+        _purgeMenuItem.Click     += (_, _) => PurgeRequested?.Invoke(this, EventArgs.Empty);
+        _autoPurgeMenuItem.Click += (_, _) => AutoPurgeToggleRequested?.Invoke(this, EventArgs.Empty);
+        _deepMenuItem.Click      += (_, _) => DeepPurgeToggleRequested?.Invoke(this, EventArgs.Empty);
+        _gameModeMenuItem.Click  += (_, _) => GameModeToggleRequested?.Invoke(this, EventArgs.Empty);
+        _lockMenuItem.Click      += (_, _) => TimerLockCycleRequested?.Invoke(this, EventArgs.Empty);
+        _exitMenuItem.Click      += (_, _) => ExitRequested?.Invoke(this, EventArgs.Empty);
 
         menu.Items.Add(_showMenuItem);
         menu.Items.Add(_settingsMenuItem);
@@ -111,6 +116,7 @@ internal sealed class TrayIconService : ITrayIconService
         menu.Items.Add(_purgeMenuItem);
         // Quick settings: the label carries the current state.
         menu.Items.Add(new WinForms.ToolStripSeparator());
+        menu.Items.Add(_autoPurgeMenuItem);
         menu.Items.Add(_deepMenuItem);
         menu.Items.Add(_gameModeMenuItem);
         menu.Items.Add(_lockMenuItem);
@@ -156,16 +162,31 @@ internal sealed class TrayIconService : ITrayIconService
         try
         {
             _notifyIcon.Icon = state.TimerActive ? (_iconActive ?? _iconBase!) : _iconBase!;
-
-            string timer = _localization.GetString(
-                state.TimerActive ? "Str_Tray_TimerStateOn" : "Str_Tray_TimerStateOff");
-            string fmt   = _localization.GetString("Str_Tray_TooltipFormat");
-
-            string tip = string.Format(CultureInfo.CurrentCulture, fmt, timer, state.PurgeCount);
-            if (tip.Length > TooltipMaxLength) tip = tip[..TooltipMaxLength];
-            _notifyIcon.Text = tip;
+            _notifyIcon.Text = FormatTooltip(state);
         }
         catch (Exception ex) { Logger.Warn($"TrayIconService.Refresh: {ex.Message}"); }
+    }
+
+    internal string FormatTooltip(TrayState state)
+    {
+        string timer = _localization.GetString(
+            state.TimerActive ? "Str_Tray_TimerStateOn" : "Str_Tray_TimerStateOff");
+        string fmt = _localization.GetString("Str_Tray_TooltipFormat");
+        string tip = string.Format(CultureInfo.CurrentCulture, fmt, timer, state.PurgeCount);
+
+        if (state.FreeRamMb > 0 || state.StandbyRamMb > 0)
+        {
+            string ramFmt = _localization.GetString("Str_Tray_TooltipRamFormat");
+            if (!string.IsNullOrEmpty(ramFmt) && ramFmt != "Str_Tray_TooltipRamFormat")
+            {
+                tip += "\n" + string.Format(CultureInfo.CurrentCulture, ramFmt,
+                    MainViewModel.FormatSize(state.FreeRamMb),
+                    MainViewModel.FormatSize(state.StandbyRamMb));
+            }
+        }
+
+        if (tip.Length > TooltipMaxLength) tip = tip[..TooltipMaxLength];
+        return tip;
     }
 
     // Language change: same state, new words (it used to reset the timer
@@ -188,6 +209,9 @@ internal sealed class TrayIconService : ITrayIconService
             _purgeMenuItem.Text = _localization.GetString("Str_Tray_PurgeNow");
 
         string OnOff(bool on) => _localization.GetString(on ? "Str_Tray_On" : "Str_Tray_Off");
+        if (_autoPurgeMenuItem is not null)
+            _autoPurgeMenuItem.Text = string.Format(CultureInfo.CurrentCulture,
+                _localization.GetString("Str_Tray_AutoPurge"), OnOff(state.AutoPurge));
         if (_deepMenuItem is not null)
             _deepMenuItem.Text = string.Format(CultureInfo.CurrentCulture,
                 _localization.GetString("Str_Tray_DeepPurge"), OnOff(state.DeepPurge));

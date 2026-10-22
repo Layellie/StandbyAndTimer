@@ -15,6 +15,7 @@ public sealed class FakeMemory : IMemoryMonitorService
     public bool AutoPurgeIdleOnly { get; set; }
     public bool AutoPurgeOnlyInGames { get; set; }
     public int  IdleThresholdMs   { get; set; }
+    public int  AutoPurgeCooldownSeconds { get; set; }
     public IReadOnlyList<string> GamePaths            { get; set; } = [];
     public IReadOnlyList<string> WatchedGamePaths     { get; set; } = [];
     public IReadOnlyList<string> NoAutoPurgeGamePaths { get; set; } = [];

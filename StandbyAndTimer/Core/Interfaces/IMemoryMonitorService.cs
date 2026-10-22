@@ -31,6 +31,9 @@ public interface IMemoryMonitorService : IDisposable
     /// <summary>Idle window in milliseconds before an idle-gated purge is allowed to fire.</summary>
     int  IdleThresholdMs   { get; set; }
 
+    /// <summary>Minimum seconds between consecutive automatic purges (0 = no cooldown).</summary>
+    int  AutoPurgeCooldownSeconds { get; set; }
+
     Task StartAsync(CancellationToken cancellationToken);
     Task StopAsync();
 }

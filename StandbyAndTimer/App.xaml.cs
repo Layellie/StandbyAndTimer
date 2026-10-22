@@ -149,6 +149,7 @@ public partial class App : Application
         _tray.TimerToggleRequested += (_, _) => _viewModel.ToggleTimerResolutionCommand.Execute(null);
         _tray.PurgeRequested       += (_, _) => _viewModel.ManualPurgeCommand.Execute(null);
         // Tray quick settings: the same setters as the window, then refresh the labels now.
+        _tray.AutoPurgeToggleRequested += (_, _) => { _viewModel.ToggleAutoPurgeCommand.Execute(null); RefreshTray(); };
         _tray.DeepPurgeToggleRequested += (_, _) => { _viewModel.DeepPurge = !_viewModel.DeepPurge; RefreshTray(); };
         _tray.GameModeToggleRequested  += (_, _) => { _viewModel.GameModeEnabled = !_viewModel.GameModeEnabled; RefreshTray(); };
         _tray.TimerLockCycleRequested  += async (_, _) => { await _viewModel.ToggleTimerLockCommand.ExecuteAsync(null); RefreshTray(); };
@@ -447,7 +448,8 @@ public partial class App : Application
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(MainViewModel.TimerActive)
-            || e.PropertyName == nameof(MainViewModel.PurgeCount))
+            || e.PropertyName == nameof(MainViewModel.PurgeCount)
+            || e.PropertyName == nameof(MainViewModel.AutoPurgeEnabled))
             Dispatcher.InvokeAsync(RefreshTray);
     }
 
@@ -455,7 +457,8 @@ public partial class App : Application
     {
         if (_tray is null || _viewModel is null) return;
         _tray.Refresh(new TrayState(_viewModel.TimerActive, _viewModel.PurgeCount,
-            _viewModel.DeepPurge, _viewModel.GameModeEnabled, _viewModel.TimerLock));
+            _viewModel.DeepPurge, _viewModel.GameModeEnabled, _viewModel.TimerLock,
+            _viewModel.AutoPurgeEnabled, _viewModel.FreeRamMb, _viewModel.StandbyRamMb));
     }
 
     // `_localization!`: these handlers are only subscribed AFTER _localization

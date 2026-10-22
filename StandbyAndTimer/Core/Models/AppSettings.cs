@@ -59,6 +59,11 @@ public sealed class AppSettings
     public DateTime?   GlobalTimerChangedUtc     { get; set; }
     public bool        GlobalTimerBootValue      { get; set; }
 
+    // Smart cooldown for automatic purges (System settings / Administrator badge):
+    // minimum seconds between consecutive auto-purges. Off by default.
+    public bool        AutoPurgeCooldownEnabled  { get; set; }
+    public int         AutoPurgeCooldownSeconds  { get; set; } = 60;
+
     // v2.1.0 — global hotkeys for manual purge / timer toggle. Stored as
     // "Ctrl+Alt+P"-style strings so the registry value is human-readable and
     // a future capture-textbox can round-trip via HotkeyBinding.Parse.

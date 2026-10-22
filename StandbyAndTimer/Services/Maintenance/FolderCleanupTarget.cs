@@ -67,6 +67,13 @@ internal static class CleanupTargets
         Path.Combine(Local, "AMD", "GLCache"),
     ], blockedWhileGameRuns: true);
 
+    /// <summary>Intel graphics driver shader cache (Iris Xe / Arc).</summary>
+    public static FolderCleanupTarget IntelShader() => new(CleanupTargetIds.IntelShader,
+    [
+        Path.Combine(Local, "Intel", "ShaderCache"),
+        Path.Combine(LocalLow, "Intel", "ShaderCache"),
+    ], blockedWhileGameRuns: true);
+
     /// <summary>Windows' own DirectX shader cache.</summary>
     public static FolderCleanupTarget DirectXShader() =>
         new(CleanupTargetIds.DirectXShader, [Path.Combine(Local, "D3DSCache")], blockedWhileGameRuns: true);
@@ -129,7 +136,12 @@ internal static class CleanupTargets
     /// libraryfolders.vdf (lines <c>"path"  "D:\\SteamLibrary"</c>). The file is
     /// user-editable: anything that is not such a line with a full path is skipped.
     /// </summary>
-    internal static IReadOnlyList<string> SteamShaderRoots(string? steamPath, string? libraryFoldersVdf)
+    internal static IReadOnlyList<string> SteamShaderRoots(string? steamPath, string? libraryFoldersVdf) =>
+        SteamLibraryRoots(steamPath, libraryFoldersVdf)
+            .Select(l => Path.Combine(l, "steamapps", "shadercache"))
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+    internal static IReadOnlyList<string> SteamLibraryRoots(string? steamPath, string? libraryFoldersVdf)
     {
         var libraries = new List<string>();
         if (FullPath(steamPath) is { } steam) libraries.Add(steam);
@@ -141,8 +153,7 @@ internal static class CleanupTargets
                 parts[2].Trim().Length != 0 || parts[4].Length != 0) continue;
             if (FullPath(parts[3].Replace(@"\\", @"\")) is { } library) libraries.Add(library);
         }
-        return libraries.Select(l => Path.Combine(l, "steamapps", "shadercache"))
-                        .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        return libraries.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     private static string? FullPath(string? path)
@@ -154,7 +165,7 @@ internal static class CleanupTargets
         catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException) { return null; }
     }
 
-    private static string? ReadSteamPath()
+    internal static string? ReadSteamPath()
     {
         try
         {
@@ -164,7 +175,7 @@ internal static class CleanupTargets
         catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException) { return null; }
     }
 
-    private static string? ReadLibraryFolders(string? steamPath)
+    internal static string? ReadLibraryFolders(string? steamPath)
     {
         if (FullPath(steamPath) is not { } steam) return null;
         try { return File.ReadAllText(Path.Combine(steam, "steamapps", "libraryfolders.vdf")); }

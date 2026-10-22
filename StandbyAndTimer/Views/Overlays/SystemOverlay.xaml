@@ -82,6 +82,34 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Smart cooldown for automatic purges -->
+                <Border Style="{StaticResource SettingsGroupStyle}" Margin="0,10,0,0">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{DynamicResource Str_System_SmartCooldown}"
+                                       Style="{StaticResource SettingTitleStyle}"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding SystemSettings.AutoPurgeCooldownSeconds, UpdateSourceTrigger=LostFocus}"
+                                     IsEnabled="{Binding SystemSettings.AutoPurgeCooldownEnabled}"
+                                     ToolTip="{DynamicResource Str_System_SmartCooldownSecTip}"
+                                     Style="{StaticResource InputTextBoxStyle}"
+                                     Width="54" Height="26" FontSize="12"
+                                     Margin="8,0,10,0"/>
+                            <CheckBox Grid.Column="2"
+                                      IsChecked="{Binding SystemSettings.AutoPurgeCooldownEnabled}"
+                                      Style="{StaticResource ToggleSwitchStyle}"/>
+                        </Grid>
+                        <TextBlock Text="{DynamicResource Str_System_SmartCooldownDesc}"
+                                   Style="{StaticResource SysTextStyle}" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+
                 <Button Content="{DynamicResource Str_System_Close}"
                         Command="{Binding SystemSettings.CloseCommand}"
                         Style="{StaticResource DarkButtonStyle}"

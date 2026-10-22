@@ -8,13 +8,9 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
 
-    <!-- Game Mode toggle + executable list with drag-drop and add/remove
+    <!-- Game Mode toggle + executable list with drag-drop and add/remove/scan
          buttons. Binds to GameModeEnabled / Games / SelectedGame /
-         RemoveGameCommand / AddGameCommand on MainViewModel. Dropped
-         file paths are forwarded via the GameDropped event so the host
-         can call MainViewModel.AddGameFromPath. -->
-    <!-- Full-height column card: the list row is * so the game list fills
-         whatever the landscape layout gives the column. -->
+         RemoveGameCommand / OpenInstalledGamesCommand / AddGameCommand on MainViewModel. -->
     <Border Style="{StaticResource SectionBorderStyle}" Padding="16,14" Margin="0">
         <Grid>
             <Grid.RowDefinitions>
@@ -23,7 +19,7 @@
                 <RowDefinition Height="*"/>     <!-- 2 Game list -->
                 <RowDefinition Height="Auto"/>  <!-- 3 Drop hint -->
                 <RowDefinition Height="Auto"/>  <!-- 4 Per-game switches -->
-                <RowDefinition Height="Auto"/>  <!-- 5 DEL / ADD -->
+                <RowDefinition Height="Auto"/>  <!-- 5 DEL / SCAN / ADD -->
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0" Margin="0,0,0,4">
@@ -73,7 +69,21 @@
                     <DataTemplate>
                         <!-- Name trims; the AUTO tag (fullscreen detection
                              added it) stays pinned to the right edge. -->
-                        <Grid>
+                        <Grid Background="Transparent"
+                              Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ListBox}}">
+                            <Grid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="{DynamicResource Str_Game_MenuLaunch}"
+                                              Command="{Binding PlacementTarget.Tag.LaunchSelectedGameCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                    <MenuItem Header="{DynamicResource Str_Game_MenuOpenFolder}"
+                                              Command="{Binding PlacementTarget.Tag.OpenGameFolderCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                    <MenuItem Header="{DynamicResource Str_Game_MenuRemove}"
+                                              Command="{Binding PlacementTarget.Tag.RemoveSpecificGameCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                </ContextMenu>
+                            </Grid.ContextMenu>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
@@ -161,18 +171,29 @@
             <Grid Grid.Row="5">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="6"/>
+                    <ColumnDefinition Width="5"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="5"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <Button Grid.Column="0"
                         Content="{DynamicResource Str_Game_Del}"
                         Command="{Binding RemoveGameCommand}"
                         Style="{StaticResource GhostButtonStyle}"
+                        Padding="4,5"
                         Height="34"/>
                 <Button Grid.Column="2"
+                        Content="{DynamicResource Str_Game_Scan}"
+                        Command="{Binding OpenInstalledGamesCommand}"
+                        ToolTip="{DynamicResource Str_Game_ScanTip}"
+                        Style="{StaticResource GhostButtonStyle}"
+                        Padding="4,5"
+                        Height="34"/>
+                <Button Grid.Column="4"
                         Content="{DynamicResource Str_Game_Add}"
                         Command="{Binding AddGameCommand}"
                         Style="{StaticResource DarkButtonStyle}"
+                        Padding="4,5"
                         Height="34"/>
             </Grid>
         </Grid>

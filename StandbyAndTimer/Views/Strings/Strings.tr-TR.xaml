@@ -24,6 +24,9 @@
     <sys:String x:Key="Str_System_RestartPending">Yeniden başlatınca geçerli olur.</sys:String>
     <sys:String x:Key="Str_System_Unsupported">Bu ayar sadece Windows 11'de var.</sys:String>
     <sys:String x:Key="Str_System_WriteFailed">Ayar yazılamadı; ayrıntı log'da.</sys:String>
+    <sys:String x:Key="Str_System_SmartCooldown">Oto temizlik akıllı bekleme süresi</sys:String>
+    <sys:String x:Key="Str_System_SmartCooldownDesc">İki otomatik temizlik arasındaki en az bekleme süresi (saniye). Agresif eşiklerde standby listesinin her saniye zorlanmasını önler.</sys:String>
+    <sys:String x:Key="Str_System_SmartCooldownSecTip">Bekleme süresi, saniye (5–600)</sys:String>
     <sys:String x:Key="Str_System_Close">Kapat</sys:String>
     <sys:String x:Key="Str_GlobalPrompt_Title">Timer tüm oyunlara uygulansın mı?</sys:String>
     <sys:String x:Key="Str_GlobalPrompt_Later">İstediğin zaman sağ üstteki Yönetici rozetinden değiştirebilirsin.</sys:String>
@@ -49,6 +52,8 @@
     <sys:String x:Key="Str_Purge_StandbyLimitLabel">Liste boyutu en az (MB):</sys:String>
     <sys:String x:Key="Str_Purge_FreeLimitLabel">Serbest bellek altında (MB):</sys:String>
     <sys:String x:Key="Str_Purge_Button">Standby Temizle</sys:String>
+    <sys:String x:Key="Str_Purge_Recommend">Önerilen</sys:String>
+    <sys:String x:Key="Str_Purge_RecommendTip">Toplam RAM miktarına göre önerilen liste ve serbest bellek eşiklerini doldurur</sys:String>
     <sys:String x:Key="Str_Purge_LightLabel">Hafif temizlik</sys:String>
     <sys:String x:Key="Str_Purge_LightDesc">Sadece düşük öncelikli önbelleği siler; sık kullanılanlar kalır.</sys:String>
     <sys:String x:Key="Str_Purge_LightTip">Butonla, otomatik ya da kısayolla yapılan her temizlikte geçerlidir.</sys:String>
@@ -60,6 +65,11 @@
     <sys:String x:Key="Str_Game_Mode">OYUN MODU</sys:String>
     <sys:String x:Key="Str_Game_Add">EKLE</sys:String>
     <sys:String x:Key="Str_Game_Del">SİL</sys:String>
+    <sys:String x:Key="Str_Game_Scan">TARA</sys:String>
+    <sys:String x:Key="Str_Game_ScanTip">Kurulu oyunlar için Steam ve Epic Games kütüphanelerini tara</sys:String>
+    <sys:String x:Key="Str_Game_MenuLaunch">Oyunu başlat</sys:String>
+    <sys:String x:Key="Str_Game_MenuOpenFolder">Dosya konumunu aç</sys:String>
+    <sys:String x:Key="Str_Game_MenuRemove">Listeden kaldır</sys:String>
     <sys:String x:Key="Str_Game_FileDialogTitle">Oyun Çalıştırılabilir Dosyasını Seç</sys:String>
     <sys:String x:Key="Str_Game_FileDialogFilter">Yürütülebilir Dosyalar (*.exe)|*.exe</sys:String>
     <sys:String x:Key="Str_Game_DropHint">.exe dosyalarını buraya sürükleyin</sys:String>
@@ -71,6 +81,13 @@
     <sys:String x:Key="Str_Game_BoostTip">Kapalıysa uygulama bu oyuna hiç dokunmaz (öncelik, çekirdek, EcoQoS). Process Lasso gibi bir araç kullanıyorsan kapat. Değişiklik oyunun bir sonraki açılışında geçerli olur.</sys:String>
     <sys:String x:Key="Str_Game_AutoPurgeLabel">Açıkken oto temizle</sys:String>
     <sys:String x:Key="Str_Game_AutoPurgeTip">Kapalıysa bu oyun çalışırken otomatik temizlik durur. Butonla ya da kısayolla temizlemek yine çalışır.</sys:String>
+    <sys:String x:Key="Str_Scan_Title">Kurulu oyunlar</sys:String>
+    <sys:String x:Key="Str_Scan_Subtitle">Steam ve Epic Games kütüphanelerinde bulunan oyunlar; eklenecekleri seç</sys:String>
+    <sys:String x:Key="Str_Scan_Loading">Kütüphaneler taranıyor…</sys:String>
+    <sys:String x:Key="Str_Scan_Empty">Kurulu Steam ya da Epic oyunu bulunamadı.</sys:String>
+    <sys:String x:Key="Str_Scan_Selected">{0} seçili</sys:String>
+    <sys:String x:Key="Str_Scan_AlreadyAdded">EKLİ</sys:String>
+    <sys:String x:Key="Str_Scan_AddSelected">Seçilenleri ekle</sys:String>
 
     <!-- Alt kontroller -->
     <sys:String x:Key="Str_Timer_Inactive">TIMER</sys:String>
@@ -116,6 +133,7 @@
     <sys:String x:Key="Str_Tray_TimerEnable">Timer'ı Aç</sys:String>
     <sys:String x:Key="Str_Tray_TimerDisable">Timer'ı Kapat</sys:String>
     <sys:String x:Key="Str_Tray_PurgeNow">Standby'ı Temizle</sys:String>
+    <sys:String x:Key="Str_Tray_AutoPurge">Oto temizle: {0}</sys:String>
     <sys:String x:Key="Str_Tray_DeepPurge">Derin temizlik: {0}</sys:String>
     <sys:String x:Key="Str_Tray_GameMode">Oyun Modu: {0}</sys:String>
     <sys:String x:Key="Str_Tray_TimerLock">Timer kilidi: {0}</sys:String>
@@ -125,6 +143,7 @@
 
     <!-- Tray balloon / tooltip -->
     <sys:String x:Key="Str_Tray_TooltipFormat" xml:space="preserve">StandbyAndTimer&#x0a;Timer: {0}  •  Temizleme: {1}</sys:String>
+    <sys:String x:Key="Str_Tray_TooltipRamFormat">Serbest: {0}  •  Standby: {1}</sys:String>
     <sys:String x:Key="Str_Tray_TimerStateOn">AÇIK</sys:String>
     <sys:String x:Key="Str_Tray_TimerStateOff">KAPALI</sys:String>
     <sys:String x:Key="Str_Tray_NotifyPurgeTitle">Standby bellek temizlendi</sys:String>
@@ -132,6 +151,8 @@
 
     <!-- Temizlik sonucu, geçmişi, canlı tahmin, oyun açılışında temizlik -->
     <sys:String x:Key="Str_Status_PurgeFreed">Standby temizlendi: {0} boşaltıldı</sys:String>
+    <sys:String x:Key="Str_Status_RecommendedApplied">Önerilen eşikler ayarlandı: liste {0} MB · serbest {1} MB</sys:String>
+    <sys:String x:Key="Str_Status_GamesScannedAdded">Kütüphane taramasından {0} oyun eklendi</sys:String>
     <sys:String x:Key="Str_Status_GameLaunching">{0} başlatılıyor…</sys:String>
     <sys:String x:Key="Str_Status_GameLaunchFailed">{0} başlatılamadı; ayrıntı log'da</sys:String>
     <sys:String x:Key="Str_Status_GameMissing">{0} bulunamadı (dosya taşınmış ya da silinmiş)</sys:String>
@@ -314,6 +335,7 @@
     <sys:String x:Key="Str_Maint_WindowsSection">WINDOWS</sys:String>
     <sys:String x:Key="Str_Clean_nvidia-shader">NVIDIA shader önbelleği</sys:String>
     <sys:String x:Key="Str_Clean_amd-shader">AMD shader önbelleği</sys:String>
+    <sys:String x:Key="Str_Clean_intel-shader">Intel shader önbelleği</sys:String>
     <sys:String x:Key="Str_Clean_user-temp">Geçici dosyalar (kullanıcı)</sys:String>
     <sys:String x:Key="Str_Clean_windows-temp">Windows geçici dosyaları</sys:String>
     <sys:String x:Key="Str_Clean_windows-update">Windows Update artıkları</sys:String>
@@ -321,6 +343,7 @@
     <sys:String x:Key="Str_Clean_downloads">İndirilenler</sys:String>
     <sys:String x:Key="Str_CleanTip_nvidia-shader">NVIDIA sürücüsünün oyunların için derlediği shader'lar. Sürücü güncellemesinden sonra ya da bozuk önbellek yüzünden takılma varsa bir kez temizle; oyunlar yeniden derler ve ilk açılışta takılabilir.</sys:String>
     <sys:String x:Key="Str_CleanTip_amd-shader">AMD sürücüsünün oyunların için derlediği shader'lar. Sürücü güncellemesinden sonra ya da bozuk önbellek yüzünden takılma varsa bir kez temizle; oyunlar yeniden derler ve ilk açılışta takılabilir.</sys:String>
+    <sys:String x:Key="Str_CleanTip_intel-shader">Intel ekran kartı sürücüsünün oyunların için derlediği shader'lar. Sürücü güncellemesinden sonra ya da bozuk önbellek yüzünden takılma varsa bir kez temizle; oyunlar yeniden derler ve ilk açılışta takılabilir.</sys:String>
     <sys:String x:Key="Str_CleanTip_user-temp">Senin geçici dosya klasörün. Son 24 saatte değişen ve kullanımdaki dosyalara dokunulmaz.</sys:String>
     <sys:String x:Key="Str_CleanTip_windows-temp">Windows'un geçici dosya klasörü. Son 24 saatte değişen ve kullanımdaki dosyalara dokunulmaz.</sys:String>
     <sys:String x:Key="Str_CleanTip_windows-update">Windows'un indirip kurduğu güncelleme dosyaları. Temizlemek güvenli; gerekirse Windows yeniden indirir.</sys:String>
@@ -411,6 +434,11 @@
     <sys:String x:Key="Str_Dl_Subtitle">Seçtiklerin Geri Dönüşüm Kutusu'na gider, oradan geri alabilirsin</sys:String>
     <sys:String x:Key="Str_Dl_All">Tümünü seç</sys:String>
     <sys:String x:Key="Str_Dl_None">Hiçbirini seçme</sys:String>
+    <sys:String x:Key="Str_Dl_Installers">Kurulum / ZIP</sys:String>
+    <sys:String x:Key="Str_Dl_InstallersTip">Kurulum dosyalarını, disk kalıplarını ve arşivleri seç (.exe, .msi, .iso, .zip, .7z, .rar)</sys:String>
+    <sys:String x:Key="Str_Dl_Old">30+ gün</sys:String>
+    <sys:String x:Key="Str_Dl_OldTip">30 günden eski öğeleri seç</sys:String>
+    <sys:String x:Key="Str_Dl_ShowInFolder">Klasörde göster</sys:String>
     <sys:String x:Key="Str_Dl_Selected">{0} seçili · {1}</sys:String>
     <sys:String x:Key="Str_Dl_Move">Geri Dönüşüm Kutusu'na taşı</sys:String>
     <sys:String x:Key="Str_Dl_Loading">Klasör okunuyor…</sys:String>
@@ -443,7 +471,7 @@
     <sys:String x:Key="Str_About_TabMaintenance">Bakım</sys:String>
     <sys:String x:Key="Str_HelpM_Intro">Bakım sekmesi disk alanı kaplayan ya da takılmaya yol açan şeyleri temizler ve Windows'un kendi araçlarını açar. Hiçbir şey kendiliğinden çalışmaz: neyi ne zaman temizleyeceğini sen seçersin.</sys:String>
     <sys:String x:Key="Str_HelpM_CleanTitle">TEMİZLİK</sys:String>
-    <sys:String x:Key="Str_HelpM_Shader">Shader önbellekleri (NVIDIA, AMD): sürücü güncellemesinden sonra ya da bozuk önbellek yüzünden bir oyun takılıyorsa bir kez temizle. Düzenli temizlemek yanlış: her oyun shader'larını yeniden derler ve ilk açılışta takılır. Listedeki bir oyun açıkken temizlenemez.</sys:String>
+    <sys:String x:Key="Str_HelpM_Shader">Shader önbellekleri (NVIDIA, AMD, Intel): sürücü güncellemesinden sonra ya da bozuk önbellek yüzünden bir oyun takılıyorsa bir kez temizle. Düzenli temizlemek yanlış: her oyun shader'larını yeniden derler ve ilk açılışta takılır. Listedeki bir oyun açıkken temizlenemez.</sys:String>
     <sys:String x:Key="Str_HelpM_Temp">Geçici dosyalar: ara sıra temizlemek güvenli. Son 24 saatte değişen ve kullanımdaki dosyalara dokunulmaz, böylece çalışan kurulumlar ve programlar bozulmaz.</sys:String>
     <sys:String x:Key="Str_HelpM_Update">Windows Update artıkları: zaten kurulmuş güncelleme dosyaları. Temizlemek güvenli; Windows gerekeni yeniden indirir.</sys:String>
     <sys:String x:Key="Str_HelpM_Bin">Geri Dönüşüm Kutusu: boşaltmak kalıcıdır. Gerekenleri önce geri al.</sys:String>

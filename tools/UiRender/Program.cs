@@ -10,6 +10,7 @@ using System.Windows.Threading;
 using StandbyAndTimer;
 using StandbyAndTimer.Core.Interfaces;
 using StandbyAndTimer.Core.Models;
+using StandbyAndTimer.Services;
 using StandbyAndTimer.ViewModels;
 using WinForms = System.Windows.Forms;
 
@@ -392,11 +393,13 @@ public static class Program
         var settingsVm = new SettingsViewModel(Null<IAutoStartService>(), loc, Null<ISettingsService>(),
                                                Null<IUpdateService>(), Null<IThemeService>(), Null<ILogTailReader>());
         var systemVm = new SystemViewModel(new FakeGlobalTimer());
-        systemVm.Initialize(promptAnswered: true, setByApp: true, changedUtc: DateTime.UtcNow, bootValue: false);
+        systemVm.Initialize(promptAnswered: true, setByApp: true, changedUtc: DateTime.UtcNow, bootValue: false,
+                            cooldownEnabled: true, cooldownSeconds: 60);
         var maintenance = new MaintenanceViewModel(
         [
             new FakeCleanupTarget("nvidia-shader", new CleanupScan(true, 1_200L << 20, 3400), blocked: true),
             new FakeCleanupTarget("amd-shader", CleanupScan.NotFound, blocked: true),
+            new FakeCleanupTarget("intel-shader", new CleanupScan(true, 180L << 20, 420), blocked: true),
             new FakeCleanupTarget("directx-shader", new CleanupScan(true, 320L << 20, 900), blocked: true),
             new FakeCleanupTarget("steam-shader", new CleanupScan(true, 2_400L << 20, 5200), blocked: true),
             new FakeCleanupTarget("driver-leftovers", new CleanupScan(true, 1_100L << 20, 700)),
@@ -416,6 +419,13 @@ public static class Program
         // UiRender has no InternalsVisibleTo (only StandbyAndTimer.Tests does), so the
         // internal members are reached by reflection, as the purge history sample already is.
         const BindingFlags Any = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+        typeof(MainViewModel).GetProperty("ScanInstalledGames", Any)!.SetValue(vm,
+            (Func<CancellationToken, Task<IReadOnlyList<InstalledGameCandidate>>>)(_ => Task.FromResult<IReadOnlyList<InstalledGameCandidate>>(
+            [
+                new("Counter-Strike 2", @"C:\Windows\System32\notepad.exe", "Steam"),
+                new("Cyberpunk 2077", @"C:\Games\Cyberpunk 2077\bin\x64\Cyberpunk2077.exe", "Steam"),
+                new("Alan Wake 2", @"C:\Games\AlanWake2\AlanWake2.exe", "Epic"),
+            ])));
         maintenance.Initialize(null);
         typeof(MaintenanceViewModel).GetProperty("AnyGameRunning", Any)!.SetValue(maintenance, (Func<bool>)(() => true));   // NVIDIA row: blocked
         typeof(MaintenanceViewModel).GetProperty("Now", Any)!.SetValue(maintenance, (Func<DateTime>)(() => new DateTime(2026, 10, 16, 22, 0, 0)));
@@ -852,6 +862,17 @@ public static class Program
                 failures += CheckToolTips(root, $"{tag} {name}");
                 show(false); Pump();
             }
+            // Installed games scanner overlay over the status page.
+            {
+                vm.OpenInstalledGamesCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+                vm.InstalledGamesDialog!.Items[1].IsChecked = true;
+                Pump();
+                Save(root, Path.Combine(outDir, $"{tag}-4-installed-games.png"));
+                failures += CheckLayout(root, $"{tag} installed games");
+                failures += CheckToolTips(root, $"{tag} installed games");
+                vm.CloseInstalledGamesCommand.Execute(null);
+                Pump();
+            }
             {
                 var purge = Walk(root).OfType<StandbyAndTimer.Views.Cards.StandbyPurgeCard>().Single();
                 var cb = Walk(purge).OfType<CheckBox>().First(c => c.Style == (Style)Application.Current.Resources["DarkCheckBoxStyle"]);
@@ -1056,7 +1077,7 @@ public static class Program
                 var trayType = typeof(MainWindow).Assembly.GetType("StandbyAndTimer.Services.Tray.TrayIconService")!;
                 var tray = Activator.CreateInstance(trayType, [loc])!;
                 var menu = (WinForms.ContextMenuStrip)trayType.GetMethod("BuildMenu", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(tray, null)!;
-                ((ITrayIconService)tray).Refresh(new TrayState(true, 3, DeepPurge: true, GameMode: true, TimerLock: TimerLockMode.Locked));
+                ((ITrayIconService)tray).Refresh(new TrayState(true, 3, DeepPurge: true, GameMode: true, TimerLock: TimerLockMode.Locked, AutoPurge: true, FreeRamMb: 4250, StandbyRamMb: 2860));
                 // Same call path as App: public interface, after the menu exists.
                 ((ITrayIconService)tray).ApplyTheme(themeEnum);
                 _ = menu.Handle;
