@@ -35,21 +35,30 @@ public sealed partial class InstalledGameRow : ObservableObject
 public sealed partial class InstalledGamesViewModel : ObservableObject, IDisposable
 {
     private readonly Func<CancellationToken, Task<IReadOnlyList<InstalledGameCandidate>>> _scanner;
-    private readonly IReadOnlySet<string> _existingPaths;
+    private readonly Func<InstalledGameCandidate, bool> _isAlreadyListed;
     private readonly ILocalizationService _loc;
     private readonly Action<IReadOnlyList<InstalledGameCandidate>> _onAdd;
     private readonly CancellationTokenSource _cts = new();
 
     internal InstalledGamesViewModel(
         Func<CancellationToken, Task<IReadOnlyList<InstalledGameCandidate>>> scanner,
-        IReadOnlySet<string> existingPaths,
+        Func<InstalledGameCandidate, bool> isAlreadyListed,
         ILocalizationService loc,
         Action<IReadOnlyList<InstalledGameCandidate>> onAdd)
     {
-        _scanner       = scanner;
-        _existingPaths = existingPaths;
-        _loc           = loc;
-        _onAdd         = onAdd;
+        _scanner         = scanner;
+        _isAlreadyListed = isAlreadyListed;
+        _loc             = loc;
+        _onAdd           = onAdd;
+    }
+
+    internal InstalledGamesViewModel(
+        Func<CancellationToken, Task<IReadOnlyList<InstalledGameCandidate>>> scanner,
+        IReadOnlySet<string> existingPaths,
+        ILocalizationService loc,
+        Action<IReadOnlyList<InstalledGameCandidate>> onAdd)
+        : this(scanner, c => existingPaths.Contains(c.ExecutablePath), loc, onAdd)
+    {
     }
 
     public ObservableCollection<InstalledGameRow> Items { get; } = [];
@@ -67,11 +76,10 @@ public sealed partial class InstalledGamesViewModel : ObservableObject, IDisposa
         try
         {
             var found = await _scanner(_cts.Token);
-            string addedBadge = _loc.GetString("Str_Scan_AlreadyAdded");
             foreach (var c in found)
             {
-                bool exists = _existingPaths.Contains(c.ExecutablePath);
-                var row = new InstalledGameRow(c, exists, exists ? addedBadge : c.Source);
+                if (_isAlreadyListed(c)) continue;
+                var row = new InstalledGameRow(c, alreadyAdded: false, c.Source);
                 row.PropertyChanged += OnRowChanged;
                 Items.Add(row);
             }

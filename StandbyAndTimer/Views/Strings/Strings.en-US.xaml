@@ -52,7 +52,7 @@
     <sys:String x:Key="Str_Purge_StandbyLimitLabel">List size at least (MB):</sys:String>
     <sys:String x:Key="Str_Purge_FreeLimitLabel">Free memory lower than (MB):</sys:String>
     <sys:String x:Key="Str_Purge_Button">Purge Standby</sys:String>
-    <sys:String x:Key="Str_Purge_Recommend">Recommended</sys:String>
+    <sys:String x:Key="Str_Purge_Recommend">RECOMMENDED</sys:String>
     <sys:String x:Key="Str_Purge_RecommendTip">Fill in the recommended standby and free memory thresholds for your total RAM</sys:String>
     <sys:String x:Key="Str_Purge_LightLabel">Light purge</sys:String>
     <sys:String x:Key="Str_Purge_LightDesc">Clears only the low-priority cache; often used files stay in memory.</sys:String>

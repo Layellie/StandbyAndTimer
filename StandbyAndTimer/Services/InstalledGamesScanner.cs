@@ -5,7 +5,11 @@ using StandbyAndTimer.Services.Maintenance;
 namespace StandbyAndTimer.Services;
 
 /// <summary>An installed game discovered from a Steam library or Epic Games manifest.</summary>
-public sealed record InstalledGameCandidate(string Name, string ExecutablePath, string Source);
+public sealed record InstalledGameCandidate(
+    string Name,
+    string ExecutablePath,
+    string Source,
+    string InstallDirectory = "");
 
 /// <summary>
 /// Scans local Steam libraries (<c>appmanifest_*.acf</c>) and Epic Games Launcher
@@ -19,6 +23,12 @@ internal static class InstalledGamesScanner
         "Steam Linux Runtime",
         "Proton ",
         "SteamVR",
+        "Wallpaper Engine",
+        "Soundpad",
+        "OBS Studio",
+        "Steam Controller Configs",
+        "Lossless Scaling",
+        "Crosshair X",
     ];
 
     private static readonly string[] IgnoredExePrefixes =
@@ -28,6 +38,7 @@ internal static class InstalledGamesScanner
         "crashreport",
         "crashhandler",
         "crashsender",
+        "crashpad",
         "vc_redist",
         "vcredist",
         "dxsetup",
@@ -40,6 +51,34 @@ internal static class InstalledGamesScanner
         "ueprereqsetup",
         "redistr",
         "setup",
+        "installer",
+        "ubisoft",
+        "uplay",
+        "epiconlineservices",
+        "eosinstaller",
+        "eaanticheat",
+        "eabackground",
+        "rockstar",
+        "socialclub",
+        "cleaner",
+        "cleanup",
+        "touchup",
+        "firewall",
+        "d3dconfig",
+        "d3d12",
+        "7za",
+        "java",
+        "javaw",
+        "jabswitch",
+        "jaccess",
+        "jfr",
+        "jrunscript",
+        "jwebserver",
+        "keytool",
+        "kinit",
+        "klist",
+        "ktab",
+        "rmiregistry",
     ];
 
     public static Task<IReadOnlyList<InstalledGameCandidate>> ScanAsync(CancellationToken ct = default) =>
@@ -130,11 +169,11 @@ internal static class InstalledGamesScanner
         if (IgnoredAppNames.Any(ig => name.StartsWith(ig, StringComparison.OrdinalIgnoreCase)))
             return null;
 
-        string gameRoot = Path.Combine(steamAppsDir, "common", installDir);
+        string gameRoot = Path.GetFullPath(Path.Combine(steamAppsDir, "common", installDir));
         if (!Directory.Exists(gameRoot)) return null;
 
         string? exe = FindBestExecutable(gameRoot, name, installDir);
-        return exe is null ? null : new InstalledGameCandidate(name, exe, "Steam");
+        return exe is null ? null : new InstalledGameCandidate(name, exe, "Steam", gameRoot);
     }
 
     internal static InstalledGameCandidate? TryReadEpicManifest(string itemPath)
@@ -151,6 +190,7 @@ internal static class InstalledGamesScanner
 
             if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(installLoc))
                 return null;
+            installLoc = Path.GetFullPath(installLoc);
             if (!Directory.Exists(installLoc))
                 return null;
 
@@ -161,14 +201,14 @@ internal static class InstalledGamesScanner
                 : null;
 
             if (directExe is not null && File.Exists(directExe) && !IsIgnoredExecutable(Path.GetFileNameWithoutExtension(directExe)))
-                return new InstalledGameCandidate(name, directExe, "Epic");
+                return new InstalledGameCandidate(name, directExe, "Epic", installLoc);
 
             string? best = FindBestExecutable(installLoc, name, Path.GetFileName(installLoc));
             if (best is not null)
-                return new InstalledGameCandidate(name, best, "Epic");
+                return new InstalledGameCandidate(name, best, "Epic", installLoc);
 
             if (directExe is not null && File.Exists(directExe))
-                return new InstalledGameCandidate(name, directExe, "Epic");
+                return new InstalledGameCandidate(name, directExe, "Epic", installLoc);
 
             return null;
         }
@@ -181,18 +221,18 @@ internal static class InstalledGamesScanner
     internal static string? FindBestExecutable(string rootDir, string gameName, string folderName)
     {
         var candidates = new List<FileInfo>();
-        CollectExecutables(new DirectoryInfo(rootDir), depth: 0, maxDepth: 3, candidates);
+        CollectExecutables(new DirectoryInfo(rootDir), depth: 0, maxDepth: 4, candidates);
         if (candidates.Count == 0) return null;
 
         var filtered = candidates
             .Where(f => !IsIgnoredExecutable(Path.GetFileNameWithoutExtension(f.Name)))
             .ToList();
-        if (filtered.Count == 0) filtered = candidates;
+        if (filtered.Count == 0) return null;
 
         string normGame = NormalizeAlphaNum(gameName);
         string normFolder = NormalizeAlphaNum(folderName);
 
-        // Score: Unreal *-Shipping.exe or exact name match gets a bonus, plus file size in MB.
+        // Score: Unreal *-Shipping.exe or exact/substring name match gets a bonus, plus file size in MB.
         return filtered
             .OrderByDescending(f => ScoreExecutable(f, normGame, normFolder))
             .ThenByDescending(f => f.Length)
@@ -211,6 +251,12 @@ internal static class InstalledGamesScanner
         if (normStem.Length > 0 && (normStem.Equals(normGame, StringComparison.OrdinalIgnoreCase)
                                  || normStem.Equals(normFolder, StringComparison.OrdinalIgnoreCase)))
             score += 300;
+        else if (normStem.Length >= 4
+              && ((normGame.Length > 0 && (normGame.Contains(normStem, StringComparison.OrdinalIgnoreCase)
+                                        || normStem.Contains(normGame, StringComparison.OrdinalIgnoreCase)))
+               || (normFolder.Length > 0 && (normFolder.Contains(normStem, StringComparison.OrdinalIgnoreCase)
+                                          || normStem.Contains(normFolder, StringComparison.OrdinalIgnoreCase)))))
+            score += 200;
         if (stem.Contains("launcher", StringComparison.OrdinalIgnoreCase))
             score -= 200;
 
@@ -220,11 +266,20 @@ internal static class InstalledGamesScanner
     private static string NormalizeAlphaNum(string s) =>
         new(s.Where(char.IsLetterOrDigit).ToArray());
 
-    private static bool IsIgnoredExecutable(string stem) =>
+    internal static bool IsIgnoredExecutable(string stem) =>
         IgnoredExePrefixes.Any(prefix => stem.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
         || stem.Contains("crashhandler", StringComparison.OrdinalIgnoreCase)
         || stem.Contains("crashreport", StringComparison.OrdinalIgnoreCase)
-        || stem.Contains("unins", StringComparison.OrdinalIgnoreCase);
+        || stem.Contains("crashpad", StringComparison.OrdinalIgnoreCase)
+        || stem.Contains("unins", StringComparison.OrdinalIgnoreCase)
+        || stem.Contains("installer", StringComparison.OrdinalIgnoreCase)
+        || stem.Contains("anticheat", StringComparison.OrdinalIgnoreCase)
+        || stem.Contains("prereq", StringComparison.OrdinalIgnoreCase)
+        || stem.Contains("redist", StringComparison.OrdinalIgnoreCase)
+        || stem.Contains("webview", StringComparison.OrdinalIgnoreCase)
+        || stem.Contains("benchmark", StringComparison.OrdinalIgnoreCase)
+        || stem.EndsWith("_be", StringComparison.OrdinalIgnoreCase)
+        || stem.EndsWith("helper", StringComparison.OrdinalIgnoreCase);
 
     private static void CollectExecutables(DirectoryInfo dir, int depth, int maxDepth, List<FileInfo> sink)
     {
