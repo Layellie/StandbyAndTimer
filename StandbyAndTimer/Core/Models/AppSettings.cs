@@ -64,6 +64,11 @@ public sealed class AppSettings
     public bool        AutoPurgeCooldownEnabled  { get; set; }
     public int         AutoPurgeCooldownSeconds  { get; set; } = 60;
 
+    // System settings (Administrator badge): when enabled, clicking the close
+    // (X) button skips the confirmation dialog, minimizes directly to the tray,
+    // and shows a background tray notification.
+    public bool        CloseToTrayDirectly       { get; set; }
+
     // v2.1.0 — global hotkeys for manual purge / timer toggle. Stored as
     // "Ctrl+Alt+P"-style strings so the registry value is human-readable and
     // a future capture-textbox can round-trip via HotkeyBinding.Parse.

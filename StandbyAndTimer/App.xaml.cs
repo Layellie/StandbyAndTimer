@@ -167,6 +167,7 @@ public partial class App : Application
         // (every size, no decoding); Icon="/app_icon.ico" decoded all eight
         // images first (~65 ms measured).
         _mainWindow = new MainWindow(_viewModel);
+        _mainWindow.MinimizedToTrayOnClose += OnMinimizedToTrayOnClose;
         // The saved theme was applied in step 4, before ThemeChanged was
         // subscribed, so hand the tray its starting palette explicitly.
         _tray.ApplyTheme(EffectiveTheme());
@@ -284,6 +285,9 @@ public partial class App : Application
             _viewModel.GameStartedNotification  -= OnGameStartedNotification;
             _viewModel.GameAutoDetected         -= OnGameAutoDetected;
         }
+
+        if (_mainWindow is not null)
+            _mainWindow.MinimizedToTrayOnClose -= OnMinimizedToTrayOnClose;
 
         // Release every Win32 RegisterHotKey before the HWND goes away —
         // otherwise the OS keeps the registrations bound to a dead window
@@ -519,6 +523,14 @@ public partial class App : Application
             : _localization.GetString("Str_Tray_NotifyTimerOffBody");
 
         _tray?.ShowBalloon(title, body);
+    }
+
+    private void OnMinimizedToTrayOnClose(object? sender, EventArgs e)
+    {
+        if (_localization is null) return;
+        _tray?.ShowBalloon(
+            _localization.GetString("Str_Tray_NotifyBackgroundTitle"),
+            _localization.GetString("Str_Tray_NotifyBackgroundBody"));
     }
 
     // ── Silent startup update check ──────────────────────────────────────────

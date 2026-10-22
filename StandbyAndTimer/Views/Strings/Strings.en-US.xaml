@@ -27,6 +27,10 @@
     <sys:String x:Key="Str_System_SmartCooldown">Auto purge smart cooldown</sys:String>
     <sys:String x:Key="Str_System_SmartCooldownDesc">Minimum pause (in seconds) between two automatic purges so aggressive thresholds never hammer the standby list every second.</sys:String>
     <sys:String x:Key="Str_System_SmartCooldownSecTip">Cooldown in seconds (5–600)</sys:String>
+    <sys:String x:Key="Str_System_CloseToTray">Always run in background on close</sys:String>
+    <sys:String x:Key="Str_System_CloseToTrayDesc">Clicking the close (✕) button skips the confirmation dialog, sends the app directly to the system tray, and shows a notification.</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyBackgroundTitle">Running in background</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyBackgroundBody">StandbyAndTimer continues running in the system tray.</sys:String>
     <sys:String x:Key="Str_System_Close">Close</sys:String>
     <sys:String x:Key="Str_GlobalPrompt_Title">Apply the timer to all games?</sys:String>
     <sys:String x:Key="Str_GlobalPrompt_Later">You can change it any time from the Administrator badge at the top right.</sys:String>

@@ -272,7 +272,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 s.TimerIdleOffEnabled, s.TimerIdleOffMinutes);
             SystemSettings.Initialize(s.GlobalTimerPromptAnswered, s.GlobalTimerSetByApp,
                               s.GlobalTimerChangedUtc, s.GlobalTimerBootValue,
-                              s.AutoPurgeCooldownEnabled, s.AutoPurgeCooldownSeconds);
+                              s.AutoPurgeCooldownEnabled, s.AutoPurgeCooldownSeconds,
+                              s.CloseToTrayDirectly);
             Maintenance.Initialize(s.CleanupSelection);
         }
         SyncMonitorThresholds();
@@ -388,6 +389,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         GlobalTimerBootValue      = SystemSettings.GlobalTimerBootValue,
         AutoPurgeCooldownEnabled  = SystemSettings.AutoPurgeCooldownEnabled,
         AutoPurgeCooldownSeconds  = SystemSettings.AutoPurgeCooldownSeconds,
+        CloseToTrayDirectly       = SystemSettings.CloseToTrayDirectly,
         FirstRunCompleted     = _firstRunCompleted,
         Games                 = [.. Games],
         IgnoredGamePaths      = [.. _ignoredGamePaths],

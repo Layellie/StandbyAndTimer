@@ -293,4 +293,16 @@ public sealed class NewFeaturesTests : IDisposable
         Assert.Equal(2, h.Main.Games.Count);
         Assert.Contains(h.Main.Games, g => g.ExecutablePath == exe2);
     }
+
+    [Fact]
+    public void SystemSettings_CloseToTrayDirectly_persists_when_toggled()
+    {
+        var h = new Harness();
+        Assert.False(h.Main.SystemSettings.CloseToTrayDirectly);
+
+        h.Main.SystemSettings.CloseToTrayDirectly = true;
+
+        Assert.True(h.Main.SystemSettings.CloseToTrayDirectly);
+        Assert.True(h.Store.Saved[^1].CloseToTrayDirectly);
+    }
 }

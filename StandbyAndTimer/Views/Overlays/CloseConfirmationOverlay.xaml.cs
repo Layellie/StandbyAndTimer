@@ -1,12 +1,15 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media.Animation;
 
 namespace StandbyAndTimer.Views.Overlays;
 
 // Hosts the two-button "Run in Background / Exit" dialog. MainWindow.OnClosing
 // cancels the close and calls Show(); the buttons raise events back to the
-// host which decides what to do (hide to tray vs. real shutdown).
+// host which decides what to do (hide to tray vs. real shutdown). Clicking
+// anywhere outside the inner dialog card dismisses the overlay and keeps the
+// user in the application.
 public partial class CloseConfirmationOverlay : UserControl
 {
     public event EventHandler? MinimizeRequested;
@@ -22,6 +25,10 @@ public partial class CloseConfirmationOverlay : UserControl
     }
 
     public void Hide() => Visibility = Visibility.Collapsed;
+
+    private void OnBackdropMouseDown(object sender, MouseButtonEventArgs e) => Hide();
+
+    private void OnDialogMouseDown(object sender, MouseButtonEventArgs e) => e.Handled = true;
 
     private void OnMinimizeClick(object sender, RoutedEventArgs e)
     {

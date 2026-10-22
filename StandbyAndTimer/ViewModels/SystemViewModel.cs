@@ -28,6 +28,7 @@ public sealed partial class SystemViewModel : ObservableObject
     [ObservableProperty] private bool _writeFailed;
     [ObservableProperty] private bool _autoPurgeCooldownEnabled;
     [ObservableProperty] private int  _autoPurgeCooldownSeconds = CooldownDefaultSeconds;
+    [ObservableProperty] private bool _closeToTrayDirectly;
 
     public bool GlobalTimerSupported   => _globalTimer.IsSupported;
     public bool GlobalTimerUnsupported => !_globalTimer.IsSupported;
@@ -49,7 +50,8 @@ public sealed partial class SystemViewModel : ObservableObject
     }
 
     public void Initialize(bool promptAnswered, bool setByApp, DateTime? changedUtc, bool bootValue,
-                           bool cooldownEnabled = false, int cooldownSeconds = CooldownDefaultSeconds)
+                           bool cooldownEnabled = false, int cooldownSeconds = CooldownDefaultSeconds,
+                           bool closeToTrayDirectly = false)
     {
         using (new InitScope(v => _isInitializing = v))
         {
@@ -62,6 +64,7 @@ public sealed partial class SystemViewModel : ObservableObject
             RestartPending           = ChangedThisBoot && GlobalTimerEnabled != GlobalTimerBootValue;
             AutoPurgeCooldownEnabled = cooldownEnabled;
             AutoPurgeCooldownSeconds = ClampCooldown(cooldownSeconds);
+            CloseToTrayDirectly      = closeToTrayDirectly;
         }
     }
 
@@ -134,6 +137,12 @@ public sealed partial class SystemViewModel : ObservableObject
             AutoPurgeCooldownSeconds = clamped;
             return;
         }
+        if (_isInitializing) return;
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    partial void OnCloseToTrayDirectlyChanged(bool value)
+    {
         if (_isInitializing) return;
         SettingsChanged?.Invoke(this, EventArgs.Empty);
     }
