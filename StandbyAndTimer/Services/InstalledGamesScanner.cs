@@ -1,10 +1,11 @@
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using StandbyAndTimer.Services.Maintenance;
 
 namespace StandbyAndTimer.Services;
 
-/// <summary>An installed game discovered from a Steam library or Epic Games manifest.</summary>
+/// <summary>An installed game discovered from a Steam library or Epic Games manifest/library.</summary>
 public sealed record InstalledGameCandidate(
     string Name,
     string ExecutablePath,
@@ -13,7 +14,8 @@ public sealed record InstalledGameCandidate(
 
 /// <summary>
 /// Scans local Steam libraries (<c>appmanifest_*.acf</c>) and Epic Games Launcher
-/// manifests (<c>*.item</c>) to find installed games and their primary executables.
+/// manifests (<c>*.item</c>) and library directories to find installed games and
+/// their primary executables.
 /// </summary>
 internal static class InstalledGamesScanner
 {
@@ -81,6 +83,33 @@ internal static class InstalledGamesScanner
         "rmiregistry",
     ];
 
+    private static readonly string[] IgnoredEpicFolderNames =
+    [
+        "Launcher",
+        "Epic Online Services",
+        "EpicOnlineServices",
+        "DirectXRedist",
+        ".egstore",
+    ];
+
+    private static readonly HashSet<string> IgnoredSubdirectoryNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Redistributables",
+        "_CommonRedist",
+        "Redist",
+        "DirectX",
+        "VCRed",
+        "EasyAntiCheat",
+        "BattlEye",
+        "Sentinel",
+        "Support",
+        "CrashReporter",
+        "jre",
+        "jre32",
+        "jre64",
+        ".egstore",
+    };
+
     public static Task<IReadOnlyList<InstalledGameCandidate>> ScanAsync(CancellationToken ct = default) =>
         Task.Run(() =>
         {
@@ -93,16 +122,53 @@ internal static class InstalledGamesScanner
                 Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
                 "Epic", "EpicGamesLauncher", "Data", "Manifests");
 
-            return ScanDirectories(steamAppsDirs, [epicManifests], ct);
+            var epicLibraryDirs = DiscoverEpicLibraryRoots();
+
+            return ScanDirectories(steamAppsDirs, [epicManifests], epicLibraryDirs, ct);
         }, ct);
+
+    internal static IReadOnlyList<string> DiscoverEpicLibraryRoots()
+    {
+        var dirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            foreach (var drive in DriveInfo.GetDrives())
+            {
+                if (drive.DriveType != DriveType.Fixed || !drive.IsReady) continue;
+                string root = drive.RootDirectory.FullName;
+                string[] candidates =
+                [
+                    Path.Combine(root, "Program Files", "Epic Games"),
+                    Path.Combine(root, "Program Files (x86)", "Epic Games"),
+                    Path.Combine(root, "Epic Games"),
+                    Path.Combine(root, "Games", "Epic Games"),
+                ];
+                foreach (string c in candidates)
+                {
+                    if (Directory.Exists(c))
+                        dirs.Add(c);
+                }
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        return [.. dirs];
+    }
 
     internal static IReadOnlyList<InstalledGameCandidate> ScanDirectories(
         IEnumerable<string> steamAppsDirs,
         IEnumerable<string> epicManifestDirs,
+        CancellationToken ct = default) =>
+        ScanDirectories(steamAppsDirs, epicManifestDirs, [], ct);
+
+    internal static IReadOnlyList<InstalledGameCandidate> ScanDirectories(
+        IEnumerable<string> steamAppsDirs,
+        IEnumerable<string> epicManifestDirs,
+        IEnumerable<string> epicLibraryDirs,
         CancellationToken ct = default)
     {
         var results = new List<InstalledGameCandidate>();
         var seenExes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var seenInstallDirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (string steamApps in steamAppsDirs)
         {
@@ -117,7 +183,11 @@ internal static class InstalledGamesScanner
             {
                 ct.ThrowIfCancellationRequested();
                 if (TryReadSteamManifest(acf, steamApps) is { } candidate && seenExes.Add(candidate.ExecutablePath))
+                {
+                    if (!string.IsNullOrEmpty(candidate.InstallDirectory))
+                        seenInstallDirs.Add(candidate.InstallDirectory);
                     results.Add(candidate);
+                }
             }
         }
 
@@ -134,13 +204,80 @@ internal static class InstalledGamesScanner
             {
                 ct.ThrowIfCancellationRequested();
                 if (TryReadEpicManifest(itemFile) is { } candidate && seenExes.Add(candidate.ExecutablePath))
+                {
+                    if (!string.IsNullOrEmpty(candidate.InstallDirectory))
+                        seenInstallDirs.Add(candidate.InstallDirectory);
                     results.Add(candidate);
+                }
+            }
+        }
+
+        // Also scan Epic Games library directories directly (covers games with .egstore
+        // or standalone folders where Launcher manifests in ProgramData were cleared/moved).
+        foreach (string epicLib in epicLibraryDirs)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (!Directory.Exists(epicLib)) continue;
+
+            IEnumerable<string> gameFolders;
+            try { gameFolders = Directory.EnumerateDirectories(epicLib); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { continue; }
+
+            foreach (string folder in gameFolders)
+            {
+                ct.ThrowIfCancellationRequested();
+                string fullFolder = Path.GetFullPath(folder);
+                if (seenInstallDirs.Contains(fullFolder)) continue;
+
+                string folderName = Path.GetFileName(fullFolder);
+                if (string.IsNullOrWhiteSpace(folderName)
+                    || IgnoredEpicFolderNames.Any(ig => folderName.Equals(ig, StringComparison.OrdinalIgnoreCase)))
+                    continue;
+
+                string displayName = FormatFolderDisplayName(folderName);
+                string? exe = FindBestExecutable(fullFolder, displayName, folderName);
+                if (exe is not null && seenExes.Add(exe))
+                {
+                    seenInstallDirs.Add(fullFolder);
+                    results.Add(new InstalledGameCandidate(displayName, exe, "Epic", fullFolder));
+                }
             }
         }
 
         return results
             .OrderBy(r => r.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
+    }
+
+    internal static string FormatFolderDisplayName(string folderName)
+    {
+        if (string.IsNullOrWhiteSpace(folderName) || folderName.Contains(' '))
+            return folderName;
+
+        // Split PascalCase / CamelCase / digit boundaries: "TheWitcher3" -> "The Witcher 3"
+        var sb = new StringBuilder(folderName.Length + 4);
+        for (int i = 0; i < folderName.Length; i++)
+        {
+            char c = folderName[i];
+            if (i > 0)
+            {
+                char prev = folderName[i - 1];
+                bool prevLower = char.IsLower(prev);
+                bool currUpper = char.IsUpper(c);
+                bool currDigit = char.IsDigit(c);
+                bool prevDigit = char.IsDigit(prev);
+                bool nextLower = i + 1 < folderName.Length && char.IsLower(folderName[i + 1]);
+
+                if ((prevLower && (currUpper || currDigit))
+                    || (char.IsUpper(prev) && currUpper && nextLower)
+                    || (prevDigit && char.IsLetter(c)))
+                {
+                    sb.Append(' ');
+                }
+            }
+            sb.Append(c);
+        }
+        return sb.ToString();
     }
 
     internal static InstalledGameCandidate? TryReadSteamManifest(string acfPath, string steamAppsDir)
@@ -291,6 +428,7 @@ internal static class InstalledGamesScanner
             foreach (var sub in dir.EnumerateDirectories())
             {
                 if (sub.Attributes.HasFlag(FileAttributes.ReparsePoint)) continue;
+                if (IgnoredSubdirectoryNames.Contains(sub.Name)) continue;
                 CollectExecutables(sub, depth + 1, maxDepth, sink);
             }
         }
