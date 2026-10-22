@@ -24,7 +24,8 @@ public interface ITrayIconService : IDisposable
     /// <summary>Invoked when the user picks "Enable/Disable Timer" from the tray menu.</summary>
     event EventHandler? TimerToggleRequested;
 
-    /// <summary>Quick settings in the menu: flip deep purge, flip Game Mode, cycle the timer lock.</summary>
+    /// <summary>Quick settings in the menu: flip auto purge, flip deep purge, flip Game Mode, cycle the timer lock.</summary>
+    event EventHandler? AutoPurgeToggleRequested;
     event EventHandler? DeepPurgeToggleRequested;
     event EventHandler? GameModeToggleRequested;
     event EventHandler? TimerLockCycleRequested;

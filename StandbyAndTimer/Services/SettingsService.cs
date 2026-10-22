@@ -67,6 +67,8 @@ internal sealed class SettingsService : ISettingsService
                 GlobalTimerSetByApp       = GetBool(key, "GlobalTimerSetByApp"),
                 GlobalTimerChangedUtc     = GetUtc (key, "GlobalTimerChangedUtc"),
                 GlobalTimerBootValue      = GetBool(key, "GlobalTimerBootValue"),
+                AutoPurgeCooldownEnabled  = GetBool(key, "AutoPurgeCooldownEnabled"),
+                AutoPurgeCooldownSeconds  = GetInt (key, "AutoPurgeCooldownSeconds", 60),
 
                 PurgeHotkey           = key.GetValue("PurgeHotkey")?.ToString() ?? "Ctrl+Alt+P",
                 TimerHotkey           = key.GetValue("TimerHotkey")?.ToString() ?? "Ctrl+Alt+T",
@@ -152,6 +154,14 @@ internal sealed class SettingsService : ISettingsService
                 key.SetValue("GlobalTimerChangedUtc", changed.ToUniversalTime().ToString("o", CultureInfo.InvariantCulture));
             else
                 key.DeleteValue("GlobalTimerChangedUtc", throwOnMissingValue: false);
+            if (settings.AutoPurgeCooldownEnabled)
+                key.SetValue("AutoPurgeCooldownEnabled", "1");
+            else
+                key.DeleteValue("AutoPurgeCooldownEnabled", throwOnMissingValue: false);
+            if (settings.AutoPurgeCooldownSeconds != 60)
+                key.SetValue("AutoPurgeCooldownSeconds", settings.AutoPurgeCooldownSeconds, RegistryValueKind.DWord);
+            else
+                key.DeleteValue("AutoPurgeCooldownSeconds", throwOnMissingValue: false);
             key.SetValue("PurgeHotkey",            settings.PurgeHotkey            ?? "Ctrl+Alt+P");
             key.SetValue("TimerHotkey",            settings.TimerHotkey            ?? "Ctrl+Alt+T");
             key.SetValue("AutoPurgeHotkey",        settings.AutoPurgeHotkey        ?? "Ctrl+Alt+O");

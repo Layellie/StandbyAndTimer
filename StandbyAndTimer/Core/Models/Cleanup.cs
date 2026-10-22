@@ -20,6 +20,7 @@ public static class CleanupTargetIds
 {
     public const string NvidiaShader  = "nvidia-shader";
     public const string AmdShader     = "amd-shader";
+    public const string IntelShader   = "intel-shader";
     public const string UserTemp      = "user-temp";
     public const string WindowsTemp   = "windows-temp";
     public const string WindowsUpdate = "windows-update";

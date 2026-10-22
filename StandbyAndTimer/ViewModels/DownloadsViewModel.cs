@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using StandbyAndTimer.Core.Interfaces;
@@ -24,6 +26,13 @@ public sealed partial class DownloadRow(DownloadEntry entry, string sizeText, st
 /// </summary>
 public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
 {
+    private static readonly HashSet<string> InstallerAndArchiveExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".exe", ".msi", ".msix", ".iso", ".zip", ".7z", ".rar", ".cab"
+    };
+
+    public const int OldItemThresholdDays = 30;
+
     private readonly IDownloadsService _service;
     private readonly ILocalizationService _loc;
     private readonly Action<long, int, int> _moved;
@@ -37,6 +46,10 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     }
 
     public ObservableCollection<DownloadRow> Items { get; } = [];
+
+    // Tests can override clock and Explorer shell launch.
+    internal Func<DateTime>     Now              { get; set; } = () => DateTime.Now;
+    internal Func<string, bool> RevealInExplorer { get; set; } = OpenExplorerSelect;
 
     [ObservableProperty] private bool   _isLoading;
     [ObservableProperty] private string _message = "";
@@ -98,8 +111,39 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         MoveCommand.NotifyCanExecuteChanged();
     }
 
-    [RelayCommand] private void SelectAll()  { foreach (var i in Items) i.IsChecked = true; }
-    [RelayCommand] private void SelectNone() { foreach (var i in Items) i.IsChecked = false; }
+    internal static bool IsInstallerOrArchive(DownloadEntry entry) =>
+        !entry.IsFolder && InstallerAndArchiveExtensions.Contains(Path.GetExtension(entry.Name));
+
+    [RelayCommand] private void SelectAll()        { foreach (var i in Items) i.IsChecked = true; }
+    [RelayCommand] private void SelectNone()       { foreach (var i in Items) i.IsChecked = false; }
+    [RelayCommand] private void SelectInstallers() { foreach (var i in Items) i.IsChecked = IsInstallerOrArchive(i.Entry); }
+    [RelayCommand] private void SelectOld()
+    {
+        DateTime now = Now();
+        foreach (var i in Items)
+            i.IsChecked = (now - i.Entry.Modified).TotalDays >= OldItemThresholdDays;
+    }
+
+    [RelayCommand]
+    private void ShowInFolder(DownloadRow? row)
+    {
+        if (row is null || string.IsNullOrWhiteSpace(row.Entry.Path)) return;
+        RevealInExplorer(row.Entry.Path);
+    }
+
+    internal static bool OpenExplorerSelect(string path)
+    {
+        try
+        {
+            using var p = Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") { UseShellExecute = true });
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warn($"OpenExplorerSelect failed for '{path}': {ex.Message}");
+            return false;
+        }
+    }
 
     private bool CanMove() => !IsMoving && Items.Any(i => i.IsChecked);
 

@@ -24,6 +24,9 @@
     <sys:String x:Key="Str_System_RestartPending">Takes effect after a restart.</sys:String>
     <sys:String x:Key="Str_System_Unsupported">This setting exists on Windows 11 only.</sys:String>
     <sys:String x:Key="Str_System_WriteFailed">Could not write the setting; details in the log.</sys:String>
+    <sys:String x:Key="Str_System_SmartCooldown">Auto purge smart cooldown</sys:String>
+    <sys:String x:Key="Str_System_SmartCooldownDesc">Minimum pause (in seconds) between two automatic purges so aggressive thresholds never hammer the standby list every second.</sys:String>
+    <sys:String x:Key="Str_System_SmartCooldownSecTip">Cooldown in seconds (5–600)</sys:String>
     <sys:String x:Key="Str_System_Close">Close</sys:String>
     <sys:String x:Key="Str_GlobalPrompt_Title">Apply the timer to all games?</sys:String>
     <sys:String x:Key="Str_GlobalPrompt_Later">You can change it any time from the Administrator badge at the top right.</sys:String>
@@ -49,6 +52,8 @@
     <sys:String x:Key="Str_Purge_StandbyLimitLabel">List size at least (MB):</sys:String>
     <sys:String x:Key="Str_Purge_FreeLimitLabel">Free memory lower than (MB):</sys:String>
     <sys:String x:Key="Str_Purge_Button">Purge Standby</sys:String>
+    <sys:String x:Key="Str_Purge_Recommend">Recommended</sys:String>
+    <sys:String x:Key="Str_Purge_RecommendTip">Fill in the recommended standby and free memory thresholds for your total RAM</sys:String>
     <sys:String x:Key="Str_Purge_LightLabel">Light purge</sys:String>
     <sys:String x:Key="Str_Purge_LightDesc">Clears only the low-priority cache; often used files stay in memory.</sys:String>
     <sys:String x:Key="Str_Purge_LightTip">Applies to every purge: the button, auto purge and the hotkey.</sys:String>
@@ -60,6 +65,11 @@
     <sys:String x:Key="Str_Game_Mode">GAME MODE</sys:String>
     <sys:String x:Key="Str_Game_Add">ADD</sys:String>
     <sys:String x:Key="Str_Game_Del">DEL</sys:String>
+    <sys:String x:Key="Str_Game_Scan">SCAN</sys:String>
+    <sys:String x:Key="Str_Game_ScanTip">Scan Steam and Epic Games libraries for installed games</sys:String>
+    <sys:String x:Key="Str_Game_MenuLaunch">Start game</sys:String>
+    <sys:String x:Key="Str_Game_MenuOpenFolder">Open file location</sys:String>
+    <sys:String x:Key="Str_Game_MenuRemove">Remove from list</sys:String>
     <sys:String x:Key="Str_Game_FileDialogTitle">Select Game Executable</sys:String>
     <sys:String x:Key="Str_Game_FileDialogFilter">Executable Files (*.exe)|*.exe</sys:String>
     <sys:String x:Key="Str_Game_DropHint">Drag &amp; drop .exe files here</sys:String>
@@ -71,6 +81,13 @@
     <sys:String x:Key="Str_Game_BoostTip">When off, the app never touches this game (priority, cores, EcoQoS). Turn it off if a tool like Process Lasso manages it. Takes effect the next time the game starts.</sys:String>
     <sys:String x:Key="Str_Game_AutoPurgeLabel">Auto purge while it runs</sys:String>
     <sys:String x:Key="Str_Game_AutoPurgeTip">When off, automatic purges pause while this game runs. The purge button and the hotkey still work.</sys:String>
+    <sys:String x:Key="Str_Scan_Title">Installed games</sys:String>
+    <sys:String x:Key="Str_Scan_Subtitle">Found in your Steam and Epic Games libraries; tick the ones to add</sys:String>
+    <sys:String x:Key="Str_Scan_Loading">Scanning libraries…</sys:String>
+    <sys:String x:Key="Str_Scan_Empty">No installed Steam or Epic games found.</sys:String>
+    <sys:String x:Key="Str_Scan_Selected">{0} selected</sys:String>
+    <sys:String x:Key="Str_Scan_AlreadyAdded">ADDED</sys:String>
+    <sys:String x:Key="Str_Scan_AddSelected">Add selected</sys:String>
 
     <!-- Bottom controls -->
     <sys:String x:Key="Str_Timer_Inactive">TIMER</sys:String>
@@ -116,6 +133,7 @@
     <sys:String x:Key="Str_Tray_TimerEnable">Enable Timer</sys:String>
     <sys:String x:Key="Str_Tray_TimerDisable">Disable Timer</sys:String>
     <sys:String x:Key="Str_Tray_PurgeNow">Purge Standby Now</sys:String>
+    <sys:String x:Key="Str_Tray_AutoPurge">Auto purge: {0}</sys:String>
     <sys:String x:Key="Str_Tray_DeepPurge">Deep purge: {0}</sys:String>
     <sys:String x:Key="Str_Tray_GameMode">Game Mode: {0}</sys:String>
     <sys:String x:Key="Str_Tray_TimerLock">Timer lock: {0}</sys:String>
@@ -125,6 +143,7 @@
 
     <!-- Tray balloon / tooltip -->
     <sys:String x:Key="Str_Tray_TooltipFormat" xml:space="preserve">StandbyAndTimer&#x0a;Timer: {0}  •  Purges: {1}</sys:String>
+    <sys:String x:Key="Str_Tray_TooltipRamFormat">Free: {0}  •  Standby: {1}</sys:String>
     <sys:String x:Key="Str_Tray_TimerStateOn">ON</sys:String>
     <sys:String x:Key="Str_Tray_TimerStateOff">OFF</sys:String>
     <sys:String x:Key="Str_Tray_NotifyPurgeTitle">Standby cache purged</sys:String>
@@ -132,6 +151,8 @@
 
     <!-- Purge result, history, live estimate, purge at game start -->
     <sys:String x:Key="Str_Status_PurgeFreed">Standby purged: {0} freed</sys:String>
+    <sys:String x:Key="Str_Status_RecommendedApplied">Recommended thresholds set: list {0} MB · free {1} MB</sys:String>
+    <sys:String x:Key="Str_Status_GamesScannedAdded">{0} game(s) added from library scan</sys:String>
     <sys:String x:Key="Str_Status_GameLaunching">Starting {0}…</sys:String>
     <sys:String x:Key="Str_Status_GameLaunchFailed">Could not start {0}; details in the log</sys:String>
     <sys:String x:Key="Str_Status_GameMissing">{0} not found (the file was moved or deleted)</sys:String>
@@ -314,6 +335,7 @@
     <sys:String x:Key="Str_Maint_WindowsSection">WINDOWS</sys:String>
     <sys:String x:Key="Str_Clean_nvidia-shader">NVIDIA shader cache</sys:String>
     <sys:String x:Key="Str_Clean_amd-shader">AMD shader cache</sys:String>
+    <sys:String x:Key="Str_Clean_intel-shader">Intel shader cache</sys:String>
     <sys:String x:Key="Str_Clean_user-temp">Temporary files (user)</sys:String>
     <sys:String x:Key="Str_Clean_windows-temp">Windows temporary files</sys:String>
     <sys:String x:Key="Str_Clean_windows-update">Windows Update leftovers</sys:String>
@@ -321,6 +343,7 @@
     <sys:String x:Key="Str_Clean_downloads">Downloads</sys:String>
     <sys:String x:Key="Str_CleanTip_nvidia-shader">Shaders NVIDIA drivers compiled for your games. Clean once after a driver update or if a game stutters because of a broken cache; games rebuild them and can stutter on first launch.</sys:String>
     <sys:String x:Key="Str_CleanTip_amd-shader">Shaders AMD drivers compiled for your games. Clean once after a driver update or if a game stutters because of a broken cache; games rebuild them and can stutter on first launch.</sys:String>
+    <sys:String x:Key="Str_CleanTip_intel-shader">Shaders Intel graphics drivers compiled for your games. Clean once after a driver update or if a game stutters because of a broken cache; games rebuild them and can stutter on first launch.</sys:String>
     <sys:String x:Key="Str_CleanTip_user-temp">Your temp folder. Files changed in the last 24 hours and files in use are left alone.</sys:String>
     <sys:String x:Key="Str_CleanTip_windows-temp">Windows' temp folder. Files changed in the last 24 hours and files in use are left alone.</sys:String>
     <sys:String x:Key="Str_CleanTip_windows-update">Update files Windows already downloaded and installed. Safe to clean; Windows downloads again what it still needs.</sys:String>
@@ -411,6 +434,11 @@
     <sys:String x:Key="Str_Dl_Subtitle">Chosen items go to the Recycle Bin, where you can restore them</sys:String>
     <sys:String x:Key="Str_Dl_All">Select all</sys:String>
     <sys:String x:Key="Str_Dl_None">Select none</sys:String>
+    <sys:String x:Key="Str_Dl_Installers">Setup / ZIP</sys:String>
+    <sys:String x:Key="Str_Dl_InstallersTip">Select installers, disk images and archives (.exe, .msi, .iso, .zip, .7z, .rar)</sys:String>
+    <sys:String x:Key="Str_Dl_Old">30+ days</sys:String>
+    <sys:String x:Key="Str_Dl_OldTip">Select items older than 30 days</sys:String>
+    <sys:String x:Key="Str_Dl_ShowInFolder">Show in folder</sys:String>
     <sys:String x:Key="Str_Dl_Selected">{0} selected · {1}</sys:String>
     <sys:String x:Key="Str_Dl_Move">Move to Recycle Bin</sys:String>
     <sys:String x:Key="Str_Dl_Loading">Reading the folder…</sys:String>
@@ -443,7 +471,7 @@
     <sys:String x:Key="Str_About_TabMaintenance">Maintenance</sys:String>
     <sys:String x:Key="Str_HelpM_Intro">The Maintenance tab cleans what costs disk space or causes stutter and opens Windows' own tools. Nothing runs by itself: you choose what to clean and when.</sys:String>
     <sys:String x:Key="Str_HelpM_CleanTitle">CLEANUP</sys:String>
-    <sys:String x:Key="Str_HelpM_Shader">Shader caches (NVIDIA, AMD): clean them once after a driver update, or when a game stutters because of a broken cache. Cleaning them regularly is wrong: every game rebuilds its shaders and stutters on its first launch. They cannot be cleaned while a listed game runs.</sys:String>
+    <sys:String x:Key="Str_HelpM_Shader">Shader caches (NVIDIA, AMD, Intel): clean them once after a driver update, or when a game stutters because of a broken cache. Cleaning them regularly is wrong: every game rebuilds its shaders and stutters on its first launch. They cannot be cleaned while a listed game runs.</sys:String>
     <sys:String x:Key="Str_HelpM_Temp">Temporary files: safe to clean now and then. Files changed in the last 24 hours and files in use are left alone, so running installers and programs keep working.</sys:String>
     <sys:String x:Key="Str_HelpM_Update">Windows Update leftovers: update files that are already installed. Safe to clean; Windows downloads again whatever it still needs.</sys:String>
     <sys:String x:Key="Str_HelpM_Bin">Recycle Bin: emptying it is final. Restore what you need first.</sys:String>

@@ -30,16 +30,21 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
     private Task? _loopTask;
     private bool  _disposed;
 
-    public int  StandbyLimitMb    { get; set; }
-    public int  FreeLimitMb       { get; set; }
-    public bool AutoPurgeEnabled  { get; set; }
-    public bool GameModeEnabled   { get; set; }
-    public bool AutoPurgeIdleOnly { get; set; }
-    public int  IdleThresholdMs   { get; set; }
-    public bool AutoPurgeOnlyInGames { get; set; }
+    public int  StandbyLimitMb           { get; set; }
+    public int  FreeLimitMb              { get; set; }
+    public bool AutoPurgeEnabled         { get; set; }
+    public bool GameModeEnabled          { get; set; }
+    public bool AutoPurgeIdleOnly        { get; set; }
+    public int  IdleThresholdMs          { get; set; }
+    public int  AutoPurgeCooldownSeconds { get; set; }
+    public bool AutoPurgeOnlyInGames     { get; set; }
     public IReadOnlyList<string> GamePaths            { get; set; } = [];
     public IReadOnlyList<string> WatchedGamePaths     { get; set; } = [];
     public IReadOnlyList<string> NoAutoPurgeGamePaths { get; set; } = [];
+
+    // Tests can inject a deterministic clock to verify Smart Cooldown gating.
+    internal Func<DateTime> UtcNow { get; set; } = () => DateTime.UtcNow;
+    private DateTime? _lastAutoPurgeUtc;
 
     public event EventHandler<MemorySnapshot>? SnapshotUpdated;
 
@@ -147,11 +152,17 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
         bool blocked = noPurge.Count > 0
             && running.Any(p => noPurge.Contains(p, StringComparer.OrdinalIgnoreCase));
 
-        bool purgeNeeded = ShouldAutoPurge(AutoPurgeEnabled, StandbyLimitMb, FreeLimitMb, snapshot,
+        DateTime nowUtc = UtcNow();
+        bool cooldownPassed = IsCooldownComplete(_lastAutoPurgeUtc, nowUtc, AutoPurgeCooldownSeconds);
+
+        bool purgeNeeded = cooldownPassed && ShouldAutoPurge(AutoPurgeEnabled, StandbyLimitMb, FreeLimitMb, snapshot,
             idleGate, blocked, AutoPurgeOnlyInGames, running.Count > 0);
 
         if (purgeNeeded)
-            await _purgeService.PurgeAsync(PurgeTrigger.Auto).ConfigureAwait(false);
+        {
+            if (await _purgeService.PurgeAsync(PurgeTrigger.Auto).ConfigureAwait(false))
+                _lastAutoPurgeUtc = nowUtc;
+        }
 
         if (GameModeEnabled && GamePaths.Count > 0)
             await _processService.CheckAndOptimizeAsync(BoostTargets(GamePaths, running),
@@ -188,6 +199,15 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
         && idleGatePassed
         && !blockingGameRunning
         && (!onlyInGames || anyGameRunning);
+
+    /// <summary>
+    /// Smart Cooldown gate: true when cooldown is disabled (&lt;= 0), no automatic
+    /// purge has fired yet, or at least <paramref name="cooldownSeconds"/> have elapsed.
+    /// </summary>
+    internal static bool IsCooldownComplete(DateTime? lastAutoPurgeUtc, DateTime nowUtc, int cooldownSeconds) =>
+        cooldownSeconds <= 0
+        || lastAutoPurgeUtc is not { } last
+        || (nowUtc - last).TotalSeconds >= cooldownSeconds;
 
     private MemorySnapshot ReadSnapshot()
     {

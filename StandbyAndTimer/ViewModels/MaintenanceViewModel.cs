@@ -150,9 +150,9 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
     public ObservableCollection<CleanupHistoryRow>   History { get; } = [];
 
     private static readonly HashSet<string> ShaderIds =
-        [CleanupTargetIds.NvidiaShader, CleanupTargetIds.AmdShader, CleanupTargetIds.DirectXShader, CleanupTargetIds.SteamShader];
+        [CleanupTargetIds.NvidiaShader, CleanupTargetIds.AmdShader, CleanupTargetIds.IntelShader, CleanupTargetIds.DirectXShader, CleanupTargetIds.SteamShader];
 
-    /// <summary>What the cleanup card lists: the shader group in place of the four shader rows.</summary>
+    /// <summary>What the cleanup card lists: the shader group in place of the shader rows.</summary>
     public ObservableCollection<object> DisplayRows { get; } = [];
 
     /// <summary>The shader caches row and its chooser (null without shader targets).</summary>

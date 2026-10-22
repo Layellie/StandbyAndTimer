@@ -36,6 +36,7 @@ internal static class AppBootstrapper
         // Maintenance tab. Row order = registration order.
         services.AddSingleton<ICleanupTarget>(_ => CleanupTargets.NvidiaShader());
         services.AddSingleton<ICleanupTarget>(_ => CleanupTargets.AmdShader());
+        services.AddSingleton<ICleanupTarget>(_ => CleanupTargets.IntelShader());
         services.AddSingleton<ICleanupTarget>(_ => CleanupTargets.DirectXShader());
         services.AddSingleton<ICleanupTarget>(_ => CleanupTargets.SteamShader());
         services.AddSingleton<ICleanupTarget>(_ => CleanupTargets.DriverLeftovers());

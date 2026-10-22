@@ -54,6 +54,64 @@
         </Setter>
     </Style>
 
+    <!-- Context menus in the theme colours (Game Mode list, Downloads list). -->
+    <Style TargetType="ContextMenu">
+        <Setter Property="Background"      Value="{DynamicResource Surface2Bg}"/>
+        <Setter Property="Foreground"      Value="{DynamicResource AppFg}"/>
+        <Setter Property="BorderBrush"     Value="{DynamicResource BorderColor}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding"         Value="3"/>
+        <Setter Property="FontFamily"      Value="{StaticResource AppFont}"/>
+        <Setter Property="FontSize"        Value="12"/>
+        <Setter Property="HasDropShadow"   Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContextMenu">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Padding="{TemplateBinding Padding}"
+                            CornerRadius="6"
+                            SnapsToDevicePixels="True">
+                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="MenuItem">
+        <Setter Property="Background"       Value="Transparent"/>
+        <Setter Property="Foreground"       Value="{DynamicResource AppFg}"/>
+        <Setter Property="FontFamily"       Value="{StaticResource AppFont}"/>
+        <Setter Property="FontSize"         Value="12"/>
+        <Setter Property="Padding"          Value="10,5"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <Border x:Name="bd"
+                            Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}"
+                            CornerRadius="4"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter ContentSource="Header"
+                                          RecognizesAccessKey="True"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="{DynamicResource HoverBg}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource AppFgMuted}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!--  PRIMARY BUTTON (accent fill + smooth color animation)                 -->
     <!--  Hardcoded hover/exit colors mirror the lime AccentPrimary / Hover     -->
@@ -313,11 +371,11 @@
             <Setter.Value>
                 <ControlTemplate TargetType="ListBox">
                     <Border Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{StaticResource RadiusMedium}"
-                            Padding="{TemplateBinding Padding}"
-                            SnapsToDevicePixels="True">
+                             BorderBrush="{TemplateBinding BorderBrush}"
+                             BorderThickness="{TemplateBinding BorderThickness}"
+                             CornerRadius="{StaticResource RadiusMedium}"
+                             Padding="{TemplateBinding Padding}"
+                             SnapsToDevicePixels="True">
                         <!-- Aliased clip edges (same hardware-path artifact as
                              the number inputs: a faint outline around the item
                              extent). Reset on the items so the rounded
