@@ -108,4 +108,17 @@ public class GameListTests
         _h.Main.RemoveGameCommand.Execute(null);
         Assert.DoesNotContain(Exe, _h.LastSaved.IgnoredGamePaths);
     }
+
+    [Theory]
+    [InlineData(1,   0x1L)]
+    [InlineData(8,   0xFFL)]
+    [InlineData(16,  0xFFFFL)]
+    [InlineData(32,  0xFFFFFFFFL)]
+    [InlineData(63,  0x7FFFFFFFFFFFFFFFL)]
+    [InlineData(64,  -1L)]
+    [InlineData(128, -1L)]
+    public void Affinity_mask_covers_all_logical_cores_including_64(int cpuCount, long expectedMask)
+    {
+        Assert.Equal(expectedMask, ProcessOptimizationService.AffinityMaskFor(cpuCount));
+    }
 }
