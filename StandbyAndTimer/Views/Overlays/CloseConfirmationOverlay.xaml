@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              FontFamily="{StaticResource AppFont}" FontSize="13"
              Visibility="Collapsed">
-    <Border Background="{DynamicResource ModalOverlayBrush}">
+    <Border Background="{DynamicResource ModalOverlayBrush}"
+            MouseLeftButtonDown="OnBackdropMouseDown">
         <Border HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Background="{DynamicResource Surface2Bg}"
@@ -11,7 +12,8 @@
                 BorderThickness="1"
                 CornerRadius="{StaticResource RadiusLarge}"
                 Padding="22,20"
-                MinWidth="290">
+                MinWidth="290"
+                MouseLeftButtonDown="OnDialogMouseDown">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                     <Ellipse Width="9" Height="9"

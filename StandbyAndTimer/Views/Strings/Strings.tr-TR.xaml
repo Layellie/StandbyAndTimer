@@ -27,6 +27,10 @@
     <sys:String x:Key="Str_System_SmartCooldown">Oto temizlik akıllı bekleme süresi</sys:String>
     <sys:String x:Key="Str_System_SmartCooldownDesc">İki otomatik temizlik arasındaki en az bekleme süresi (saniye). Agresif eşiklerde standby listesinin her saniye zorlanmasını önler.</sys:String>
     <sys:String x:Key="Str_System_SmartCooldownSecTip">Bekleme süresi, saniye (5–600)</sys:String>
+    <sys:String x:Key="Str_System_CloseToTray">Kapatınca doğrudan arka planda çalıştır</sys:String>
+    <sys:String x:Key="Str_System_CloseToTrayDesc">Kapatma (✕) butonuna basıldığında onay ekranı sormadan doğrudan sistem tepsisine küçülür ve bildirim gönderir.</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyBackgroundTitle">Arka planda çalışıyor</sys:String>
+    <sys:String x:Key="Str_Tray_NotifyBackgroundBody">StandbyAndTimer sistem tepsisinde çalışmaya devam ediyor.</sys:String>
     <sys:String x:Key="Str_System_Close">Kapat</sys:String>
     <sys:String x:Key="Str_GlobalPrompt_Title">Timer tüm oyunlara uygulansın mı?</sys:String>
     <sys:String x:Key="Str_GlobalPrompt_Later">İstediğin zaman sağ üstteki Yönetici rozetinden değiştirebilirsin.</sys:String>

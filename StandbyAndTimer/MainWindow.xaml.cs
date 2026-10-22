@@ -64,10 +64,18 @@ public partial class MainWindow : Window
 
     // ── Close → "run in background / exit" overlay ───────────────────────────
 
+    public event EventHandler? MinimizedToTrayOnClose;
+
     protected override void OnClosing(CancelEventArgs e)
     {
         if (_forceClose) return;
         e.Cancel = true;
+        if (_vm.SystemSettings.CloseToTrayDirectly)
+        {
+            HideOffscreen();
+            MinimizedToTrayOnClose?.Invoke(this, EventArgs.Empty);
+            return;
+        }
         CloseDialog.Show();
     }
 

@@ -69,6 +69,7 @@ internal sealed class SettingsService : ISettingsService
                 GlobalTimerBootValue      = GetBool(key, "GlobalTimerBootValue"),
                 AutoPurgeCooldownEnabled  = GetBool(key, "AutoPurgeCooldownEnabled"),
                 AutoPurgeCooldownSeconds  = GetInt (key, "AutoPurgeCooldownSeconds", 60),
+                CloseToTrayDirectly       = GetBool(key, "CloseToTrayDirectly"),
 
                 PurgeHotkey           = key.GetValue("PurgeHotkey")?.ToString() ?? "Ctrl+Alt+P",
                 TimerHotkey           = key.GetValue("TimerHotkey")?.ToString() ?? "Ctrl+Alt+T",
@@ -162,6 +163,10 @@ internal sealed class SettingsService : ISettingsService
                 key.SetValue("AutoPurgeCooldownSeconds", settings.AutoPurgeCooldownSeconds, RegistryValueKind.DWord);
             else
                 key.DeleteValue("AutoPurgeCooldownSeconds", throwOnMissingValue: false);
+            if (settings.CloseToTrayDirectly)
+                key.SetValue("CloseToTrayDirectly", "1");
+            else
+                key.DeleteValue("CloseToTrayDirectly", throwOnMissingValue: false);
             key.SetValue("PurgeHotkey",            settings.PurgeHotkey            ?? "Ctrl+Alt+P");
             key.SetValue("TimerHotkey",            settings.TimerHotkey            ?? "Ctrl+Alt+T");
             key.SetValue("AutoPurgeHotkey",        settings.AutoPurgeHotkey        ?? "Ctrl+Alt+O");
