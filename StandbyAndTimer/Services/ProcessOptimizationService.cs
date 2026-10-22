@@ -18,11 +18,13 @@ internal sealed class ProcessOptimizationService : IProcessOptimizationService
                                       Func<int, bool>? isRunning = null) =>
         Task.Run(() => CheckAndOptimize(executablePaths, pidsOf, isRunning));
 
+    internal static long AffinityMaskFor(int cpuCount) =>
+        cpuCount >= 64 ? -1L : (1L << Math.Max(1, cpuCount)) - 1;
+
     private void CheckAndOptimize(IReadOnlyList<string> executablePaths,
                                   Func<string, IReadOnlyList<int>>? pidsOf, Func<int, bool>? isRunning)
     {
-        int  cpuCount     = Environment.ProcessorCount;
-        long affinityMask = (1L << cpuCount) - 1;
+        long affinityMask = AffinityMaskFor(Environment.ProcessorCount);
 
         foreach (string path in executablePaths)
         {

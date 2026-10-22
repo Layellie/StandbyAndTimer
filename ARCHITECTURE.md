@@ -1,273 +1,115 @@
 # ARCHITECTURE.md — StandbyAndTimer
 
-Mevcut Windows Forms monolitini, `Services` katmanı izole edilmiş, kaynak sızıntısı olmayan, modern bir WPF/MVVM uygulamasına dönüştürme planı.
+**StandbyAndTimer**, **.NET 10 (`net10.0-windows`)** üzerinde çalışan, katmanlı MVVM mimarisine sahip bir Windows sistem optimizasyonu ve oyuncu yardımcı uygulamasıdır.
 
 ---
 
-## 1. Mevcut Yapının Sorunları
+## 1. Mimari İlkeler
 
-| Sorun | Detay |
+| İlke | Uygulama Şekli |
 |---|---|
-| Monolitik `Form1` | Tüm iş mantığı (~17 KB), UI kodu, P/Invoke tanımları tek sınıfta |
-| Ham `Thread` döngüsü | `CancellationToken` yok → uygulama kapanırken thread temizlenemiyor |
-| `PerformanceCounter` sızıntısı | Asla `Dispose()` edilmiyor |
-| `Process` sızıntısı | `optimizedProcesses` sözlüğü, handle'ları serbest bırakmadan Process nesnelerini tutuyor |
-| `Environment.Exit(0)` | Dispose zinciri atlanıyor; registry/thread temizliği yapılmıyor |
-| Registry çağrısı her tuş vuruşunda | `TextChanged` her değiştiğinde registry'e yazıyor |
-| UI iş parçacığı güvensizliği | Timer callback'i `PerformanceCounter.NextValue()` çağrısı UI thread'inde yapılıyor |
-| WinForms'dan WPF'e geçiş yok | Mevcut hedef `net10.0-windows` + `UseWindowsForms` |
+| **Tek Noktadan Win32 İzolasyonu** | Tüm P/Invoke bildirimleri yalnızca [`Services/Native/NativeMethods.cs`](StandbyAndTimer/Services/Native/NativeMethods.cs) içinde (`internal`) tanımlıdır; `Core`, `ViewModels` veya `Views` katmanlarına sızmaz. |
+| **Sıfır Kaynak Sızıntısı** | `Process` nesneleri her kullanımda `using` ile anında temizlenir; süreç takibi yalnızca PID (`HashSet<int>` / `ConcurrentDictionary<int, byte>`) üzerinden yapılır. |
+| **Ultra-Düşük İzleme Maliyeti** | Bellek listeleri `PerformanceCounter` (~150 µs) yerine `NtQuerySystemInformation(SystemMemoryListInformation = 80)` ile ~0.2 µs'de okunur ([`MemoryLists.cs`](StandbyAndTimer/Services/MemoryLists.cs)). Süreç listesi `Process.GetProcesses()` (435 KB/sn tahsisat) yerine `NtQuerySystemInformation(SystemProcessInformation = 5)` ile 18 KB tahsisatla taranır ([`RunningGames.cs`](StandbyAndTimer/Services/RunningGames.cs)). |
+| **Geriye Dönük Ayar Uyumluluğu** | Kullanıcı ayarları (`HKCU\SOFTWARE\StandbyAndTimer`) güncellemeler arasında korunur; mevcut kayıt defteri anahtarları ve enum adları değiştirilmez. |
+| **Sabit Düzen & Görsel Doğrulama** | Pencere `760×520` sabit boyuttadır (`ScrollViewer` kullanılmaz). [`tools/UiRender`](tools/UiRender/Program.cs) aracı tüm temaları (`Dark`, `Black`, `Light`, `White`) ve dilleri (`en-US`, `tr-TR`) PNG olarak render edip taşma/kesilmeleri otomatik denetler. |
 
 ---
 
-## 2. Hedef Çözüm Yapısı
+## 2. Çözüm Yapısı
 
 ```
 StandbyAndTimer.slnx
-└── StandbyAndTimer/
-    ├── StandbyAndTimer.csproj
-    ├── app.manifest                         ← requireAdministrator + DPI aware
-    ├── App.xaml / App.xaml.cs               ← DI container kurulumu, uygulama ömrü
-    │
-    ├── Core/                                ← Saf kontratlar; hiçbir platforma bağımlılık yok
-    │   ├── Interfaces/
-    │   │   ├── ITimerResolutionService.cs
-    │   │   ├── IStandbyPurgeService.cs
-    │   │   ├── IMemoryMonitorService.cs
-    │   │   ├── IProcessOptimizationService.cs
-    │   │   ├── IAutoStartService.cs
-    │   │   └── ISettingsService.cs
-    │   └── Models/
-    │       ├── MemorySnapshot.cs            ← TotalMb, FreeMb, StandbyMb
-    │       ├── AppSettings.cs               ← StandbyLimitMb, FreeLimitMb, GamePaths, AutoStart
-    │       └── GameEntry.cs                 ← DisplayName, ExecutablePath
-    │
-    ├── Services/                            ← Tüm sistem çağrıları buraya izole edildi
-    │   ├── Native/
-    │   │   └── NativeMethods.cs             ← Tüm DllImport tanımları TEK dosyada
-    │   ├── TimerResolutionService.cs
-    │   ├── StandbyPurgeService.cs
-    │   ├── MemoryMonitorService.cs
-    │   ├── ProcessOptimizationService.cs
-    │   ├── AutoStartService.cs
-    │   └── SettingsService.cs
-    │
-    ├── ViewModels/
-    │   └── MainViewModel.cs                 ← [ObservableProperty] + [RelayCommand]
-    │
-    ├── Views/
-    │   ├── MainWindow.xaml / .xaml.cs       ← Code-behind sadece DataContext ataması
-    │   └── Styles/
-    │       └── Theme.xaml                   ← Sarı/siyah renk paleti, global stiller
-    │
-    └── Infrastructure/
-        └── AppBootstrapper.cs               ← ServiceCollection yapılandırması
+├── StandbyAndTimer/                         ← Ana WPF Uygulaması (net10.0-windows, x64)
+│   ├── app.manifest                         ← requireAdministrator + PerMonitorV2 DPI + Win10/11 uyumluluğu
+│   ├── App.xaml / App.xaml.cs               ← Tek örnek (Mutex + EventWaitHandle), DLL planting koruması,
+│   │                                          EcoQoS opt-out, DI kurulumu, tepsi ve kısayol yaşam döngüsü
+│   ├── Core/                                ← Saf kontratlar ve modeller (platform bağımlılığı yok)
+│   │   ├── Interfaces/                      ← ITimerResolutionService, IStandbyPurgeService, IMemoryMonitorService,
+│   │   │                                      IProcessOptimizationService, IGameDetectionService, ISettingsService,
+│   │   │                                      IGlobalTimerSetting, ICleanupTarget, ISystemInfoService, vb.
+│   │   └── Models/                          ← AppSettings, GameEntry, MemorySnapshot, PurgeStats, CleanupStats, vb.
+│   │
+│   ├── Services/                            ← Win32, NT Kernel ve Registry implementasyonları
+│   │   ├── Native/NativeMethods.cs          ← Tüm DllImport tanımları (ntdll, kernel32, user32, avrt, advapi32,
+│   │   │                                      dwmapi, shell32, ole32, powrprof)
+│   │   ├── TimerResolutionService.cs        ← NtSetTimerResolution + 50 ms MMCSS "Pro Audio" watchdog thread
+│   │   ├── StandbyPurgeService.cs           ← Normal, Light (öncelik-0) ve Deep (modified + file cache) temizlik
+│   │   ├── MemoryLists.cs                   ← NtQuerySystemInformation(80) ile 8 öncelikli standby okuma
+│   │   ├── MemoryMonitorService.cs          ← 1 sn PeriodicTimer döngüsü: bellek, boşta kalma, oyun ve oto-temizlik
+│   │   ├── RunningGames.cs                  ← NtQuerySystemInformation(5) ile hafif süreç ve PID anlık görüntüsü
+│   │   ├── ProcessOptimizationService.cs    ← High CPU önceliği + tam çekirdek affinity + EcoQoS/Timer opt-out
+│   │   ├── GameDetectionService.cs          ← 3 sn tam ekran ön plan penceresi yoklaması (2 ardışık doğrulama)
+│   │   ├── GlobalTimerSetting.cs            ← HKLM GlobalTimerResolutionRequests (Windows 11)
+│   │   ├── SettingsService.cs               ← HKCU\SOFTWARE\StandbyAndTimer kalıcılığı
+│   │   ├── PurgeStatsStore.cs               ← purge-history.json kalıcılığı
+│   │   ├── UpdateService.cs                 ← GitHub Releases kontrolü + SHA-256 doğrulamalı güncelleme
+│   │   ├── ThemeService.cs / LocalizationService.cs ← Canlı ResourceDictionary değişimi
+│   │   ├── Tray/                            ← WinForms NotifyIcon + temalı ContextMenuStrip (TrayMenuPalette)
+│   │   └── Maintenance/                     ← Bakım sekmesi servisleri (SafeFolderCleaner, FolderCleanupTarget,
+│   │                                          RecycleBinTarget, WindowsOldTarget, DeliveryOptimizationTarget,
+│   │                                          DownloadsService, SystemInfoService, SystemToolLauncher)
+│   │
+│   ├── Infrastructure/
+│   │   ├── AppBootstrapper.cs               ← Microsoft.Extensions.DependencyInjection singleton kayıtları
+│   │   ├── AppConstants.cs                  ← Sabitler
+│   │   └── CrashHandler.cs                  ← Beklenmeyen hata yakalama ve timer serbest bırakma güvencesi
+│   │
+│   ├── ViewModels/
+│   │   ├── MainViewModel.cs                 ← Durum sekmesi, timer kilit/boşta modları, oyun listesi, temizlik geçmişi
+│   │   ├── MaintenanceViewModel.cs          ← Bakım sekmesi, paralel tarama/temizlik, grafikli geçmiş, Windows bilgileri
+│   │   ├── SettingsViewModel.cs             ← Ayarlar sekmesi, kısayol kaydı, dışa/içe aktarma, güncellemeler, loglar
+│   │   ├── SystemViewModel.cs               ← Başlık çubuğu Administrator rozeti altındaki Windows düzeyi ayarlar
+│   │   └── DownloadsViewModel.cs            ← İndirilenler klasörü seçmeli Geri Dönüşüm Kutusu diyaloğu
+│   │
+│   └── Views/
+│       ├── MainWindow.xaml / .xaml.cs       ← 3 sekmeli ana pencere (Status, Maintenance, Settings) ve modal katmanlar
+│       ├── Cards/                           ← TitleBar, TimerCard, MemoryStatsCard, StandbyPurgeCard, GameModeCard, StatusBar
+│       ├── Overlays/                        ← About, Wizard, System, PurgeHistory, Downloads, ShaderCaches,
+│       │                                      CleanupHistory, GlobalTimerPrompt, CloseConfirmation
+│       ├── Styles/                          ← Theme.xaml + Palette.{Dark,Black,Light,White}.xaml
+│       └── Strings/                         ← Strings.{en-US,tr-TR}.xaml
+│
+├── StandbyAndTimer.Tests/                   ← xUnit birim ve entegrasyon testleri (sahte servislerle güvenli koşum)
+├── tools/
+│   ├── UiRender/                            ← XAML/tema/dil değişikliklerini PNG'ye render eden düzen denetleyicisi
+│   └── IconGen/                             ← Uygulama ikonunu (16–256 px) vektörel üreten araç
+├── installer/Setup.iss                      ← Inno Setup 6 kurulum betiği
+└── winget-manifests/                        ← Microsoft Winget paket manifestleri (Layellie.StandbyAndTimer)
 ```
 
 ---
 
-## 3. Katman Sorumlulukları
-
-### 3.1 Core (Kontratlar)
-
-- **Sıfır** platform bağımlılığı; teorik olarak test projesinde referans alınabilir.
-- `IMemoryMonitorService`: `event EventHandler<MemorySnapshot> SnapshotUpdated` + `Task StartAsync(CancellationToken)` + `Task StopAsync()`.
-- `ISettingsService`: `AppSettings Load()` + `void Save(AppSettings)` — registry'i soyutlar.
-- `ITimerResolutionService`: `void Activate()` + `void Deactivate()` + `IDisposable` — uygulama kapandığında otomatik geri yükleme.
-
-### 3.2 Services (Uygulama Detayları)
-
-**`Native/NativeMethods.cs`** — Tüm P/Invoke buraya taşınır:
-```
-ntdll.dll     → NtSetTimerResolution, NtSetSystemInformation
-kernel32.dll  → GlobalMemoryStatusEx, SetProcessInformation, SetThreadExecutionState
-advapi32.dll  → OpenProcessToken, LookupPrivilegeValue, AdjustTokenPrivileges
-avrt.dll      → AvSetMmThreadCharacteristics
-```
-
-**`MemoryMonitorService`** — `PeriodicTimer` (iptal edilebilir, .NET 6+) ile 1 saniyelik döngü. `PerformanceCounter` bu sınıfa aittir ve `Dispose()` ile temizlenir. Her döngüde `SnapshotUpdated` event'i yayınlar; `StandbyPurgeService` ve `ProcessOptimizationService`'i koordine eder.
-
-**`TimerResolutionService`** — `IDisposable`. `Activate()` → 5000 (0.5 ms) hedef. `Dispose()` → `NtSetTimerResolution(false)` ile sistem varsayılanını geri yükler.
-
-**`StandbyPurgeService`** — `SeProfileSingleProcessPrivilege` ayrıcalık yükseltmeyi kapsüller. `PurgeAsync()` → `NtSetSystemInformation(80, ...)` → `Task<bool>` döner.
-
-**`ProcessOptimizationService`** — `Dictionary<int, ProcessHandle>` yerine `HashSet<int>` kullanır (sadece PID'leri takip eder); her kontrol sonrasında `Process.GetProcessById(pid)` ile doğrular ve `process.Dispose()` çağırır. Çıkmış process'ler temizlenir.
-
-**`SettingsService`** — Registry okuma/yazma. `Save()` yalnızca `MainViewModel` kaydetme komutu tetiklendiğinde çağrılır (her tuş vuruşunda **değil**).
-
-**`AutoStartService`** — `schtasks.exe` sarmalayıcısı; `ProcessStartInfo` ile çağrılır, `async/await` destekli.
-
-### 3.3 ViewModels
-
-`MainViewModel` tek ViewModel'dir. `CommunityToolkit.Mvvm` source generator kullanılır:
-
-```csharp
-// Örnek — kaynak üretici attribute'ları
-[ObservableProperty] private long _totalRamMb;
-[ObservableProperty] private long _freeRamMb;
-[ObservableProperty] private long _standbyRamMb;
-[ObservableProperty] private int _purgeCount;
-[ObservableProperty] private int _standbyLimitMb;
-[ObservableProperty] private int _freeLimitMb;
-[ObservableProperty] private bool _gameModeEnabled;
-[ObservableProperty] private bool _autoStartEnabled;
-[ObservableProperty] private string? _selectedGame;
-
-public ObservableCollection<GameEntry> Games { get; } = [];
-
-[RelayCommand] private Task ManualPurgeAsync()   { ... }
-[RelayCommand] private Task AddGameAsync()        { ... }  // OpenFileDialog
-[RelayCommand] private void RemoveSelectedGame()  { ... }
-[RelayCommand] private void ActivateTimer()       { ... }
-[RelayCommand] private async Task SaveSettingsAsync() { ... }
-```
-
-`MemoryMonitorService.SnapshotUpdated` event'i, `Dispatcher.InvokeAsync` aracılığıyla observable property'leri günceller.
-
-### 3.4 Views
-
-`MainWindow.xaml.cs` yalnızca şunları içerir:
-```csharp
-public MainWindow(MainViewModel vm) {
-    InitializeComponent();
-    DataContext = vm;
-}
-```
-
-Tüm stil ve renk (`#FFFF00` sarı, `#000000` siyah arka plan, `Times New Roman` yazı tipi) `Theme.xaml` içinde `Style` olarak tanımlanır — hardcoded değerler kaldırılır.
-
-### 3.5 Infrastructure / DI
-
-`App.xaml.cs` içinde `Microsoft.Extensions.DependencyInjection` ile:
-
-```csharp
-var services = new ServiceCollection()
-    .AddSingleton<ISettingsService, SettingsService>()
-    .AddSingleton<ITimerResolutionService, TimerResolutionService>()
-    .AddSingleton<IStandbyPurgeService, StandbyPurgeService>()
-    .AddSingleton<IMemoryMonitorService, MemoryMonitorService>()
-    .AddSingleton<IProcessOptimizationService, ProcessOptimizationService>()
-    .AddSingleton<IAutoStartService, AutoStartService>()
-    .AddSingleton<MainViewModel>()
-    .AddSingleton<MainWindow>();
-```
-
-`App.OnStartup` → `host.Start()` → `MainWindow.Show()`.  
-`App.OnExit` → `host.StopAsync()` → tüm CancellationToken'lar iptal, `IDisposable` servisler temizlenir.
-
----
-
-## 4. Eşzamanlılık Modeli
+## 3. Eşzamanlılık ve Çalışma Döngüsü
 
 ```
 UI Thread (WPF Dispatcher)
-    ↑ Dispatcher.InvokeAsync (snapshot güncellemeleri)
-    │
-Background Task (PeriodicTimer, CancellationToken)
-    ├── MemoryMonitorService.RunLoopAsync()
-    │       ├── GlobalMemoryStatusEx()           ← kernel32
-    │       ├── PerformanceCounter.NextValue()   ← PerfCounter (kendi thread'inde)
-    │       ├── → StandbyPurgeService (koşullu)
-    │       └── → ProcessOptimizationService (koşullu)
-    └── TimerResolutionService (başlangıçta bir kez)
-            └── NtSetTimerResolution()           ← ntdll (her döngüde yenilenmez)
-```
-
-`NtSetTimerResolution` mevcut uygulamada her saniye çağrılıyor — bu gereksiz. Yeni yapıda yalnızca `Activate()` / `Deactivate()` ile bir kez çağrılır.
-
----
-
-## 5. Kaynak Sızıntısı Önlemleri
-
-| Mevcut Sorun | Çözüm |
-|---|---|
-| `PerformanceCounter` dispose edilmiyor | `MemoryMonitorService : IDisposable` — `Dispose()` counter'ı kapatır |
-| `Thread` durdurulamıyor | `PeriodicTimer` + `CancellationTokenSource` — `StopAsync()` ile temiz iptal |
-| `Process` handle sızıntısı | Her erişimde `using var p = Process.GetProcessById(pid)` |
-| `Environment.Exit(0)` dispose atlatıyor | `Application.Current.Shutdown()` → `OnExit` → `host.StopAsync()` zinciri |
-| Registry her tuş vuruşunda | `SettingsService.Save()` yalnızca explicit komutla veya `OnExit`'te çağrılır |
-
----
-
-## 6. NuGet Bağımlılıkları
-
-```xml
-<PackageReference Include="CommunityToolkit.Mvvm" Version="8.*" />
-<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.*" />
-<PackageReference Include="H.NotifyIcon.Wpf" Version="2.*" />
-```
-
-- **CommunityToolkit.Mvvm** — Source-generated `[ObservableProperty]` / `[RelayCommand]`; reflection yok, sıfır ek yük.
-- **Microsoft.Extensions.DependencyInjection** — .NET 10 SDK ile uyumlu; hosting altyapısı olmadan sadece DI container.
-- **H.NotifyIcon.Wpf** — WinForms `NotifyIcon` olmadan, saf WPF sistem tepsisi desteği.
-
----
-
-## 7. app.manifest Düzeltmesi
-
-Mevcut manifest'te **3 çelişen** `requestedExecutionLevel` satırı var (asInvoker + requireAdministrator + highestAvailable + tekrar requireAdministrator). Yalnızca bir satır kalmalı:
-
-```xml
-<requestedExecutionLevel level="requireAdministrator" uiAccess="false" />
+  ├── MainWindow / Tepsi Simgesi / Global Kısayollar (WM_HOTKEY)
+  └── Dispatcher.InvokeAsync ile anlık görüntü ve bildirim güncellemeleri
+        ↑
+Arka Plan İş Parçacıkları
+  ├── TimerResolution-Watchdog (Dedicated Thread, AboveNormal, MMCSS "Pro Audio")
+  │     └── Her 50 ms'de bir NtSetTimerResolution ile 0.5 ms hedefini tazeler ve ölçer
+  │
+  ├── MemoryMonitorService (PeriodicTimer, 1 sn)
+  │     ├── GlobalMemoryStatusEx() + MemoryLists.TryRead() (NtQuerySystemInformation 80)
+  │     ├── RunningGames.Take() (NtQuerySystemInformation 5) → çalışan oyunları eşleştirir
+  │     ├── IdleMonitor.TimeSinceLastInput (GetLastInputInfo)
+  │     ├── Koşullar sağlanırsa → StandbyPurgeService.PurgeAsync(PurgeTrigger.Auto)
+  │     └── GameMode açıksa → ProcessOptimizationService.CheckAndOptimizeAsync()
+  │
+  ├── GameDetectionService (PeriodicTimer, 3 sn)
+  │     └── GetForegroundWindow() + GetMonitorInfo() → 2 ardışık tam ekran yoklamasında otomatik oyun ekler
+  │
+  └── MaintenanceViewModel (Yalnızca Bakım sekmesi açıkken aktif)
+        └── SafeFolderCleaner.Scan / Clean (sekmeden çıkıldığında CancellationToken ile iptal edilir)
 ```
 
 ---
 
-## 8. Veri Akışı (Uçtan Uca)
+## 4. Güvenlik ve Dayanıklılık Önlemleri
 
-```
-Başlangıç:
-  App.OnStartup
-    → ServiceProvider.Build()
-    → ISettingsService.Load()          → Registry → AppSettings
-    → MainViewModel.InitializeAsync()
-        → ITimerResolutionService.Activate()
-        → IMemoryMonitorService.StartAsync(ct)
-        → ApplySettings(AppSettings)
-    → MainWindow.Show()
-
-Çalışma döngüsü (her 1 saniye):
-  MemoryMonitorService.RunLoopAsync()
-    → GlobalMemoryStatusEx()           → MemorySnapshot
-    → PerformanceCounter.NextValue()   → StandbyMb
-    → SnapshotUpdated event yayınla
-        → MainViewModel handler
-            → Dispatcher.InvokeAsync(() => TotalRamMb = ...) ← WPF binding
-
-    [Koşullu] standby >= limit && free <= limit
-    → IStandbyPurgeService.PurgeAsync()
-        → AdjustTokenPrivileges()
-        → NtSetSystemInformation(80)
-        → PurgeCount++
-
-    [Koşullu] GameMode == true
-    → IProcessOptimizationService.CheckAsync(GamePaths)
-        → Process.GetProcessesByName()
-        → p.PriorityClass = High
-        → p.ProcessorAffinity = all cores
-        → p.Dispose()
-
-Kapanış:
-  MainWindow.OnClosing → minimize-to-tray (Visibility=Hidden) veya Shutdown()
-  App.OnExit
-    → cts.Cancel()                     ← PeriodicTimer döngüsü durur
-    → ITimerResolutionService.Dispose() ← timer resolution geri yüklenir
-    → IMemoryMonitorService.Dispose()   ← PerformanceCounter kapatılır
-    → ISettingsService.Save(current)    ← son ayarlar yazılır
-```
-
----
-
-## 9. Uygulama Sırası
-
-Mimari plan onaylandıktan sonra aşağıdaki sırayla uygulanacak:
-
-1. **`.csproj` güncelle** — `UseWindowsForms` → `UseWPF`, NuGet paketleri ekle
-2. **`app.manifest` düzelt** — tek `requireAdministrator`
-3. **`Core/` katmanı** — interface'ler ve modeller (bağımlılıksız)
-4. **`Services/Native/NativeMethods.cs`** — tüm P/Invoke tanımları
-5. **Servisler** — her biri bağımsız, sırayla: Settings → Timer → Purge → Memory → Process → AutoStart
-6. **`Infrastructure/AppBootstrapper.cs`** — DI kaydı
-7. **`MainViewModel`** — servis entegrasyonu, komutlar
-8. **`Views/`** — XAML, stil, tray icon
-9. **`App.xaml.cs`** — başlatma/kapanış zinciri
-10. **CLAUDE.md güncelle**
+- **DLL Planting Koruması:** Uygulama başlangıcında `SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)` çağrılarak yönetici yetkili sürecin çalışma dizininden sahte DLL yüklemesi engellenir.
+- **Güvenli Dosya Temizliği (`SafeFolderCleaner`):** Bakım sekmesindeki temizleyici hiçbir zaman sembolik bağları veya junction noktalarını (`FileAttributes.ReparsePoint`) takip etmez; yalnızca izin verilen kök klasörlerin içini temizler ve kullanımdaki dosyaları sessizce atlar.
+- **SHA-256 Doğrulamalı Güncelleme (`UpdateService`):** İndirilen kurulum paketi, yazma/yeniden adlandırma kilitli bir dosya tanıtıcısı (`FileShare.Read`) üzerinden SHA-256 özet kontrolünden geçirilir ve kilit tutulurken başlatılır (TOCTOU koruması).
+- **Gizli Başlangıçta Sıfır GPU Yükü:** `-hidden` argümanıyla (Windows başlangıcında) açıldığında pencere ilk kez gösterilene kadar `RenderMode.SoftwareOnly` kullanılır; Direct3D iş parçacıkları ve GPU belleği tepside boşuna tutulmaz.
