@@ -244,31 +244,48 @@ public sealed class NewFeaturesTests : IDisposable
     }
 
     [Fact]
-    public async Task InstalledGames_dialog_marks_existing_and_adds_selected()
+    public async Task InstalledGames_dialog_hides_existing_and_auto_added_games_and_blocks_readding()
     {
-        string exe1 = Path.Combine(_tempDir, "game1.exe");
-        string exe2 = Path.Combine(_tempDir, "game2.exe");
-        File.WriteAllBytes(exe1, [1]);
+        string steamCommon = Path.Combine(_tempDir, "steamapps", "common");
+        string game1Root = Path.Combine(steamCommon, "Ready Or Not");
+        string game1BinDir = Path.Combine(game1Root, "ReadyOrNot", "Binaries", "Win64");
+        string game2Root = Path.Combine(steamCommon, "GameTwo");
+        Directory.CreateDirectory(game1BinDir);
+        Directory.CreateDirectory(game2Root);
+
+        string exe1Shipping = Path.Combine(game1BinDir, "ReadyOrNotSteam-Win64-Shipping.exe");
+        string exe1Launcher = Path.Combine(game1Root, "ReadyOrNot.exe");
+        string exe2 = Path.Combine(game2Root, "game2.exe");
+        File.WriteAllBytes(exe1Shipping, [1]);
+        File.WriteAllBytes(exe1Launcher, [1]);
         File.WriteAllBytes(exe2, [2]);
 
         var h = new Harness();
-        h.Main.AddGameFromPath(exe1);
+        // Auto-add game 1 (via its shipping binary)
+        h.Main.AutoAddDetectedGame(exe1Shipping);
+        Assert.Single(h.Main.Games);
+        Assert.True(h.Main.Games[0].AutoAdded);
+
+        // Attempting to re-add via ADD (either the same exe or the root launcher in the same game folder) is blocked
+        h.Main.AddGameFromPath(exe1Shipping);
+        h.Main.AddGameFromPath(exe1Launcher);
+        Assert.Single(h.Main.Games);
+
         h.Main.ScanInstalledGames = _ => Task.FromResult<IReadOnlyList<InstalledGameCandidate>>(
         [
-            new("Game One", exe1, "Steam"),
-            new("Game Two", exe2, "Epic"),
+            new("Ready or Not", exe1Launcher, "Steam", game1Root),
+            new("Game Two", exe2, "Epic", game2Root),
         ]);
 
         await h.Main.OpenInstalledGamesCommand.ExecuteAsync(null);
         var dialog = h.Main.InstalledGamesDialog!;
 
-        Assert.Equal(2, dialog.Items.Count);
-        Assert.True(dialog.Items[0].AlreadyAdded);
-        Assert.False(dialog.Items[0].CanSelect);
-        Assert.False(dialog.Items[1].AlreadyAdded);
-        Assert.True(dialog.Items[1].CanSelect);
+        // Auto-added game 1 is filtered out completely; only Game Two is shown
+        var single = Assert.Single(dialog.Items);
+        Assert.Equal("Game Two", single.Name);
+        Assert.True(single.CanSelect);
+        Assert.True(single.IsChecked);
 
-        dialog.Items[1].IsChecked = true;
         Assert.True(dialog.AddSelectedCommand.CanExecute(null));
         dialog.AddSelectedCommand.Execute(null);
 

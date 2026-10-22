@@ -52,7 +52,7 @@
     <sys:String x:Key="Str_Purge_StandbyLimitLabel">Liste boyutu en az (MB):</sys:String>
     <sys:String x:Key="Str_Purge_FreeLimitLabel">Serbest bellek altında (MB):</sys:String>
     <sys:String x:Key="Str_Purge_Button">Standby Temizle</sys:String>
-    <sys:String x:Key="Str_Purge_Recommend">Önerilen</sys:String>
+    <sys:String x:Key="Str_Purge_Recommend">ÖNERİLEN</sys:String>
     <sys:String x:Key="Str_Purge_RecommendTip">Toplam RAM miktarına göre önerilen liste ve serbest bellek eşiklerini doldurur</sys:String>
     <sys:String x:Key="Str_Purge_LightLabel">Hafif temizlik</sys:String>
     <sys:String x:Key="Str_Purge_LightDesc">Sadece düşük öncelikli önbelleği siler; sık kullanılanlar kalır.</sys:String>

@@ -17,7 +17,7 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <StackPanel Grid.Row="0">
-                <Grid Margin="0,0,0,8">
+                <Grid Margin="0,0,0,6" MinHeight="24">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -26,13 +26,31 @@
                                Style="{StaticResource SectionLabelStyle}"
                                VerticalAlignment="Center"/>
                     <Button Grid.Column="1"
-                            Content="{DynamicResource Str_Purge_Recommend}"
                             Command="{Binding ApplyRecommendedThresholdsCommand}"
                             ToolTip="{DynamicResource Str_Purge_RecommendTip}"
-                            Style="{StaticResource GhostButtonStyle}"
-                            Height="20" Padding="7,0" FontSize="10"
-                            Margin="0,-3,0,-3"
-                            VerticalAlignment="Center"/>
+                            Cursor="Hand"
+                            Focusable="False"
+                            FocusVisualStyle="{x:Null}"
+                            VerticalAlignment="Center">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="badge"
+                                        Style="{StaticResource SuccessBadgeStyle}"
+                                        SnapsToDevicePixels="True">
+                                    <TextBlock Text="{DynamicResource Str_Purge_Recommend}"
+                                               FontSize="10"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource AccentText}"
+                                               VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="badge" Property="Background" Value="{DynamicResource AccentSubtle}"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
                 </Grid>
 
                 <!-- Idle-only gate (sits ABOVE the master toggle).

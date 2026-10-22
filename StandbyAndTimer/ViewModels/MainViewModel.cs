@@ -254,7 +254,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
             Games.Clear();
             foreach (var g in s.Games)
-                Games.Add(g);
+            {
+                if (InstalledGamesScanner.IsIgnoredExecutable(Path.GetFileNameWithoutExtension(g.ExecutablePath)))
+                    continue;
+                if (!IsGameAlreadyListed(g.ExecutablePath))
+                    Games.Add(g);
+            }
 
             _ignoredGamePaths.Clear();
             foreach (var p in s.IgnoredGamePaths ?? [])
@@ -745,8 +750,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     internal void AutoAddDetectedGame(string exePath)
     {
-        if (string.IsNullOrWhiteSpace(exePath) || _ignoredGamePaths.Contains(exePath)) return;
-        if (Games.Any(g => g.ExecutablePath.Equals(exePath, StringComparison.OrdinalIgnoreCase))) return;
+        if (string.IsNullOrWhiteSpace(exePath)) return;
+        if (IsGameAlreadyListed(exePath, includeIgnored: true)) return;
 
         string name = Path.GetFileNameWithoutExtension(exePath);
         Games.Add(new GameEntry { DisplayName = name, ExecutablePath = exePath, AutoAdded = true });
@@ -1080,8 +1085,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task OpenInstalledGamesAsync()
     {
-        var existing = new HashSet<string>(Games.Select(g => g.ExecutablePath), StringComparer.OrdinalIgnoreCase);
-        var dialog = new InstalledGamesViewModel(ScanInstalledGames, existing, _localization, OnInstalledGamesChosen);
+        var dialog = new InstalledGamesViewModel(
+            ScanInstalledGames,
+            c => IsGameAlreadyListed(c.ExecutablePath, c.InstallDirectory, includeIgnored: true),
+            _localization,
+            OnInstalledGamesChosen);
         InstalledGamesDialog = dialog;
         await dialog.LoadAsync();
     }
@@ -1099,7 +1107,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         foreach (var c in candidates)
         {
             if (string.IsNullOrWhiteSpace(c.ExecutablePath) || !File.Exists(c.ExecutablePath)) continue;
-            if (Games.Any(g => g.ExecutablePath.Equals(c.ExecutablePath, StringComparison.OrdinalIgnoreCase))) continue;
+            if (IsGameAlreadyListed(c.ExecutablePath, c.InstallDirectory)) continue;
 
             Games.Add(new GameEntry
             {
@@ -1126,7 +1134,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return;
         if (!path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) return;
 
-        if (Games.Any(g => g.ExecutablePath.Equals(path, StringComparison.OrdinalIgnoreCase)))
+        if (IsGameAlreadyListed(path))
         {
             StatusMessage = _localization.GetString("Str_Status_GameExists");
             return;
@@ -1143,6 +1151,68 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         PersistSettings();
         StatusMessage = _localization.GetString("Str_Status_GameAdded");
         Logger.Info($"Game added: {path}");
+    }
+
+    /// <summary>
+    /// True when <paramref name="exePath"/> matches a game already in <see cref="Games"/>
+    /// (including AUTO-added games) by exact path, executable filename, or shared
+    /// Steam/Epic install root directory.
+    /// </summary>
+    internal bool IsGameAlreadyListed(string exePath, string? installDir = null, bool includeIgnored = false)
+    {
+        if (string.IsNullOrWhiteSpace(exePath)) return false;
+
+        if (includeIgnored && _ignoredGamePaths.Any(ig => AreSameGameExecutable(ig, exePath, installDir)))
+            return true;
+
+        return Games.Any(g => AreSameGameExecutable(g.ExecutablePath, exePath, installDir));
+    }
+
+    internal static bool AreSameGameExecutable(string existingPath, string candidatePath, string? candidateInstallDir = null)
+    {
+        if (string.IsNullOrWhiteSpace(existingPath) || string.IsNullOrWhiteSpace(candidatePath))
+            return false;
+
+        if (existingPath.Equals(candidatePath, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        string existingFile = Path.GetFileName(existingPath);
+        string candidateFile = Path.GetFileName(candidatePath);
+        if (!string.IsNullOrEmpty(existingFile) && existingFile.Equals(candidateFile, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (!string.IsNullOrWhiteSpace(candidateInstallDir) && IsPathUnderDirectory(existingPath, candidateInstallDir))
+            return true;
+
+        string? rootA = TryGetLibraryGameRoot(existingPath);
+        string? rootB = TryGetLibraryGameRoot(candidatePath);
+        if (rootA is not null && rootB is not null && rootA.Equals(rootB, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    }
+
+    private static bool IsPathUnderDirectory(string filePath, string dirPath)
+    {
+        string normDir = dirPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                       + Path.DirectorySeparatorChar;
+        string normFile = filePath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+        return normFile.StartsWith(normDir, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? TryGetLibraryGameRoot(string exePath)
+    {
+        string norm = exePath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+        foreach (string marker in new[] { @"\steamapps\common\", @"\Epic Games\" })
+        {
+            int idx = norm.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+            if (idx < 0) continue;
+            int folderStart = idx + marker.Length;
+            int nextSep = norm.IndexOf(Path.DirectorySeparatorChar, folderStart);
+            if (nextSep > folderStart)
+                return norm[..nextSep];
+        }
+        return null;
     }
 
     [RelayCommand(CanExecute = nameof(CanRemoveGame))]
