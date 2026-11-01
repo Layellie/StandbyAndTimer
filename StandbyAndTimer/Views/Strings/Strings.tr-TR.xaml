@@ -50,7 +50,6 @@
     <sys:String x:Key="Str_Card_GameModeTitle">OYUN MODU</sys:String>
     <sys:String x:Key="Str_Card_GameModeOn">Açık</sys:String>
     <sys:String x:Key="Str_Card_GameModeOff">Kapalı</sys:String>
-    <sys:String x:Key="Str_Card_GameModeDesc">Yüksek öncelik · Tam affinity</sys:String>
 
     <!-- Temizleme bölümü -->
     <sys:String x:Key="Str_Purge_StandbyLimitLabel">Liste boyutu en az (MB):</sys:String>
@@ -80,9 +79,12 @@
     <sys:String x:Key="Str_Game_ListTip">.exe dosyalarını buraya sürükleyin. Bir oyunu başlatmak için üzerine çift tıklayın.</sys:String>
     <sys:String x:Key="Str_Game_AutoTag">OTO</sys:String>
     <sys:String x:Key="Str_Game_AutoTagTip">Tam ekranda algılanıp otomatik eklendi. Silersen bir daha eklenmez.</sys:String>
-    <sys:String x:Key="Str_Game_CustomTagTip">Bu oyun için özel ayar var: öncelik verme ya da oto temizlik kapalı, ya da açılınca temizleme açık.</sys:String>
-    <sys:String x:Key="Str_Game_BoostLabel">Yüksek öncelik ver</sys:String>
-    <sys:String x:Key="Str_Game_BoostTip">Kapalıysa uygulama bu oyuna hiç dokunmaz (öncelik, çekirdek, EcoQoS). Process Lasso gibi bir araç kullanıyorsan kapat. Değişiklik oyunun bir sonraki açılışında geçerli olur.</sys:String>
+    <sys:String x:Key="Str_Game_CustomTagTip">Bu oyunun kendi ayarları var: öncelik, oto temizlik, bir kez temizleme ya da timer varsayılandan farklı.</sys:String>
+    <sys:String x:Key="Str_Game_PriorityLabel">Öncelik</sys:String>
+    <sys:String x:Key="Str_Game_PriorityTip">Oyun Modu'nun bu oyuna vereceği CPU önceliği. Yüksek: en büyük pay. Normalin üstü: oyun yine öne geçer ama Discord, OBS ve ses daha az sıkışır (ses cızırtısı ya da yayın takılması olursa dene). Dokunma: uygulama bu oyuna hiç dokunmaz (öncelik, çekirdek, EcoQoS); Process Lasso gibi bir araç kullanıyorsan seç. Oyun Modu açık olmalı; değişiklik oyunun bir sonraki açılışında geçerli olur.</sys:String>
+    <sys:String x:Key="Str_GamePriority_High">Yüksek</sys:String>
+    <sys:String x:Key="Str_GamePriority_AboveNormal">Normalin üstü</sys:String>
+    <sys:String x:Key="Str_GamePriority_Unchanged">Dokunma</sys:String>
     <sys:String x:Key="Str_Game_AutoPurgeLabel">Açıkken oto temizle</sys:String>
     <sys:String x:Key="Str_Game_AutoPurgeTip">Kapalıysa bu oyun çalışırken otomatik temizlik durur. Butonla ya da kısayolla temizlemek yine çalışır.</sys:String>
     <sys:String x:Key="Str_Scan_Title">Kurulu oyunlar</sys:String>
@@ -165,12 +167,17 @@
     <sys:String x:Key="Str_PurgeKind_Deep">Derin</sys:String>
     <sys:String x:Key="Str_PurgeTrigger_Auto">otomatik</sys:String>
     <sys:String x:Key="Str_PurgeTrigger_GameStart">oyun açılışı</sys:String>
+    <sys:String x:Key="Str_PurgeTrigger_GameExit">oyun kapanışı</sys:String>
     <sys:String x:Key="Str_Card_ClearableLight">Hafif temizlikle</sys:String>
     <sys:String x:Key="Str_Card_ClearableDeep">Derin temizlikle</sys:String>
     <sys:String x:Key="Str_Card_ClearableTip">Şu an temizlik açar: normal {0} · hafif {1} · derin {2} ve biraz daha (sistem önbelleği). Büyük değer seçili temizlik türünü gösterir.</sys:String>
     <sys:String x:Key="Str_Card_PurgesTip">Temizlik geçmişini görmek için tıkla</sys:String>
-    <sys:String x:Key="Str_Game_PurgeOnStartLabel">Açılınca bir kez temizle</sys:String>
-    <sys:String x:Key="Str_Game_PurgeOnStartTip">Bu oyun başladığında, RAM'e yüklenmeden önce bir kez standby temizlenir (seçili türde: normal, hafif ya da derin). OTO TEMİZLE kapalıyken de çalışır.</sys:String>
+    <sys:String x:Key="Str_Game_PurgeOnceLabel">Bir kez temizle</sys:String>
+    <sys:String x:Key="Str_Game_PurgeOnceTip">Açılınca: oyun başladığında, RAM'e yüklenmeden önce standby bir kez temizlenir. Kapanınca: oyun kapandığında geride bıraktığı önbellek bir kez temizlenir. Seçili türde temizler (normal, hafif ya da derin); OTO TEMİZLE kapalıyken de çalışır.</sys:String>
+    <sys:String x:Key="Str_PurgeOnce_Off">Kapalı</sys:String>
+    <sys:String x:Key="Str_PurgeOnce_AtStart">Açılınca</sys:String>
+    <sys:String x:Key="Str_PurgeOnce_AtExit">Kapanınca</sys:String>
+    <sys:String x:Key="Str_PurgeOnce_Both">İkisinde de</sys:String>
     <sys:String x:Key="Str_Game_TimerLabel">Açıkken timer'ı aç</sys:String>
     <sys:String x:Key="Str_Game_TimerTip">OYUNDA kilidiyle bu oyun açıkken timer açılır. Timer'a ihtiyacı olmayan bir oyun için kaldırın: listedeki, timer isteyen başka bir oyun yine açar.</sys:String>
     <sys:String x:Key="Str_GameNotify_PurgeAtStart">Açılış temizliği</sys:String>
@@ -242,10 +249,10 @@
     <sys:String x:Key="Str_Help_Standby6">Derin temizlik: temizlikten önce diske yazılmayı bekleyen (değiştirilmiş) sayfaları yazar ve Windows'un sistem önbelleğini boşaltır; bunlar da standby'a iner ve birlikte temizlenir. Normal temizlikten daha çok yer açar, kısa bir disk yazımı olabilir. Hafif temizlikle birlikte seçilemez.</sys:String>
     <sys:String x:Key="Str_Help_Standby7">Standby bellek kartındaki büyük değer, seçili temizlik türünün şu an ne kadar açacağını gösterir (üzerine gelince üç türün karşılaştırması). Her temizlikten sonra ne kadar boşaltıldığı yazılır; kartın altındaki temizleme sayısına tıklayınca geçmiş açılır: bugün, son 7 gün ve tüm zamanlarda ne kadar boşaltıldığı, türlere göre dağılım ve son 20 temizlik. Geçmiş yeniden başlatınca da kalır.</sys:String>
     <sys:String x:Key="Str_Help_GameTitle">OYUN MODU</sys:String>
-    <sys:String x:Key="Str_Help_Game1">Oyun Modu açıkken listedeki bir oyun çalışınca ona Yüksek öncelik ve tüm CPU çekirdekleri verilir, Windows'un arka plan kısıtlaması (EcoQoS) kapatılır.</sys:String>
+    <sys:String x:Key="Str_Help_Game1">Oyun Modu açıkken listedeki bir oyun çalışınca ona o oyun için seçtiğin öncelik (varsayılan Yüksek) ve tüm CPU çekirdekleri verilir, Windows'un arka plan kısıtlaması (EcoQoS) kapatılır.</sys:String>
     <sys:String x:Key="Str_Help_Game2">Oyun eklemek için EKLE'ye bas ya da .exe dosyasını listeye sürükle. Tam ekran çalışan bir oyunu uygulama kendisi de bulup OTO etiketiyle ekler; OTO bir oyunu silersen bir daha eklenmez. Oyunlar .exe adına göre tanınır.</sys:String>
-    <sys:String x:Key="Str_Help_Game3">Listeden bir oyun seçince altındaki iki ayar sadece o oyun içindir. "Yüksek öncelik ver" kapalıysa uygulama o oyuna hiç dokunmaz; Process Lasso gibi bir araç kullanıyorsan kapat (oyunun bir sonraki açılışında geçerli olur). "Açıkken oto temizle" kapalıysa o oyun çalışırken otomatik temizlik durur.</sys:String>
-    <sys:String x:Key="Str_Help_Game4">"Açılınca bir kez temizle": o oyun başladığında, RAM'e yüklenmeden önce bir kez standby temizlenir. Eşik ayarlamadan, OTO TEMİZLE kapalıyken de çalışır. "Açıkken timer'ı aç": OYUNDA kilidiyle timer'ı yalnızca bu kutusu işaretli oyunlar açar.</sys:String>
+    <sys:String x:Key="Str_Help_Game3">Listeden bir oyun seçince altındaki ayarlar sadece o oyun içindir. "Öncelik": Yüksek, Normalin üstü (Discord, OBS ve ses daha az sıkışır) ya da Dokunma (uygulama o oyuna hiç dokunmaz; Process Lasso gibi bir araç kullanıyorsan seç). Öncelik Oyun Modu'nun işidir, Oyun Modu kapalıyken soluk görünür; değişiklik oyunun bir sonraki açılışında geçerli olur. "Açıkken oto temizle" kapalıysa o oyun çalışırken otomatik temizlik durur.</sys:String>
+    <sys:String x:Key="Str_Help_Game4">"Bir kez temizle": Açılınca seçersen oyun başlarken, RAM'e yüklenmeden önce; Kapanınca seçersen oyun kapanınca, geride bıraktığı önbellek için standby bir kez temizlenir. Eşik ayarlamadan, OTO TEMİZLE kapalıyken de çalışır. "Açıkken timer'ı aç": OYUNDA kilidiyle timer'ı yalnızca bu kutusu işaretli oyunlar açar.</sys:String>
     <sys:String x:Key="Str_Help_Game5">Listedeki bir oyuna çift tıklayınca oyun başlar. Uygulama yönetici olarak çalışsa da oyun senin normal yetkinle açılır (masaüstünden açmak gibi), böylece Steam overlay ve anti-cheat sorun çıkarmaz.</sys:String>
     <sys:String x:Key="Str_Help_KeysTitle">KISAYOLLAR VE BİLDİRİMLER</sys:String>
     <sys:String x:Key="Str_Help_Keys1">Varsayılan kısayollar: Ctrl+Alt+P temizler, Ctrl+Alt+T timer'ı açıp kapatır, Ctrl+Alt+O oto temizliği açıp kapatır. Değiştirmek için Ayarlar → Kısayollar'da kısayola tıklayıp yeni tuşlara bas; Esc vazgeçer. Kısayollar uygulama arka plandayken de çalışır.</sys:String>
@@ -290,6 +297,7 @@
     <sys:String x:Key="Str_Detect_NotifyBody">"{0}" tam ekranda algılandı ve Game Mode listesine eklendi. Oyun değilse listeden silebilirsin.</sys:String>
     <sys:String x:Key="Str_GameNotify_Title">{0} başladı</sys:String>
     <sys:String x:Key="Str_GameNotify_Boost">Yüksek öncelik</sys:String>
+    <sys:String x:Key="Str_GameNotify_AboveNormal">Normalin üstü öncelik</sys:String>
     <sys:String x:Key="Str_GameNotify_NoBoost">Öncelik değiştirilmedi</sys:String>
     <sys:String x:Key="Str_GameNotify_TimerOn">Timer açık ({0:F2} ms)</sys:String>
     <sys:String x:Key="Str_GameNotify_TimerOff">Timer kapalı</sys:String>

@@ -39,6 +39,7 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
     public int  AutoPurgeCooldownSeconds { get; set; }
     public bool AutoPurgeOnlyInGames     { get; set; }
     public IReadOnlyList<string> GamePaths            { get; set; } = [];
+    public IReadOnlyList<string> AboveNormalGamePaths { get; set; } = [];
     public IReadOnlyList<string> WatchedGamePaths     { get; set; } = [];
     public IReadOnlyList<string> NoAutoPurgeGamePaths { get; set; } = [];
 
@@ -167,7 +168,8 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
         if (GameModeEnabled && GamePaths.Count > 0)
             await _processService.CheckAndOptimizeAsync(BoostTargets(GamePaths, running),
                                                         processes is null ? null : processes.PidsOf,
-                                                        processes is null ? null : processes.Contains)
+                                                        processes is null ? null : processes.Contains,
+                                                        AboveNormalGamePaths)
                                  .ConfigureAwait(false);
     }
 

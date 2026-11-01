@@ -55,7 +55,7 @@ Services/                   ← implementations; the only layer that touches Win
   MemoryMonitorService      ← 1 s PeriodicTimer loop: snapshot, running listed games, idle time,
                               auto purge, game boost; a failing tick is logged, the loop goes on
   StandbyPurgeService       ← NtSetSystemInformation(80), full or light (low-priority) purge
-  ProcessOptimizationService← High priority / all cores / EcoQoS opt-out for running boost games
+  ProcessOptimizationService← High or Above normal priority / all cores / EcoQoS opt-out for running boost games
   GameDetectionService      ← 3 s poll: fullscreen foreground exe → auto-added game
   SettingsService           ← HKCU\SOFTWARE\StandbyAndTimer R/W; never saves after a failed load
   GlobalTimerSetting        ← HKLM ...\kernel\GlobalTimerResolutionRequests (Windows 11, read at boot)

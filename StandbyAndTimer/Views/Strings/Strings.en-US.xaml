@@ -50,7 +50,6 @@
     <sys:String x:Key="Str_Card_GameModeTitle">GAME MODE</sys:String>
     <sys:String x:Key="Str_Card_GameModeOn">On</sys:String>
     <sys:String x:Key="Str_Card_GameModeOff">Off</sys:String>
-    <sys:String x:Key="Str_Card_GameModeDesc">High priority · Full affinity</sys:String>
 
     <!-- Purge section -->
     <sys:String x:Key="Str_Purge_StandbyLimitLabel">List size at least (MB):</sys:String>
@@ -80,9 +79,12 @@
     <sys:String x:Key="Str_Game_ListTip">Drag and drop .exe files here. Double-click a game to start it.</sys:String>
     <sys:String x:Key="Str_Game_AutoTag">AUTO</sys:String>
     <sys:String x:Key="Str_Game_AutoTagTip">Detected fullscreen and added automatically. Remove it and it will not be added again.</sys:String>
-    <sys:String x:Key="Str_Game_CustomTagTip">This game has its own rules: priority boost or auto purge off, or purge at start on.</sys:String>
-    <sys:String x:Key="Str_Game_BoostLabel">Give high priority</sys:String>
-    <sys:String x:Key="Str_Game_BoostTip">When off, the app never touches this game (priority, cores, EcoQoS). Turn it off if a tool like Process Lasso manages it. Takes effect the next time the game starts.</sys:String>
+    <sys:String x:Key="Str_Game_CustomTagTip">This game has its own rules: priority, auto purge, purge once or the timer differ from the defaults.</sys:String>
+    <sys:String x:Key="Str_Game_PriorityLabel">Priority</sys:String>
+    <sys:String x:Key="Str_Game_PriorityTip">The CPU priority Game Mode gives this game. High: the biggest share. Above normal: the game still comes first, but Discord, OBS and audio are squeezed less (try it if sound crackles or a stream stutters). Don't change: the app never touches this game (priority, cores, EcoQoS); pick it if a tool like Process Lasso manages it. Needs Game Mode on; takes effect the next time the game starts.</sys:String>
+    <sys:String x:Key="Str_GamePriority_High">High</sys:String>
+    <sys:String x:Key="Str_GamePriority_AboveNormal">Above normal</sys:String>
+    <sys:String x:Key="Str_GamePriority_Unchanged">Don't change</sys:String>
     <sys:String x:Key="Str_Game_AutoPurgeLabel">Auto purge while it runs</sys:String>
     <sys:String x:Key="Str_Game_AutoPurgeTip">When off, automatic purges pause while this game runs. The purge button and the hotkey still work.</sys:String>
     <sys:String x:Key="Str_Scan_Title">Installed games</sys:String>
@@ -165,12 +167,17 @@
     <sys:String x:Key="Str_PurgeKind_Deep">Deep</sys:String>
     <sys:String x:Key="Str_PurgeTrigger_Auto">automatic</sys:String>
     <sys:String x:Key="Str_PurgeTrigger_GameStart">at game start</sys:String>
+    <sys:String x:Key="Str_PurgeTrigger_GameExit">at game exit</sys:String>
     <sys:String x:Key="Str_Card_ClearableLight">With light purge</sys:String>
     <sys:String x:Key="Str_Card_ClearableDeep">With deep purge</sys:String>
     <sys:String x:Key="Str_Card_ClearableTip">A purge would free now: normal {0} · light {1} · deep {2} and a little more (system cache). The big number shows the selected purge.</sys:String>
     <sys:String x:Key="Str_Card_PurgesTip">Click to see the purge history</sys:String>
-    <sys:String x:Key="Str_Game_PurgeOnStartLabel">Purge once when it starts</sys:String>
-    <sys:String x:Key="Str_Game_PurgeOnStartTip">When this game starts, the standby list is purged once, before the game fills RAM (in the selected mode: normal, light or deep). Works with AUTO PURGE off too.</sys:String>
+    <sys:String x:Key="Str_Game_PurgeOnceLabel">Purge once</sys:String>
+    <sys:String x:Key="Str_Game_PurgeOnceTip">At start: when this game starts, the standby list is purged once, before the game fills RAM. At exit: when it closes, the cache it left behind is purged once. Uses the selected mode (normal, light or deep) and works with AUTO PURGE off too.</sys:String>
+    <sys:String x:Key="Str_PurgeOnce_Off">Off</sys:String>
+    <sys:String x:Key="Str_PurgeOnce_AtStart">At start</sys:String>
+    <sys:String x:Key="Str_PurgeOnce_AtExit">At exit</sys:String>
+    <sys:String x:Key="Str_PurgeOnce_Both">Both</sys:String>
     <sys:String x:Key="Str_Game_TimerLabel">Timer on while it runs</sys:String>
     <sys:String x:Key="Str_Game_TimerTip">With the IN GAME lock, the timer turns on while this game runs. Untick it for a game that does not need the timer: another listed game that wants it still turns it on.</sys:String>
     <sys:String x:Key="Str_GameNotify_PurgeAtStart">Purge at start</sys:String>
@@ -242,10 +249,10 @@
     <sys:String x:Key="Str_Help_Standby6">Deep purge: before purging, writes out the pages waiting to be written (the modified list) and empties Windows' system cache; those land on the standby list and are purged with it. Frees more than a normal purge; can cause a short burst of disk writes. Cannot be combined with light purge.</sys:String>
     <sys:String x:Key="Str_Help_Standby7">The big number on the Standby memory card is what the selected purge would free right now (hover to compare all three). After every purge the app says how much it freed; click the purge count on the card for the history: how much was freed today, in the last 7 days and in all, per purge type, and the last 20 purges. It is kept across restarts.</sys:String>
     <sys:String x:Key="Str_Help_GameTitle">GAME MODE</sys:String>
-    <sys:String x:Key="Str_Help_Game1">With Game Mode on, a listed game that runs gets High priority and all CPU cores, and Windows' background throttling (EcoQoS) is switched off for it.</sys:String>
+    <sys:String x:Key="Str_Help_Game1">With Game Mode on, a listed game that runs gets the priority you picked for it (High by default) and all CPU cores, and Windows' background throttling (EcoQoS) is switched off for it.</sys:String>
     <sys:String x:Key="Str_Help_Game2">To add a game, press ADD or drag its .exe onto the list. The app also finds games running fullscreen and adds them with an AUTO tag; delete an AUTO game and it is never added again. Games are recognised by their .exe name.</sys:String>
-    <sys:String x:Key="Str_Help_Game3">Select a game in the list and the two switches below apply to that game only. With "Give high priority" off the app leaves the game alone; turn it off if you use a tool such as Process Lasso (it applies the next time the game starts). With "Auto purge while it runs" off, automatic purges pause while that game runs.</sys:String>
-    <sys:String x:Key="Str_Help_Game4">"Purge once when it starts": when that game starts, the standby list is purged once, before the game fills RAM. No thresholds to set; works with AUTO PURGE off. "Timer on while it runs": with the IN GAME lock, only the games that have it ticked turn the timer on.</sys:String>
+    <sys:String x:Key="Str_Help_Game3">Select a game in the list and the rules below apply to that game only. "Priority": High, Above normal (Discord, OBS and audio are squeezed less) or Don't change (the app leaves the game alone; pick it if you use a tool such as Process Lasso). Priority is Game Mode's job, so it is greyed while Game Mode is off; a change applies the next time the game starts. With "Auto purge while it runs" off, automatic purges pause while that game runs.</sys:String>
+    <sys:String x:Key="Str_Help_Game4">"Purge once": At start purges the standby list once when that game starts, before it fills RAM; At exit purges once when it closes, freeing the cache it left behind. No thresholds to set; works with AUTO PURGE off. "Timer on while it runs": with the IN GAME lock, only the games that have it ticked turn the timer on.</sys:String>
     <sys:String x:Key="Str_Help_Game5">Double-click a game in the list to start it. Even though the app runs as administrator, the game starts with your normal rights (like opening it from the desktop), so the Steam overlay and anti-cheat are not affected.</sys:String>
     <sys:String x:Key="Str_Help_KeysTitle">HOTKEYS AND NOTIFICATIONS</sys:String>
     <sys:String x:Key="Str_Help_Keys1">Default hotkeys: Ctrl+Alt+P purges, Ctrl+Alt+T toggles the timer, Ctrl+Alt+O toggles auto purge. To change one, click it under Settings → Hotkeys and press the new keys; Esc cancels. Hotkeys work while the app is in the background.</sys:String>
@@ -290,6 +297,7 @@
     <sys:String x:Key="Str_Detect_NotifyBody">"{0}" was detected fullscreen and added to the Game Mode list. Not a game? Remove it from the list.</sys:String>
     <sys:String x:Key="Str_GameNotify_Title">{0} started</sys:String>
     <sys:String x:Key="Str_GameNotify_Boost">High priority</sys:String>
+    <sys:String x:Key="Str_GameNotify_AboveNormal">Above normal priority</sys:String>
     <sys:String x:Key="Str_GameNotify_NoBoost">Priority left alone</sys:String>
     <sys:String x:Key="Str_GameNotify_TimerOn">Timer on ({0:F2} ms)</sys:String>
     <sys:String x:Key="Str_GameNotify_TimerOff">Timer off</sys:String>

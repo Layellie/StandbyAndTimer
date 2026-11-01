@@ -6,6 +6,78 @@
     <UserControl.Resources>
         <conv:GameIconConverter x:Key="GameIconConv"/>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <!-- Menu entries: the enum value shown as a DynamicResource string,
+             so an open card follows a language change. -->
+        <DataTemplate x:Key="GamePriorityItem">
+            <TextBlock Foreground="{DynamicResource InputFg}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Text" Value="{DynamicResource Str_GamePriority_High}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding}" Value="AboveNormal">
+                                <Setter Property="Text" Value="{DynamicResource Str_GamePriority_AboveNormal}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding}" Value="Unchanged">
+                                <Setter Property="Text" Value="{DynamicResource Str_GamePriority_Unchanged}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </DataTemplate>
+        <DataTemplate x:Key="PurgeOnceItem">
+            <TextBlock Foreground="{DynamicResource InputFg}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Text" Value="{DynamicResource Str_PurgeOnce_Off}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding}" Value="AtStart">
+                                <Setter Property="Text" Value="{DynamicResource Str_PurgeOnce_AtStart}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding}" Value="AtExit">
+                                <Setter Property="Text" Value="{DynamicResource Str_PurgeOnce_AtExit}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding}" Value="Both">
+                                <Setter Property="Text" Value="{DynamicResource Str_PurgeOnce_Both}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </DataTemplate>
+
+        <!-- A label + small menu row, as tall as a checkbox row next to it. -->
+        <Style x:Key="GameRuleComboStyle" TargetType="ComboBox" BasedOn="{StaticResource SettingsComboBoxStyle}">
+            <Setter Property="Grid.Column"       Value="1"/>
+            <!-- Fits the longest entry (Normalin üstü, 75 px at 12 px) plus
+                 the arrow; the label keeps a 6 px gap. -->
+            <Setter Property="Width"             Value="110"/>
+            <Setter Property="Height"            Value="24"/>
+            <Setter Property="Margin"            Value="6,0,0,0"/>
+            <Setter Property="FontSize"          Value="12"/>
+            <Setter Property="Padding"           Value="8,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="ToolTipService.ShowOnDisabled" Value="True"/>
+            <Style.Triggers>
+                <!-- Greyed like the checkboxes beside it (no game picked, or
+                     Game Mode off for Priority). -->
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.4"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="GameRuleLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontWeight"        Value="SemiBold"/>
+            <Setter Property="Foreground"        Value="{DynamicResource AppFg}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextTrimming"      Value="CharacterEllipsis"/>
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.4"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
 
     <!-- Game Mode toggle + executable list with drag-drop and add/remove/scan
@@ -15,14 +87,12 @@
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>  <!-- 0 Title + toggle -->
-                <RowDefinition Height="Auto"/>  <!-- 1 Description -->
-                <RowDefinition Height="*"/>     <!-- 2 Game list -->
-                <RowDefinition Height="Auto"/>  <!-- 3 Drop hint -->
-                <RowDefinition Height="Auto"/>  <!-- 4 Per-game switches -->
-                <RowDefinition Height="Auto"/>  <!-- 5 DEL / SCAN / ADD -->
+                <RowDefinition Height="*"/>     <!-- 1 Game list -->
+                <RowDefinition Height="Auto"/>  <!-- 2 Per-game switches -->
+                <RowDefinition Height="Auto"/>  <!-- 3 DEL / SCAN / ADD -->
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="0" Margin="0,0,0,4">
+            <Grid Grid.Row="0" Margin="0,0,0,10">
                 <TextBlock Text="{DynamicResource Str_Card_GameModeTitle}"
                            Style="{StaticResource SectionLabelStyle}"
                            VerticalAlignment="Center"/>
@@ -47,14 +117,8 @@
                 </CheckBox>
             </Grid>
 
-            <TextBlock Grid.Row="1"
-                       Text="{DynamicResource Str_Card_GameModeDesc}"
-                       FontSize="11"
-                       Foreground="{DynamicResource AppFgDim}"
-                       Margin="0,0,0,10"/>
-
             <ListBox x:Name="GamesList"
-                     Grid.Row="2"
+                     Grid.Row="1"
                      ItemsSource="{Binding Games}"
                      SelectedItem="{Binding SelectedGame}"
                      Style="{StaticResource GameListBoxStyle}"
@@ -125,21 +189,36 @@
                 </ListBox.ItemTemplate>
             </ListBox>
 
-            <!-- Own row: next to two buttons the ~238 px column left the
-                 hint about 70 px and it got clipped. -->
-            <TextBlock Grid.Row="3"
+            <!-- The drag-and-drop hint, inside the empty list: it took a row
+                 of its own before; the list tooltip says it too. -->
+            <TextBlock Grid.Row="1"
                        Text="{DynamicResource Str_Game_DropHint}"
                        FontSize="11"
                        TextWrapping="Wrap"
-                       Foreground="{DynamicResource AppFgDim}"
-                       Margin="0,0,0,8"/>
+                       TextAlignment="Center"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Margin="16,0,16,8"
+                       IsHitTestVisible="False"
+                       Foreground="{DynamicResource AppFgDim}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Games.Count}" Value="0">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
 
-            <!-- The selected game's own switches. Always shown so the user
+            <!-- The selected game's own rules. Always shown so the user
                  sees they exist; greyed (like DEL) until a row is picked,
-                 showing the defaults (boost and auto purge on, purge at
-                 start off). Tooltips still open while
-                 greyed so the switches explain themselves. -->
-            <StackPanel Grid.Row="4" Margin="0,0,0,8">
+                 showing the defaults (High priority, auto purge on, no purge
+                 once). Tooltips still open while greyed so the rules explain
+                 themselves. -->
+            <StackPanel Grid.Row="2" Margin="0,0,0,8">
                 <StackPanel.Style>
                     <Style TargetType="StackPanel">
                         <Style.Triggers>
@@ -149,24 +228,45 @@
                         </Style.Triggers>
                     </Style>
                 </StackPanel.Style>
-                <CheckBox Content="{DynamicResource Str_Game_BoostLabel}"
-                          IsChecked="{Binding SelectedGameBoost}"
-                          ToolTip="{DynamicResource Str_Game_BoostTip}"
-                          ToolTipService.ShowOnDisabled="True"
-                          Style="{StaticResource DarkCheckBoxStyle}"
-                          Margin="0,0,0,6"/>
+                <!-- Priority is Game Mode's job: greyed while Game Mode is
+                     off (the other rules work without it). -->
+                <Grid Margin="0,0,0,6"
+                      IsEnabled="{Binding GameModeEnabled}"
+                      ToolTip="{DynamicResource Str_Game_PriorityTip}"
+                      ToolTipService.ShowOnDisabled="True"
+                      Background="Transparent">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{DynamicResource Str_Game_PriorityLabel}"
+                               Style="{StaticResource GameRuleLabelStyle}"/>
+                    <ComboBox ItemsSource="{Binding GamePriorities}"
+                              SelectedItem="{Binding SelectedGamePriority}"
+                              ItemTemplate="{StaticResource GamePriorityItem}"
+                              Style="{StaticResource GameRuleComboStyle}"/>
+                </Grid>
                 <CheckBox Content="{DynamicResource Str_Game_AutoPurgeLabel}"
                           IsChecked="{Binding SelectedGameAutoPurge}"
                           ToolTip="{DynamicResource Str_Game_AutoPurgeTip}"
                           ToolTipService.ShowOnDisabled="True"
                           Style="{StaticResource DarkCheckBoxStyle}"
                           Margin="0,0,0,6"/>
-                <CheckBox Content="{DynamicResource Str_Game_PurgeOnStartLabel}"
-                          IsChecked="{Binding SelectedGamePurgeOnStart}"
-                          ToolTip="{DynamicResource Str_Game_PurgeOnStartTip}"
-                          ToolTipService.ShowOnDisabled="True"
-                          Style="{StaticResource DarkCheckBoxStyle}"
-                          Margin="0,0,0,6"/>
+                <Grid Margin="0,0,0,6"
+                      ToolTip="{DynamicResource Str_Game_PurgeOnceTip}"
+                      ToolTipService.ShowOnDisabled="True"
+                      Background="Transparent">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{DynamicResource Str_Game_PurgeOnceLabel}"
+                               Style="{StaticResource GameRuleLabelStyle}"/>
+                    <ComboBox ItemsSource="{Binding PurgeOnceOptions}"
+                              SelectedItem="{Binding SelectedGamePurgeOnce}"
+                              ItemTemplate="{StaticResource PurgeOnceItem}"
+                              Style="{StaticResource GameRuleComboStyle}"/>
+                </Grid>
                 <CheckBox Content="{DynamicResource Str_Game_TimerLabel}"
                           IsChecked="{Binding SelectedGameTimerInGame}"
                           ToolTip="{DynamicResource Str_Game_TimerTip}"
@@ -174,7 +274,7 @@
                           Style="{StaticResource DarkCheckBoxStyle}"/>
             </StackPanel>
 
-            <Grid Grid.Row="5">
+            <Grid Grid.Row="3">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="5"/>

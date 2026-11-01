@@ -8,9 +8,10 @@ namespace StandbyAndTimer.Core.Models;
 // Core free of UI dependencies.
 public sealed class GameEntry : INotifyPropertyChanged
 {
-    private bool _boostPriority  = true;
+    private GamePriority _priority = GamePriority.High;
     private bool _allowAutoPurge = true;
     private bool _purgeOnStart;
+    private bool _purgeOnExit;
     private bool _timerInGame    = true;
 
     public string DisplayName    { get; init; } = string.Empty;
@@ -20,13 +21,34 @@ public sealed class GameEntry : INotifyPropertyChanged
     public bool   AutoAdded      { get; init; }
 
     /// <summary>
-    /// True: High priority, all cores and the EcoQoS opt-out while it runs.
-    /// False: the app never touches this process (e.g. Process Lasso owns it).
+    /// High or AboveNormal: that priority class, all cores and the EcoQoS
+    /// opt-out while it runs. Unchanged: the app never touches this process
+    /// (e.g. Process Lasso owns it).
+    /// </summary>
+    public GamePriority Priority
+    {
+        get => _priority;
+        set
+        {
+            if (_priority == value) return;
+            _priority = value;
+            Raise();
+            Raise(nameof(BoostPriority));
+            Raise(nameof(HasCustomRules));
+        }
+    }
+
+    /// <summary>
+    /// Whether the app boosts this game at all (Priority is not Unchanged).
+    /// The switch from before the priority menu; true picks High.
     /// </summary>
     public bool BoostPriority
     {
-        get => _boostPriority;
-        set => Set(ref _boostPriority, value);
+        get => _priority != GamePriority.Unchanged;
+        set
+        {
+            if (value != BoostPriority) Priority = value ? GamePriority.High : GamePriority.Unchanged;
+        }
     }
 
     /// <summary>False: automatic standby purges are paused while this game runs (manual purges still work).</summary>
@@ -47,6 +69,16 @@ public sealed class GameEntry : INotifyPropertyChanged
     }
 
     /// <summary>
+    /// True: one purge (in the chosen mode) when this game closes, so the cache
+    /// it left behind is freed. Works without AUTO PURGE. Off by default.
+    /// </summary>
+    public bool PurgeOnExit
+    {
+        get => _purgeOnExit;
+        set => Set(ref _purgeOnExit, value);
+    }
+
+    /// <summary>
     /// True: the IN GAME timer lock turns the timer on while this game runs.
     /// False: it leaves the timer alone for this game (another running game
     /// that wants it still turns it on). On by default.
@@ -58,7 +90,8 @@ public sealed class GameEntry : INotifyPropertyChanged
     }
 
     /// <summary>True when a per-game switch is not at its default; drives the list row marker.</summary>
-    public bool HasCustomRules => !_boostPriority || !_allowAutoPurge || _purgeOnStart || !_timerInGame;
+    public bool HasCustomRules =>
+        _priority != GamePriority.High || !_allowAutoPurge || _purgeOnStart || _purgeOnExit || !_timerInGame;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -66,9 +99,12 @@ public sealed class GameEntry : INotifyPropertyChanged
     {
         if (field == value) return;
         field = value;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasCustomRules)));
+        Raise(name);
+        Raise(nameof(HasCustomRules));
     }
+
+    private void Raise([CallerMemberName] string? name = null) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
     public override string ToString() => DisplayName;
 }

@@ -17,6 +17,7 @@ public sealed class FakeMemory : IMemoryMonitorService
     public int  IdleThresholdMs   { get; set; }
     public int  AutoPurgeCooldownSeconds { get; set; }
     public IReadOnlyList<string> GamePaths            { get; set; } = [];
+    public IReadOnlyList<string> AboveNormalGamePaths { get; set; } = [];
     public IReadOnlyList<string> WatchedGamePaths     { get; set; } = [];
     public IReadOnlyList<string> NoAutoPurgeGamePaths { get; set; } = [];
     public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
@@ -77,7 +78,7 @@ public class PerGameSettingsTests
     [Fact]
     public void A_new_game_gets_priority_and_allows_auto_purge_by_default()
     {
-        Assert.True(_h.Main.SelectedGameBoost);
+        Assert.Equal(GamePriority.High, _h.Main.SelectedGamePriority);
         Assert.True(_h.Main.SelectedGameAutoPurge);
         Assert.Equal([Exe], _mem.GamePaths);
         Assert.Equal([Exe], _mem.WatchedGamePaths);
@@ -87,7 +88,7 @@ public class PerGameSettingsTests
     [Fact]
     public void Turning_priority_off_leaves_the_process_alone_but_keeps_watching_it()
     {
-        _h.Main.SelectedGameBoost = false;
+        _h.Main.SelectedGamePriority = GamePriority.Unchanged;
 
         Assert.Empty(_mem.GamePaths);
         Assert.Equal([Exe], _mem.WatchedGamePaths);
