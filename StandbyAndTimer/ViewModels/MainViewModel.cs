@@ -253,12 +253,17 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             _firstRunCompleted   = s.FirstRunCompleted;
 
             Games.Clear();
+            // A game the user added is never dropped (the next save would erase
+            // it): only exact duplicates, and AUTO-added helpers or duplicates.
             foreach (var g in s.Games)
             {
-                if (InstalledGamesScanner.IsIgnoredExecutable(Path.GetFileNameWithoutExtension(g.ExecutablePath)))
+                if (Games.Any(x => x.ExecutablePath.Equals(g.ExecutablePath, StringComparison.OrdinalIgnoreCase)))
                     continue;
-                if (!IsGameAlreadyListed(g.ExecutablePath))
-                    Games.Add(g);
+                if (g.AutoAdded
+                    && (InstalledGamesScanner.IsIgnoredExecutable(Path.GetFileNameWithoutExtension(g.ExecutablePath))
+                        || IsGameAlreadyListed(g.ExecutablePath)))
+                    continue;
+                Games.Add(g);
             }
 
             _ignoredGamePaths.Clear();

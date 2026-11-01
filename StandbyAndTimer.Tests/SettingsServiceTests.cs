@@ -60,6 +60,7 @@ public sealed class SettingsServiceTests : IDisposable
             Language = Language.Turkish, Theme = Theme.Light,
             PurgeHotkey = "Ctrl+Shift+F9", NotifyOnPurge = false,
             TimerIdleOffEnabled = true, TimerIdleOffMinutes = 25,
+            AutoPurgeCooldownEnabled = true, AutoPurgeCooldownSeconds = 120, CloseToTrayDirectly = true,
             Games =
             [
                 new GameEntry { DisplayName = "cs2", ExecutablePath = cs2 },
@@ -84,6 +85,9 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.False(s.NotifyOnPurge);
         Assert.True(s.TimerIdleOffEnabled);
         Assert.Equal(25, s.TimerIdleOffMinutes);
+        Assert.True(s.AutoPurgeCooldownEnabled);
+        Assert.Equal(120, s.AutoPurgeCooldownSeconds);
+        Assert.True(s.CloseToTrayDirectly);
 
         Assert.Equal([cs2, val], s.Games.Select(g => g.ExecutablePath));
         Assert.True(s.Games[0].BoostPriority);
