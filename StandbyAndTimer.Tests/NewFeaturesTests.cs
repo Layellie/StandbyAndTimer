@@ -215,6 +215,24 @@ public sealed class NewFeaturesTests : IDisposable
     }
 
     [Fact]
+    public void A_corrupt_steam_manifest_is_skipped_and_the_scan_goes_on()
+    {
+        string steamApps = Path.Combine(_tempDir, "steamapps");
+        string gameDir = Path.Combine(steamApps, "common", "Good Game");
+        Directory.CreateDirectory(gameDir);
+        string exe = Path.Combine(gameDir, "GoodGame.exe");
+        File.WriteAllBytes(exe, new byte[1024]);
+        File.WriteAllText(Path.Combine(steamApps, "appmanifest_1.acf"),
+            "\"AppState\"\n{\n\"name\"\t\"Broken\"\n\"installdir\"\t\"Bro\0ken\"\n}\n");   // half-written file
+        File.WriteAllText(Path.Combine(steamApps, "appmanifest_2.acf"),
+            "\"AppState\"\n{\n\"name\"\t\"Good Game\"\n\"installdir\"\t\"Good Game\"\n}\n");
+
+        var found = InstalledGamesScanner.ScanDirectories([steamApps], []);
+
+        Assert.Equal(exe, Assert.Single(found).ExecutablePath);
+    }
+
+    [Fact]
     public void Epic_scanner_reads_item_manifests()
     {
         string manifestsDir = Path.Combine(_tempDir, "EpicManifests");
