@@ -85,6 +85,25 @@ dotnet run --project StandbyAndTimer/StandbyAndTimer.csproj   # run as administr
 
 # Türkçe
 
+<p align="center">
+  <img src="docs/tr/screenshot.png" width="49%" alt="StandbyAndTimer: timer, standby bellek, temizleme seçenekleri ve Oyun Modu listesiyle durum sayfası" />
+  <img src="docs/tr/screenshot-maintenance.png" width="49%" alt="StandbyAndTimer: shader önbellekleri, geçici dosyalar, Windows Update artıkları ve Windows ayarlarıyla Bakım sekmesi" />
+</p>
+
+<details>
+<summary><b>Daha fazla ekran görüntüsü</b></summary>
+
+| | |
+|:---:|:---:|
+| <img src="docs/tr/screenshot-settings.png" alt="Ayarlar: başlangıç, bildirimler, görünüm, kısayollar ve yedekleme" /> | <img src="docs/tr/screenshot-history.png" alt="Temizlik geçmişi: bugün, son 7 gün ve tüm zamanlar, 7 günlük grafik ve son 20 temizlik" /> |
+| Ayarlar | Temizlik geçmişi |
+| <img src="docs/tr/screenshot-system.png" alt="Sistem ayarları: timer'ı tüm oyunlara uygula, akıllı bekleme süresi, doğrudan tepsiye küçült" /> | <img src="docs/tr/screenshot-guide.png" alt="? butonunun arkasındaki kullanım kılavuzu" /> |
+| Sistem ayarları | Kullanım kılavuzu (**?**) |
+| <img src="docs/tr/screenshot-light.png" alt="Açık temada durum sayfası" /> | <img src="docs/tr/screenshot-tray.png" alt="Hızlı ayarlarla tepsi menüsü" /> |
+| Açık tema | Tepsi menüsü |
+
+</details>
+
 ## Ne işe yarar?
 
 StandbyAndTimer sistem tepsisinde çalışır ve birbirinden bağımsız dört iş yapar. İstediğinizi tek başına kullanabilirsiniz.
