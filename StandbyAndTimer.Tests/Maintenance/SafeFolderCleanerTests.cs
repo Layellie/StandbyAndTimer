@@ -179,4 +179,22 @@ public sealed class SafeFolderCleanerTests : IDisposable
         Assert.True(File.Exists(target));
         File.Delete(link);
     }
+
+    // C:\NVIDIA and C:\AMD can be created by any user: one made a junction to
+    // another folder must not get that folder emptied by the elevated app.
+    [Fact]
+    public void A_folder_root_that_is_a_junction_is_never_followed()
+    {
+        string outside = File_("outside/keep.bin", 100);
+        string root = Path.Combine(_dir, "NVIDIA");
+        Junction(root, Path.Combine(_dir, "outside"));
+
+        var scan = SafeFolderCleaner.Scan([root], null, Now, default);
+        var result = SafeFolderCleaner.Clean([root], null, Now, default);
+
+        Assert.Equal(0, scan.Bytes);
+        Assert.Equal(Core.Models.CleanupResult.Nothing, result);
+        Assert.True(File.Exists(outside));
+        Assert.True(Directory.Exists(root));           // the link itself is not deleted either
+    }
 }
