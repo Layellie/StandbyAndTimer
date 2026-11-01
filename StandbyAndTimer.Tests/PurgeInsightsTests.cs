@@ -138,7 +138,7 @@ public class PurgeInsightsTests
         var (h, _) = WithGames(("cs2", false));
         h.Main.SelectedGame = h.Main.Games[0];
 
-        h.Main.SelectedGamePurgeOnStart = true;
+        h.Main.SelectedGamePurgeOnce = ViewModels.PurgeOnceOption.AtStart;
 
         Assert.True(h.Main.Games[0].PurgeOnStart);
         Assert.True(h.Main.Games[0].HasCustomRules);

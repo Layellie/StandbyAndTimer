@@ -14,9 +14,14 @@ internal sealed class FakeTarget(string id, CleanupScan scan, bool blockedWhileG
     public CleanupResult Result { get; set; } = new(100L * 1024 * 1024, 3, 1);
     public TaskCompletionSource? ScanGate { get; set; }
     public bool ScanCompleted { get; private set; }
+    public int Scans { get; private set; }
+    /// <summary>The first scan waits for this and ignores cancellation, like the Recycle Bin's shell query.</summary>
+    public TaskCompletionSource? StubbornFirstScan { get; set; }
 
     public async Task<CleanupScan> ScanAsync(CancellationToken ct)
     {
+        Scans++;
+        if (StubbornFirstScan is { } stubborn) { StubbornFirstScan = null; await stubborn.Task; return scan; }
         if (ScanGate is not null) await ScanGate.Task.WaitAsync(ct);
         ScanCompleted = true;
         return scan;
@@ -387,4 +392,62 @@ public class MaintenanceViewModelTests
     [Fact]
     public void No_cleanups_no_bars() =>
         Assert.Empty(MaintenanceViewModel.Inert().TargetBars);
+
+    // ── Fixes from the 3.0.4 audit ──────────────────────────────────────────
+
+    [Fact]
+    public async Task A_late_superseded_scan_does_not_blank_the_newer_result()
+    {
+        var shell = new TaskCompletionSource();
+        var bin = new FakeTarget("recycle-bin", Mb(10)) { StubbornFirstScan = shell };
+        var (vm, _, _, _) = Make(bin);
+
+        var first = vm.RefreshAsync();      // waits on the shell, cannot be cancelled
+        await vm.RefreshAsync();            // Rescan pressed again: finishes first
+        Assert.Equal("10 MB", vm.Rows[0].SizeText);
+
+        shell.SetResult();                  // the old scan now completes, already superseded
+        await first;
+        Assert.Equal("10 MB", vm.Rows[0].SizeText);
+    }
+
+    [Fact]
+    public async Task No_rescan_after_a_clean_when_the_tab_was_left()
+    {
+        var target = new FakeTarget("user-temp", Mb(10));
+        var (vm, _, _, _) = Make(target);
+        vm.Initialize("user-temp");
+        vm.IsActive = true;
+        await vm.RefreshAsync();
+        int scansBefore = target.Scans;
+        vm.IsActive = false;                // left the tab; the clean was already under way
+
+        await vm.CleanSelectedCommand.ExecuteAsync(null);
+
+        Assert.Equal(1, target.Cleaned);
+        Assert.Equal(scansBefore, target.Scans);
+    }
+
+    [Fact]
+    public void Ticks_this_version_does_not_know_are_kept()
+    {
+        var (vm, _, _, _) = Make(new FakeTarget("user-temp", Mb(1)), new FakeTarget("recycle-bin", Mb(1)));
+
+        vm.Initialize("user-temp,future-row");        // saved by a later version
+        vm.Rows[1].IsChecked = true;
+
+        Assert.Equal("user-temp,recycle-bin,future-row", vm.SelectionText);
+    }
+
+    [Fact]
+    public async Task A_language_change_keeps_a_blocked_rows_tooltip()
+    {
+        var (vm, _, _, _) = Make(new FakeTarget("nvidia-shader", Mb(500), blockedWhileGameRuns: true));
+        vm.AnyGameRunning = () => true;
+        await vm.RefreshAsync();
+
+        vm.Relabel();
+
+        Assert.Equal("Str_Maint_BlockedGame", vm.Rows[0].Tip);
+    }
 }

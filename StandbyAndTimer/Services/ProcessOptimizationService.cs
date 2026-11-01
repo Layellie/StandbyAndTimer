@@ -15,27 +15,36 @@ internal sealed class ProcessOptimizationService : IProcessOptimizationService
 
     public Task CheckAndOptimizeAsync(IReadOnlyList<string> executablePaths,
                                       Func<string, IReadOnlyList<int>>? pidsOf = null,
-                                      Func<int, bool>? isRunning = null) =>
-        Task.Run(() => CheckAndOptimize(executablePaths, pidsOf, isRunning));
+                                      Func<int, bool>? isRunning = null,
+                                      IReadOnlyCollection<string>? aboveNormalPaths = null) =>
+        Task.Run(() => CheckAndOptimize(executablePaths, pidsOf, isRunning, aboveNormalPaths));
 
     internal static long AffinityMaskFor(int cpuCount) =>
         cpuCount >= 64 ? -1L : (1L << Math.Max(1, cpuCount)) - 1;
 
+    /// <summary>The per-game Priority menu: Above normal for the listed paths, High for the rest.</summary>
+    internal static ProcessPriorityClass PriorityFor(string path, IReadOnlyCollection<string>? aboveNormalPaths) =>
+        aboveNormalPaths is not null && aboveNormalPaths.Contains(path, StringComparer.OrdinalIgnoreCase)
+            ? ProcessPriorityClass.AboveNormal
+            : ProcessPriorityClass.High;
+
     private void CheckAndOptimize(IReadOnlyList<string> executablePaths,
-                                  Func<string, IReadOnlyList<int>>? pidsOf, Func<int, bool>? isRunning)
+                                  Func<string, IReadOnlyList<int>>? pidsOf, Func<int, bool>? isRunning,
+                                  IReadOnlyCollection<string>? aboveNormalPaths)
     {
         long affinityMask = AffinityMaskFor(Environment.ProcessorCount);
 
         foreach (string path in executablePaths)
         {
             string procName = Path.GetFileNameWithoutExtension(path);
+            ProcessPriorityClass priority = PriorityFor(path, aboveNormalPaths);
             foreach (Process p in Find(procName, pidsOf))
             {
                 using (p) // dispose handle immediately after use — no leaks
                 {
                     try
                     {
-                        p.PriorityClass = ProcessPriorityClass.High;
+                        p.PriorityClass = priority;
                         // affinityMask is bounded by ProcessorCount (≤ 64). On a
                         // 64-CPU host the top bit is set, which makes the signed
                         // IntPtr cast nominally overflow — but we *want* the bit

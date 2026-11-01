@@ -306,7 +306,9 @@ internal static class InstalledGamesScanner
         if (IgnoredAppNames.Any(ig => name.StartsWith(ig, StringComparison.OrdinalIgnoreCase)))
             return null;
 
-        string gameRoot = Path.GetFullPath(Path.Combine(steamAppsDir, "common", installDir));
+        string gameRoot;
+        try { gameRoot = Path.GetFullPath(Path.Combine(steamAppsDir, "common", installDir)); }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException) { return null; }   // a half-written manifest
         if (!Directory.Exists(gameRoot)) return null;
 
         string? exe = FindBestExecutable(gameRoot, name, installDir);

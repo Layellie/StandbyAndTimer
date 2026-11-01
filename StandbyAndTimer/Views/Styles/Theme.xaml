@@ -673,7 +673,7 @@
     <Style x:Key="ToggleSwitchStyle" TargetType="CheckBox">
         <Setter Property="Foreground"       Value="{DynamicResource AppFg}"/>
         <Setter Property="FontFamily"       Value="{StaticResource AppFont}"/>
-        <Setter Property="FontSize"         Value="13"/>
+        <Setter Property="FontSize"         Value="11"/>
         <Setter Property="FontWeight"       Value="SemiBold"/>
         <Setter Property="Cursor"           Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -682,27 +682,32 @@
                 <ControlTemplate TargetType="CheckBox">
                     <!-- Off = outlined track + dim thumb, On = filled accent
                          track + dark thumb (WhichGPU switch shape). The old
-                         filled-grey off state nearly vanished on SurfaceBg. -->
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
-                                Background="Transparent">
-                        <Border x:Name="track"
-                                Width="40" Height="20"
-                                CornerRadius="10"
-                                Background="Transparent"
-                                BorderBrush="{DynamicResource AppFgMuted}"
-                                BorderThickness="1.5"
-                                SnapsToDevicePixels="True">
+                         filled-grey off state nearly vanished on SurfaceBg.
+                         A switch with content (On / Off) shows it inside the
+                         track, on the side away from the thumb; the track is
+                         wide enough for the longest word (Kapalı), so it does
+                         not change size when it flips. -->
+                    <Border x:Name="track"
+                            Width="64" Height="20"
+                            VerticalAlignment="Center"
+                            CornerRadius="10"
+                            Background="Transparent"
+                            BorderBrush="{DynamicResource AppFgMuted}"
+                            BorderThickness="1.5"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <ContentPresenter x:Name="content"
+                                              Margin="17,0,4,0"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True"/>
                             <Ellipse x:Name="thumb"
                                      Width="12" Height="12"
                                      Fill="{DynamicResource AppFgDim}"
                                      HorizontalAlignment="Left"
                                      Margin="3,0,0,0"/>
-                        </Border>
-                        <ContentPresenter x:Name="content"
-                                          Margin="9,0,0,0"
-                                          VerticalAlignment="Center"
-                                          RecognizesAccessKey="True"/>
-                    </StackPanel>
+                        </Grid>
+                    </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="track" Property="BorderBrush" Value="{DynamicResource AppFgDim}"/>
@@ -713,11 +718,14 @@
                             <Setter TargetName="thumb" Property="Fill"                Value="{DynamicResource AccentOnText}"/>
                             <Setter TargetName="thumb" Property="HorizontalAlignment" Value="Right"/>
                             <Setter TargetName="thumb" Property="Margin"              Value="0,0,3,0"/>
+                            <Setter TargetName="content" Property="Margin"            Value="4,0,17,0"/>
+                            <Setter Property="Foreground"                             Value="{DynamicResource AccentOnText}"/>
                         </Trigger>
-                        <!-- Content-less switch (settings rows): drop the gap
-                             so the track sits flush right. -->
+                        <!-- Content-less switch (settings rows): the plain
+                             40 px track. -->
                         <Trigger Property="Content" Value="{x:Null}">
-                            <Setter TargetName="content" Property="Margin" Value="0"/>
+                            <Setter TargetName="track"   Property="Width"      Value="40"/>
+                            <Setter TargetName="content" Property="Visibility" Value="Collapsed"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.4"/>

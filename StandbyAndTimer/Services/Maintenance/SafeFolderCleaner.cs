@@ -13,7 +13,8 @@ namespace StandbyAndTimer.Services.Maintenance;
 /// 4. never deletes a root folder itself; empty sub-folders go, deepest first;
 /// 5. FreedBytes is the size of the files actually deleted;
 /// 6. a root that is a file (MEMORY.DMP) is handled like a file inside a
-///    folder root; a root that is a link is neither followed nor deleted.
+///    folder root; a root that is a link (file or folder) is neither
+///    followed nor deleted.
 /// Scan walks with the same rules, so it shows what a clean would remove.
 /// This is the only code in the app that deletes files.
 /// </summary>
@@ -65,17 +66,16 @@ internal static class SafeFolderCleaner
     {
         if (Directory.Exists(root))
         {
-            Walk(new DirectoryInfo(root), isRoot: true, keepNewerThan, nowUtc, delete, onFile, ct);
+            var dir = new DirectoryInfo(root);
+            // Never through a link: any user can create C:\NVIDIA as a junction.
+            if (IsLinkOrUnreadable(dir)) return true;
+            Walk(dir, isRoot: true, keepNewerThan, nowUtc, delete, onFile, ct);
             return true;
         }
         var file = new FileInfo(root);
         if (!file.Exists) return false;
         ct.ThrowIfCancellationRequested();
-        try
-        {
-            if (file.Attributes.HasFlag(FileAttributes.ReparsePoint)) return true;   // never through a link
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return true; }
+        if (IsLinkOrUnreadable(file)) return true;   // never through a link
         if (keepNewerThan is { } keep && nowUtc - SafeWriteTime(file) < keep) return true;
         onFile(file);
         return true;
@@ -133,6 +133,12 @@ internal static class SafeFolderCleaner
             try { dir.Delete(recursive: false); }   // only succeeds when empty
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         }
+    }
+
+    private static bool IsLinkOrUnreadable(FileSystemInfo root)
+    {
+        try { return root.Attributes.HasFlag(FileAttributes.ReparsePoint); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return true; }
     }
 
     private static DateTime SafeWriteTime(FileInfo f)

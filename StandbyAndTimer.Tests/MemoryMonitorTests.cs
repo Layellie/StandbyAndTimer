@@ -11,7 +11,8 @@ public sealed class MemoryMonitorTests
         public readonly TaskCompletionSource SecondCall = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public Task CheckAndOptimizeAsync(IReadOnlyList<string> executablePaths,
-            Func<string, IReadOnlyList<int>>? pidsOf = null, Func<int, bool>? isRunning = null)
+            Func<string, IReadOnlyList<int>>? pidsOf = null, Func<int, bool>? isRunning = null,
+            IReadOnlyCollection<string>? aboveNormalPaths = null)
         {
             if (Interlocked.Increment(ref Calls) == 1)
                 throw new InvalidOperationException("first tick fails");

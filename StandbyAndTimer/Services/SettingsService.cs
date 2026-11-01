@@ -86,6 +86,11 @@ internal sealed class SettingsService : ISettingsService
             var noBoost   = new HashSet<string>(SplitPaths(key.GetValue("NoBoostGamePaths")), StringComparer.OrdinalIgnoreCase);
             var noPurge   = new HashSet<string>(SplitPaths(key.GetValue("NoAutoPurgeGamePaths")), StringComparer.OrdinalIgnoreCase);
             var purgeOnStart = new HashSet<string>(SplitPaths(key.GetValue("PurgeOnStartGamePaths")), StringComparer.OrdinalIgnoreCase);
+            // 3.0.5: games the IN GAME lock leaves alone (an exception list, so older lists keep the timer on).
+            var noTimer   = new HashSet<string>(SplitPaths(key.GetValue("NoTimerGamePaths")), StringComparer.OrdinalIgnoreCase);
+            // 3.0.5: boosted games at Above normal instead of High, and games purged once when they close.
+            var aboveNormal = new HashSet<string>(SplitPaths(key.GetValue("AboveNormalGamePaths")), StringComparer.OrdinalIgnoreCase);
+            var purgeOnExit = new HashSet<string>(SplitPaths(key.GetValue("PurgeOnExitGamePaths")), StringComparer.OrdinalIgnoreCase);
             settings.Games = SplitPaths(key.GetValue("GamePaths"))
                 .Where(File.Exists)
                 .Select(p => new GameEntry
@@ -93,9 +98,13 @@ internal sealed class SettingsService : ISettingsService
                     DisplayName    = Path.GetFileNameWithoutExtension(p),
                     ExecutablePath = p,
                     AutoAdded      = autoPaths.Contains(p),
-                    BoostPriority  = !noBoost.Contains(p),
+                    Priority       = noBoost.Contains(p)     ? GamePriority.Unchanged
+                                   : aboveNormal.Contains(p) ? GamePriority.AboveNormal
+                                   :                           GamePriority.High,
                     AllowAutoPurge = !noPurge.Contains(p),
-                    PurgeOnStart   = purgeOnStart.Contains(p)
+                    PurgeOnStart   = purgeOnStart.Contains(p),
+                    PurgeOnExit    = purgeOnExit.Contains(p),
+                    TimerInGame    = !noTimer.Contains(p)
                 })
                 .ToList();
             settings.IgnoredGamePaths = SplitPaths(key.GetValue("IgnoredGamePaths")).ToList();
@@ -182,6 +191,9 @@ internal sealed class SettingsService : ISettingsService
             SetPaths(key, "NoBoostGamePaths",     settings.Games.Where(g => !g.BoostPriority).Select(g => g.ExecutablePath));
             SetPaths(key, "NoAutoPurgeGamePaths", settings.Games.Where(g => !g.AllowAutoPurge).Select(g => g.ExecutablePath));
             SetPaths(key, "PurgeOnStartGamePaths", settings.Games.Where(g => g.PurgeOnStart).Select(g => g.ExecutablePath));
+            SetPaths(key, "NoTimerGamePaths",      settings.Games.Where(g => !g.TimerInGame).Select(g => g.ExecutablePath));
+            SetPaths(key, "AboveNormalGamePaths",  settings.Games.Where(g => g.Priority == GamePriority.AboveNormal).Select(g => g.ExecutablePath));
+            SetPaths(key, "PurgeOnExitGamePaths",  settings.Games.Where(g => g.PurgeOnExit).Select(g => g.ExecutablePath));
         }
         catch (Exception ex)
         {

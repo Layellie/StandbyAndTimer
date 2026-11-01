@@ -56,6 +56,7 @@ internal static class CleanupTargets
         Path.Combine(Local, "NVIDIA", "DXCache"),
         Path.Combine(Local, "NVIDIA", "GLCache"),
         Path.Combine(LocalLow, "NVIDIA", "PerDriverVersion", "DXCache"),
+        Path.Combine(LocalLow, "NVIDIA", "DXCache"),   // older drivers (found on a real PC)
         Path.Combine(Common, "NVIDIA Corporation", "NV_Cache"),
     ], blockedWhileGameRuns: true);
 

@@ -727,10 +727,12 @@ public static class Program
             // Real on-screen capture (hardware render path, through DWM): the
             // offscreen RenderTargetBitmap path is software-only and cannot
             // show GPU edge/opacity-layer artifacts.
-            // --docs: the same capture in Dark / English with tidy sample
-            // data and an empty game list, written to docs/ for the README:
-            // every page and dialog, plus the status page in Light.
-            bool docs = args.Contains("--docs") && tag is "Dark-en-US" or "Light-en-US";
+            // --docs: the same capture in Dark with tidy sample data and an
+            // empty game list, written for the README: every page and dialog,
+            // plus the status page in Light. English to docs/, Turkish to docs/tr/.
+            bool docs = args.Contains("--docs") && tag is "Dark-en-US" or "Light-en-US" or "Dark-tr-TR" or "Light-tr-TR";
+            string docsDir = tag.EndsWith("tr-TR") ? Path.Combine("docs", "tr") : "docs";
+            if (docs) Directory.CreateDirectory(docsDir);
             if ((args.Contains("--screen") && tag == "Dark-tr-TR") || docs)
             {
                 var keepGames = vm.Games.ToList();
@@ -763,11 +765,11 @@ public static class Program
                     shot.Save(path, System.Drawing.Imaging.ImageFormat.Png);
                 }
                 string Shot(string page) => docs
-                    ? Path.Combine("docs", page == "window" ? (tag == "Light-en-US" ? "screenshot-light.png" : "screenshot.png") : $"screenshot-{page}.png")
+                    ? Path.Combine(docsDir, page == "window" ? (tag.StartsWith("Light-") ? "screenshot-light.png" : "screenshot.png") : $"screenshot-{page}.png")
                     : Path.Combine(outDir, $"screen-{tag}-{page}.png");
 
                 Grab(Shot("window"), 1500);
-                if (!docs || tag == "Dark-en-US")
+                if (!docs || tag.StartsWith("Dark-"))
                 {
                     // Settings tab (log viewer, combos), then each dialog.
                     foreach (var (page, show) in new (string, Action<bool>)[] {
@@ -788,7 +790,7 @@ public static class Program
                     vm.Games.Clear();
                     foreach (var game in keepGames) vm.Games.Add(game);
                     SetField(vm, "_timerLock", keepLock);
-                    Log($"  saved the {tag} README screenshots in docs/");
+                    Log($"  saved the {tag} README screenshots in {docsDir}");
                 }
 
                 w.Left = -30000; w.Top = -30000; w.Topmost = false;
@@ -1089,8 +1091,8 @@ public static class Program
                 string theme = themeEnum.ToString();
                 string p = Path.Combine(outDir, $"tray-{theme}-{lang}.png");
                 bmp.Save(p, System.Drawing.Imaging.ImageFormat.Png);
-                if (args.Contains("--docs") && theme == "Dark" && lang == "en-US")
-                    bmp.Save(Path.Combine("docs", "screenshot-tray.png"), System.Drawing.Imaging.ImageFormat.Png);
+                if (args.Contains("--docs") && theme == "Dark")
+                    bmp.Save(Path.Combine(lang == "tr-TR" ? Path.Combine("docs", "tr") : "docs", "screenshot-tray.png"), System.Drawing.Imaging.ImageFormat.Png);
 
                 // Sample the plain background and the hovered row: they must
                 // be the palette colours, not the system accent.

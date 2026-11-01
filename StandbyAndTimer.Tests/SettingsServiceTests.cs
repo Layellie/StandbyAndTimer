@@ -60,11 +60,12 @@ public sealed class SettingsServiceTests : IDisposable
             Language = Language.Turkish, Theme = Theme.Light,
             PurgeHotkey = "Ctrl+Shift+F9", NotifyOnPurge = false,
             TimerIdleOffEnabled = true, TimerIdleOffMinutes = 25,
+            AutoPurgeCooldownEnabled = true, AutoPurgeCooldownSeconds = 120, CloseToTrayDirectly = true,
             Games =
             [
-                new GameEntry { DisplayName = "cs2", ExecutablePath = cs2 },
+                new GameEntry { DisplayName = "cs2", ExecutablePath = cs2, Priority = GamePriority.AboveNormal, PurgeOnExit = true },
                 new GameEntry { DisplayName = "VALORANT", ExecutablePath = val, AutoAdded = true,
-                                BoostPriority = false, AllowAutoPurge = false, PurgeOnStart = true },
+                                BoostPriority = false, AllowAutoPurge = false, PurgeOnStart = true, TimerInGame = false },
             ],
         };
 
@@ -84,6 +85,9 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.False(s.NotifyOnPurge);
         Assert.True(s.TimerIdleOffEnabled);
         Assert.Equal(25, s.TimerIdleOffMinutes);
+        Assert.True(s.AutoPurgeCooldownEnabled);
+        Assert.Equal(120, s.AutoPurgeCooldownSeconds);
+        Assert.True(s.CloseToTrayDirectly);
 
         Assert.Equal([cs2, val], s.Games.Select(g => g.ExecutablePath));
         Assert.True(s.Games[0].BoostPriority);
@@ -94,6 +98,12 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.True(s.Games[1].PurgeOnStart);
         Assert.False(s.Games[0].PurgeOnStart);
         Assert.False(s.Games[1].AllowAutoPurge);
+        Assert.True(s.Games[0].TimerInGame);    // the default: the in-game lock turns the timer on for it
+        Assert.False(s.Games[1].TimerInGame);
+        Assert.Equal(GamePriority.AboveNormal, s.Games[0].Priority);
+        Assert.Equal(GamePriority.Unchanged, s.Games[1].Priority);   // the old unticked "Give high priority"
+        Assert.True(s.Games[0].PurgeOnExit);
+        Assert.False(s.Games[1].PurgeOnExit);
     }
 
     [Fact]

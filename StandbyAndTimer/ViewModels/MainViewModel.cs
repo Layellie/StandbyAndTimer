@@ -253,12 +253,17 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             _firstRunCompleted   = s.FirstRunCompleted;
 
             Games.Clear();
+            // A game the user added is never dropped (the next save would erase
+            // it): only exact duplicates, and AUTO-added helpers or duplicates.
             foreach (var g in s.Games)
             {
-                if (InstalledGamesScanner.IsIgnoredExecutable(Path.GetFileNameWithoutExtension(g.ExecutablePath)))
+                if (Games.Any(x => x.ExecutablePath.Equals(g.ExecutablePath, StringComparison.OrdinalIgnoreCase)))
                     continue;
-                if (!IsGameAlreadyListed(g.ExecutablePath))
-                    Games.Add(g);
+                if (g.AutoAdded
+                    && (InstalledGamesScanner.IsIgnoredExecutable(Path.GetFileNameWithoutExtension(g.ExecutablePath))
+                        || IsGameAlreadyListed(g.ExecutablePath)))
+                    continue;
+                Games.Add(g);
             }
 
             _ignoredGamePaths.Clear();
@@ -304,6 +309,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         // Process Lasso) entirely; every listed game is still watched, for
         // the auto-purge pause and the "only in games" options.
         _memoryService.GamePaths            = Games.Where(g => g.BoostPriority).Select(g => g.ExecutablePath).ToList();
+        _memoryService.AboveNormalGamePaths = Games.Where(g => g.Priority == GamePriority.AboveNormal).Select(g => g.ExecutablePath).ToList();
         _memoryService.WatchedGamePaths     = paths;
         _memoryService.NoAutoPurgeGamePaths = Games.Where(g => !g.AllowAutoPurge).Select(g => g.ExecutablePath).ToList();
         // Also keep the detection service in sync — without this, a game the
@@ -472,10 +478,15 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     internal async Task HandleRunningGamesAsync(IReadOnlyList<string> running)
     {
         var started = running.Where(p => !_runningGames.Contains(p)).ToList();
+        var exited  = _runningGames.Where(p => !running.Contains(p, StringComparer.OrdinalIgnoreCase)).ToList();
         _runningGames.Clear();
         _runningGames.UnionWith(running);
 
-        await ApplyGameStateAsync(running.Count > 0).ConfigureAwait(true);
+        // The IN GAME lock follows only the games that want the timer
+        // ("Timer on while it runs"); a game removed from the list meanwhile counts as one.
+        bool timerGameRunning = running.Any(p =>
+            Games.FirstOrDefault(g => g.ExecutablePath.Equals(p, StringComparison.OrdinalIgnoreCase))?.TimerInGame != false);
+        await ApplyGameStateAsync(timerGameRunning).ConfigureAwait(true);
 
         bool purgeNow = false;
         foreach (string path in started)
@@ -491,6 +502,19 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         // games start together, in the chosen mode, without AUTO PURGE.
         if (purgeNow)
             await _purgeService.PurgeAsync(PurgeTrigger.GameStart).ConfigureAwait(true);
+
+        // "Purge once: at exit": frees the cache the game left behind; one
+        // purge for the tick even if two such games close together.
+        bool purgeAtExit = false;
+        foreach (string path in exited)
+        {
+            var game = Games.FirstOrDefault(g => g.ExecutablePath.Equals(path, StringComparison.OrdinalIgnoreCase));
+            if (game is null) continue;   // removed from the list meanwhile
+            purgeAtExit |= game.PurgeOnExit;
+            Logger.Info($"Game exited: {game.DisplayName}");
+        }
+        if (purgeAtExit)
+            await _purgeService.PurgeAsync(PurgeTrigger.GameExit).ConfigureAwait(true);
     }
 
     // "High priority · Timer on (0.50 ms) · Auto purge paused": only the
@@ -499,7 +523,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         var parts = new List<string>(3);
         if (GameModeEnabled)
-            parts.Add(_localization.GetString(game.BoostPriority ? "Str_GameNotify_Boost" : "Str_GameNotify_NoBoost"));
+            parts.Add(_localization.GetString(game.Priority switch
+            {
+                GamePriority.High        => "Str_GameNotify_Boost",
+                GamePriority.AboveNormal => "Str_GameNotify_AboveNormal",
+                _                        => "Str_GameNotify_NoBoost",
+            }));
         parts.Add(TimerActive
             ? string.Format(CultureInfo.CurrentCulture, _localization.GetString("Str_GameNotify_TimerOn"), ActualTimerMs)
             : _localization.GetString("Str_GameNotify_TimerOff"));
@@ -720,6 +749,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             PurgeTrigger.Auto      => kind + ", " + _localization.GetString("Str_PurgeTrigger_Auto"),
             PurgeTrigger.GameStart => kind + ", " + _localization.GetString("Str_PurgeTrigger_GameStart"),
+            PurgeTrigger.GameExit  => kind + ", " + _localization.GetString("Str_PurgeTrigger_GameExit"),
             _                      => kind,
         };
     }
@@ -852,17 +882,24 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     partial void OnSelectedGameChanged(GameEntry? value)
     {
         RemoveGameCommand.NotifyCanExecuteChanged();
-        OnPropertyChanged(nameof(SelectedGameBoost));
+        OnPropertyChanged(nameof(SelectedGamePriority));
         OnPropertyChanged(nameof(SelectedGameAutoPurge));
-        OnPropertyChanged(nameof(SelectedGamePurgeOnStart));
+        OnPropertyChanged(nameof(SelectedGamePurgeOnce));
+        OnPropertyChanged(nameof(SelectedGameTimerInGame));
     }
 
     // Per-game switches for the selected list entry (the strip under the
     // Game Mode list). Each change re-syncs the monitor and persists.
-    public bool SelectedGameBoost
+
+    /// <summary>The Priority menu's choices, in menu order.</summary>
+    public IReadOnlyList<GamePriority> GamePriorities { get; } =
+        [GamePriority.High, GamePriority.AboveNormal, GamePriority.Unchanged];
+
+    /// <summary>Applied the next time the game starts (a running, boosted game keeps its class).</summary>
+    public GamePriority SelectedGamePriority
     {
-        get => SelectedGame?.BoostPriority ?? true;
-        set => SetSelectedGameRule(g => g.BoostPriority = value);
+        get => SelectedGame?.Priority ?? GamePriority.High;
+        set => SetSelectedGameRule(g => g.Priority = value);
     }
 
     public bool SelectedGameAutoPurge
@@ -871,19 +908,43 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         set => SetSelectedGameRule(g => g.AllowAutoPurge = value);
     }
 
-    public bool SelectedGamePurgeOnStart
+    /// <summary>The Purge once menu's choices, in menu order.</summary>
+    public IReadOnlyList<PurgeOnceOption> PurgeOnceOptions { get; } =
+        [PurgeOnceOption.Off, PurgeOnceOption.AtStart, PurgeOnceOption.AtExit, PurgeOnceOption.Both];
+
+    /// <summary>One menu over the game's two switches: purge once at start and / or at exit.</summary>
+    public PurgeOnceOption SelectedGamePurgeOnce
     {
-        get => SelectedGame?.PurgeOnStart ?? false;
-        set => SetSelectedGameRule(g => g.PurgeOnStart = value);
+        get => SelectedGame is not { } g ? PurgeOnceOption.Off
+             : (g.PurgeOnStart, g.PurgeOnExit) switch
+               {
+                   (true, true)  => PurgeOnceOption.Both,
+                   (true, false) => PurgeOnceOption.AtStart,
+                   (false, true) => PurgeOnceOption.AtExit,
+                   _             => PurgeOnceOption.Off,
+               };
+        set => SetSelectedGameRule(g =>
+        {
+            g.PurgeOnStart = value is PurgeOnceOption.AtStart or PurgeOnceOption.Both;
+            g.PurgeOnExit  = value is PurgeOnceOption.AtExit  or PurgeOnceOption.Both;
+        });
+    }
+
+    /// <summary>The IN GAME lock turns the timer on while this game runs (applied at the next monitor tick).</summary>
+    public bool SelectedGameTimerInGame
+    {
+        get => SelectedGame?.TimerInGame ?? true;
+        set => SetSelectedGameRule(g => g.TimerInGame = value);
     }
 
     private void SetSelectedGameRule(Action<GameEntry> apply)
     {
         if (SelectedGame is null) return;
         apply(SelectedGame);
-        OnPropertyChanged(nameof(SelectedGameBoost));
+        OnPropertyChanged(nameof(SelectedGamePriority));
         OnPropertyChanged(nameof(SelectedGameAutoPurge));
-        OnPropertyChanged(nameof(SelectedGamePurgeOnStart));
+        OnPropertyChanged(nameof(SelectedGamePurgeOnce));
+        OnPropertyChanged(nameof(SelectedGameTimerInGame));
         SyncMonitorGames();
         PersistSettings();
     }
@@ -1337,6 +1398,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 public sealed record TimerToggledArgs(bool IsActive, double ActualMs);
 
 public sealed record GameStartedArgs(string GameName, string Body);
+
+/// <summary>The Game Mode strip's "Purge once" menu: PurgeOnStart / PurgeOnExit in one choice.</summary>
+public enum PurgeOnceOption { Off, AtStart, AtExit, Both }
 
 /// <summary>A finished purge for the tray balloon, with the session's purge count.</summary>
 public sealed record PurgeNotice(PurgeResult Result, int TotalPurges);

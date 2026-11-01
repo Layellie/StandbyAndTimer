@@ -16,6 +16,9 @@ public interface IMemoryMonitorService : IDisposable
     /// <summary>Games that get High priority / all cores (per-game "boost" on).</summary>
     IReadOnlyList<string> GamePaths { get; set; }
 
+    /// <summary>The boosted games (a subset of <see cref="GamePaths"/>) that get Above normal instead of High.</summary>
+    IReadOnlyList<string> AboveNormalGamePaths { get; set; }
+
     /// <summary>Every listed game: checked each tick and reported in <see cref="MemorySnapshot.RunningGamePaths"/>.</summary>
     IReadOnlyList<string> WatchedGamePaths { get; set; }
 
