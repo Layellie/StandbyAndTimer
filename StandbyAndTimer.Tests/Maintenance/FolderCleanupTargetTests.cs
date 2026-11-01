@@ -60,6 +60,9 @@ public sealed class FolderCleanupTargetTests : IDisposable
         string local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         string windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
         Assert.Contains(Path.Combine(local, "NVIDIA", "DXCache"), CleanupTargets.NvidiaShader().Roots);
+        // Older NVIDIA drivers keep DirectX shaders in LocalLow\NVIDIA\DXCache too (found on a real PC).
+        string localLow = Path.Combine(Path.GetDirectoryName(local)!, "LocalLow");
+        Assert.Contains(Path.Combine(localLow, "NVIDIA", "DXCache"), CleanupTargets.NvidiaShader().Roots);
         Assert.Contains(Path.Combine(local, "AMD", "DxCache"), CleanupTargets.AmdShader().Roots);
         Assert.Equal([Path.Combine(windows, "Temp")], CleanupTargets.WindowsTemp().Roots);
         Assert.Equal([Path.Combine(windows, "SoftwareDistribution", "Download")], CleanupTargets.WindowsUpdate().Roots);

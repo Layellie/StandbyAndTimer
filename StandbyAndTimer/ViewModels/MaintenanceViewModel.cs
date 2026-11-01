@@ -199,8 +199,16 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
 
     // ── Selection (persisted by MainViewModel as CleanupSelection) ───────────
 
-    /// <summary>Comma-separated ticked ids. With no rows (inert), what Initialize got.</summary>
-    public string? SelectionText => Rows.Count == 0 ? _rawSelection : string.Join(",", Rows.Where(r => r.IsChecked).Select(r => r.Id));
+    /// <summary>
+    /// Comma-separated ticked ids. With no rows (inert), what Initialize got.
+    /// Ids this version has no row for (ticked in a later version) are kept,
+    /// so going back and forth between versions does not lose them.
+    /// </summary>
+    public string? SelectionText => Rows.Count == 0
+        ? _rawSelection
+        : string.Join(",", Rows.Where(r => r.IsChecked).Select(r => r.Id).Concat(_unknownIds));
+
+    private IReadOnlyList<string> _unknownIds = [];
 
     public void Initialize(string? selection)
     {
@@ -208,6 +216,10 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
         var ids = selection is null
             ? CleanupTargetIds.DefaultSelection.ToHashSet()
             : selection.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet();
+        var known = Rows.Select(r => r.Id).ToHashSet();
+        _unknownIds = selection is null ? [] : selection
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(id => !known.Contains(id)).Distinct().ToList();   // in their saved order
         _initializing = true;
         try { foreach (var r in Rows) r.IsChecked = ids.Contains(r.Id); }
         finally { _initializing = false; }
@@ -314,7 +326,10 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
         }
         catch (OperationCanceledException)
         {
-            row.SizeText = "";
+            // Only the current scan clears the row (the tab was left). A scan a
+            // newer one replaced (Rescan pressed twice, the Recycle Bin's shell
+            // query ignoring cancellation) must not blank the newer result.
+            if (_scanCts is { } current && current.Token == ct) row.SizeText = "";
             throw;
         }
         catch (Exception ex)
@@ -417,7 +432,9 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
             StatusRequested?.Invoke(this, string.Format(CultureInfo.CurrentCulture, _loc.GetString("Str_Status_CleanDone"), SizeText(total)));
         }
         finally { IsCleaning = false; }
-        await RefreshAsync(keepResults: true);
+        // Rescan only while the tab is shown: selecting it again scans anyway,
+        // and nothing should run while it is not shown.
+        if (IsActive) await RefreshAsync(keepResults: true);
         _ = ClearResultsLaterAsync();
     }
 
@@ -576,12 +593,12 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
 
     private string TargetName(string id) => _loc.GetString("Str_Clean_" + id);
 
-    private void Relabel()
+    internal void Relabel()
     {
         foreach (var r in Rows)
         {
             r.Name = TargetName(r.Id);
-            r.Tip  = _loc.GetString("Str_CleanTip_" + r.Id);
+            r.Tip  = _loc.GetString(r.IsBlocked ? "Str_Maint_BlockedGame" : "Str_CleanTip_" + r.Id);
         }
         if (Shaders is not null) Shaders.Name = _loc.GetString("Str_Clean_shader-caches");
         UpdateShaderGroup();
