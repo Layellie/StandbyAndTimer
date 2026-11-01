@@ -475,7 +475,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _runningGames.Clear();
         _runningGames.UnionWith(running);
 
-        await ApplyGameStateAsync(running.Count > 0).ConfigureAwait(true);
+        // The IN GAME lock follows only the games that want the timer
+        // ("Timer on while it runs"); a game removed from the list meanwhile counts as one.
+        bool timerGameRunning = running.Any(p =>
+            Games.FirstOrDefault(g => g.ExecutablePath.Equals(p, StringComparison.OrdinalIgnoreCase))?.TimerInGame != false);
+        await ApplyGameStateAsync(timerGameRunning).ConfigureAwait(true);
 
         bool purgeNow = false;
         foreach (string path in started)
@@ -855,6 +859,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(SelectedGameBoost));
         OnPropertyChanged(nameof(SelectedGameAutoPurge));
         OnPropertyChanged(nameof(SelectedGamePurgeOnStart));
+        OnPropertyChanged(nameof(SelectedGameTimerInGame));
     }
 
     // Per-game switches for the selected list entry (the strip under the
@@ -877,6 +882,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         set => SetSelectedGameRule(g => g.PurgeOnStart = value);
     }
 
+    /// <summary>The IN GAME lock turns the timer on while this game runs (applied at the next monitor tick).</summary>
+    public bool SelectedGameTimerInGame
+    {
+        get => SelectedGame?.TimerInGame ?? true;
+        set => SetSelectedGameRule(g => g.TimerInGame = value);
+    }
+
     private void SetSelectedGameRule(Action<GameEntry> apply)
     {
         if (SelectedGame is null) return;
@@ -884,6 +896,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(SelectedGameBoost));
         OnPropertyChanged(nameof(SelectedGameAutoPurge));
         OnPropertyChanged(nameof(SelectedGamePurgeOnStart));
+        OnPropertyChanged(nameof(SelectedGameTimerInGame));
         SyncMonitorGames();
         PersistSettings();
     }

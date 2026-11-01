@@ -171,6 +171,8 @@
     <sys:String x:Key="Str_Card_PurgesTip">Temizlik geçmişini görmek için tıkla</sys:String>
     <sys:String x:Key="Str_Game_PurgeOnStartLabel">Açılınca bir kez temizle</sys:String>
     <sys:String x:Key="Str_Game_PurgeOnStartTip">Bu oyun başladığında, RAM'e yüklenmeden önce bir kez standby temizlenir (seçili türde: normal, hafif ya da derin). OTO TEMİZLE kapalıyken de çalışır.</sys:String>
+    <sys:String x:Key="Str_Game_TimerLabel">Açıkken timer'ı aç</sys:String>
+    <sys:String x:Key="Str_Game_TimerTip">OYUNDA kilidiyle bu oyun açıkken timer açılır. Timer'a ihtiyacı olmayan bir oyun için kaldırın: listedeki, timer isteyen başka bir oyun yine açar.</sys:String>
     <sys:String x:Key="Str_GameNotify_PurgeAtStart">Açılış temizliği</sys:String>
     <sys:String x:Key="Str_History_Title">Temizlik geçmişi</sys:String>
     <sys:String x:Key="Str_History_Subtitle">Ne kadar bellek boşaltıldı; yeniden başlatınca da kalır</sys:String>
@@ -243,7 +245,7 @@
     <sys:String x:Key="Str_Help_Game1">Oyun Modu açıkken listedeki bir oyun çalışınca ona Yüksek öncelik ve tüm CPU çekirdekleri verilir, Windows'un arka plan kısıtlaması (EcoQoS) kapatılır.</sys:String>
     <sys:String x:Key="Str_Help_Game2">Oyun eklemek için EKLE'ye bas ya da .exe dosyasını listeye sürükle. Tam ekran çalışan bir oyunu uygulama kendisi de bulup OTO etiketiyle ekler; OTO bir oyunu silersen bir daha eklenmez. Oyunlar .exe adına göre tanınır.</sys:String>
     <sys:String x:Key="Str_Help_Game3">Listeden bir oyun seçince altındaki iki ayar sadece o oyun içindir. "Yüksek öncelik ver" kapalıysa uygulama o oyuna hiç dokunmaz; Process Lasso gibi bir araç kullanıyorsan kapat (oyunun bir sonraki açılışında geçerli olur). "Açıkken oto temizle" kapalıysa o oyun çalışırken otomatik temizlik durur.</sys:String>
-    <sys:String x:Key="Str_Help_Game4">"Açılınca bir kez temizle": o oyun başladığında, RAM'e yüklenmeden önce bir kez standby temizlenir. Eşik ayarlamadan, OTO TEMİZLE kapalıyken de çalışır.</sys:String>
+    <sys:String x:Key="Str_Help_Game4">"Açılınca bir kez temizle": o oyun başladığında, RAM'e yüklenmeden önce bir kez standby temizlenir. Eşik ayarlamadan, OTO TEMİZLE kapalıyken de çalışır. "Açıkken timer'ı aç": OYUNDA kilidiyle timer'ı yalnızca bu kutusu işaretli oyunlar açar.</sys:String>
     <sys:String x:Key="Str_Help_Game5">Listedeki bir oyuna çift tıklayınca oyun başlar. Uygulama yönetici olarak çalışsa da oyun senin normal yetkinle açılır (masaüstünden açmak gibi), böylece Steam overlay ve anti-cheat sorun çıkarmaz.</sys:String>
     <sys:String x:Key="Str_Help_KeysTitle">KISAYOLLAR VE BİLDİRİMLER</sys:String>
     <sys:String x:Key="Str_Help_Keys1">Varsayılan kısayollar: Ctrl+Alt+P temizler, Ctrl+Alt+T timer'ı açıp kapatır, Ctrl+Alt+O oto temizliği açıp kapatır. Değiştirmek için Ayarlar → Kısayollar'da kısayola tıklayıp yeni tuşlara bas; Esc vazgeçer. Kısayollar uygulama arka plandayken de çalışır.</sys:String>

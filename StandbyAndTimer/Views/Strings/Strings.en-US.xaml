@@ -171,6 +171,8 @@
     <sys:String x:Key="Str_Card_PurgesTip">Click to see the purge history</sys:String>
     <sys:String x:Key="Str_Game_PurgeOnStartLabel">Purge once when it starts</sys:String>
     <sys:String x:Key="Str_Game_PurgeOnStartTip">When this game starts, the standby list is purged once, before the game fills RAM (in the selected mode: normal, light or deep). Works with AUTO PURGE off too.</sys:String>
+    <sys:String x:Key="Str_Game_TimerLabel">Timer on while it runs</sys:String>
+    <sys:String x:Key="Str_Game_TimerTip">With the IN GAME lock, the timer turns on while this game runs. Untick it for a game that does not need the timer: another listed game that wants it still turns it on.</sys:String>
     <sys:String x:Key="Str_GameNotify_PurgeAtStart">Purge at start</sys:String>
     <sys:String x:Key="Str_History_Title">Purge history</sys:String>
     <sys:String x:Key="Str_History_Subtitle">How much memory was freed; kept across restarts</sys:String>
@@ -243,7 +245,7 @@
     <sys:String x:Key="Str_Help_Game1">With Game Mode on, a listed game that runs gets High priority and all CPU cores, and Windows' background throttling (EcoQoS) is switched off for it.</sys:String>
     <sys:String x:Key="Str_Help_Game2">To add a game, press ADD or drag its .exe onto the list. The app also finds games running fullscreen and adds them with an AUTO tag; delete an AUTO game and it is never added again. Games are recognised by their .exe name.</sys:String>
     <sys:String x:Key="Str_Help_Game3">Select a game in the list and the two switches below apply to that game only. With "Give high priority" off the app leaves the game alone; turn it off if you use a tool such as Process Lasso (it applies the next time the game starts). With "Auto purge while it runs" off, automatic purges pause while that game runs.</sys:String>
-    <sys:String x:Key="Str_Help_Game4">"Purge once when it starts": when that game starts, the standby list is purged once, before the game fills RAM. No thresholds to set; works with AUTO PURGE off.</sys:String>
+    <sys:String x:Key="Str_Help_Game4">"Purge once when it starts": when that game starts, the standby list is purged once, before the game fills RAM. No thresholds to set; works with AUTO PURGE off. "Timer on while it runs": with the IN GAME lock, only the games that have it ticked turn the timer on.</sys:String>
     <sys:String x:Key="Str_Help_Game5">Double-click a game in the list to start it. Even though the app runs as administrator, the game starts with your normal rights (like opening it from the desktop), so the Steam overlay and anti-cheat are not affected.</sys:String>
     <sys:String x:Key="Str_Help_KeysTitle">HOTKEYS AND NOTIFICATIONS</sys:String>
     <sys:String x:Key="Str_Help_Keys1">Default hotkeys: Ctrl+Alt+P purges, Ctrl+Alt+T toggles the timer, Ctrl+Alt+O toggles auto purge. To change one, click it under Settings → Hotkeys and press the new keys; Esc cancels. Hotkeys work while the app is in the background.</sys:String>

@@ -11,6 +11,7 @@ public sealed class GameEntry : INotifyPropertyChanged
     private bool _boostPriority  = true;
     private bool _allowAutoPurge = true;
     private bool _purgeOnStart;
+    private bool _timerInGame    = true;
 
     public string DisplayName    { get; init; } = string.Empty;
     public string ExecutablePath { get; init; } = string.Empty;
@@ -45,8 +46,19 @@ public sealed class GameEntry : INotifyPropertyChanged
         set => Set(ref _purgeOnStart, value);
     }
 
+    /// <summary>
+    /// True: the IN GAME timer lock turns the timer on while this game runs.
+    /// False: it leaves the timer alone for this game (another running game
+    /// that wants it still turns it on). On by default.
+    /// </summary>
+    public bool TimerInGame
+    {
+        get => _timerInGame;
+        set => Set(ref _timerInGame, value);
+    }
+
     /// <summary>True when a per-game switch is not at its default; drives the list row marker.</summary>
-    public bool HasCustomRules => !_boostPriority || !_allowAutoPurge || _purgeOnStart;
+    public bool HasCustomRules => !_boostPriority || !_allowAutoPurge || _purgeOnStart || !_timerInGame;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

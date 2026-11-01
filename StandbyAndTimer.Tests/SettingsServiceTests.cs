@@ -64,7 +64,7 @@ public sealed class SettingsServiceTests : IDisposable
             [
                 new GameEntry { DisplayName = "cs2", ExecutablePath = cs2 },
                 new GameEntry { DisplayName = "VALORANT", ExecutablePath = val, AutoAdded = true,
-                                BoostPriority = false, AllowAutoPurge = false, PurgeOnStart = true },
+                                BoostPriority = false, AllowAutoPurge = false, PurgeOnStart = true, TimerInGame = false },
             ],
         };
 
@@ -94,6 +94,8 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.True(s.Games[1].PurgeOnStart);
         Assert.False(s.Games[0].PurgeOnStart);
         Assert.False(s.Games[1].AllowAutoPurge);
+        Assert.True(s.Games[0].TimerInGame);    // the default: the in-game lock turns the timer on for it
+        Assert.False(s.Games[1].TimerInGame);
     }
 
     [Fact]
