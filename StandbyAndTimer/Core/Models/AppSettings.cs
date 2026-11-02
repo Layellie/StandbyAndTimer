@@ -30,6 +30,8 @@ public sealed class AppSettings
     public bool        NotifyOnPurge         { get; set; } = true;
     public bool        NotifyOnTimerToggle   { get; set; } = true;
     public bool        NotifyOnGameDetected  { get; set; } = true;
+    // 3.0.7: the balloon after Auto maintenance cleaned by itself (it always showed before).
+    public bool        NotifyOnAutoClean     { get; set; } = true;
 
     // v2.1.0 — idle gate for auto-purge. When the flag is on, the monitor
     // only fires a threshold-triggered purge once the user has been idle for

@@ -262,7 +262,7 @@
     <sys:String x:Key="Str_Help_Game5">Listedeki bir oyuna çift tıklayınca oyun başlar. Uygulama yönetici olarak çalışsa da oyun senin normal yetkinle açılır (masaüstünden açmak gibi), böylece Steam overlay ve anti-cheat sorun çıkarmaz.</sys:String>
     <sys:String x:Key="Str_Help_KeysTitle">KISAYOLLAR VE BİLDİRİMLER</sys:String>
     <sys:String x:Key="Str_Help_Keys1">Varsayılan kısayollar: Ctrl+Alt+P temizler, Ctrl+Alt+T timer'ı açıp kapatır, Ctrl+Alt+O oto temizliği açıp kapatır. Değiştirmek için Ayarlar → Kısayollar'da kısayola tıklayıp yeni tuşlara bas; Esc vazgeçer. Kısayollar uygulama arka plandayken de çalışır.</sys:String>
-    <sys:String x:Key="Str_Help_Keys2">Bildirimler temizlikte, timer açılıp kapanınca, bir oyun listeye eklenince ve listedeki bir oyun başlayınca çıkar. Her biri Ayarlar → Bildirimler'den kapatılabilir.</sys:String>
+    <sys:String x:Key="Str_Help_Keys2">Bildirimler temizlikte, timer açılıp kapanınca, bir oyun listeye eklenince, listedeki bir oyun başlayınca ve Otomatik bakım kendiliğinden temizlik yapınca çıkar. Her biri Ayarlar → Bildirimler'den kapatılabilir.</sys:String>
     <sys:String x:Key="Str_Help_Keys3">Tepsi simgesine sağ tıklayınca pencereyi açmadan derin temizliği, Oyun Modu'nu ve timer kilidini değiştirebilirsin.</sys:String>
     <sys:String x:Key="Str_Help_MoreTitle">AYARLAR VE DİĞER</sys:String>
     <sys:String x:Key="Str_Help_More1">Başlangıçta başlat: Windows'a girince Görev Zamanlayıcı ile tepside açılır.</sys:String>
@@ -322,6 +322,8 @@
     <sys:String x:Key="Str_Settings_NotifyOnTimer">Zamanlayıcı bildirimleri</sys:String>
     <sys:String x:Key="Str_Settings_NotifyOnGame">Oyun bildirimleri</sys:String>
     <sys:String x:Key="Str_Settings_NotifyOnGameTip">Listedeki bir oyun açılınca ve tam ekranda yeni bir oyun algılanınca bildirim gösterir.</sys:String>
+    <sys:String x:Key="Str_Settings_NotifyOnAutoClean">Otomatik bakım bildirimleri</sys:String>
+    <sys:String x:Key="Str_Settings_NotifyOnAutoCleanTip">Otomatik bakım açılışta kendiliğinden temizlik yapınca bildirim gösterir ve ne kadar yer açtığını söyler.</sys:String>
     <sys:String x:Key="Str_Settings_HotkeysSection">KISAYOLLAR</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyPurge">Manuel temizle</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyTimer">Zamanlayıcı aç/kapa</sys:String>
