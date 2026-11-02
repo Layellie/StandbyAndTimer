@@ -107,7 +107,7 @@
              make the whole row hit-testable for the tooltip. -->
         <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource SettingsGroupStyle}">
             <StackPanel VerticalAlignment="Center">
-                <Grid Margin="0,2,0,3"
+                <Grid Margin="0,1"
                       Background="Transparent"
                       ToolTip="{DynamicResource Str_Settings_LaunchOnStartupDesc}">
                     <Grid.ColumnDefinitions>
@@ -122,7 +122,7 @@
                               Style="{StaticResource ToggleSwitchStyle}"/>
                 </Grid>
 
-                <Grid Margin="0,3"
+                <Grid Margin="0,1"
                       Background="Transparent"
                       ToolTip="{DynamicResource Str_Settings_CheckUpdateOnStartupDesc}">
                     <Grid.ColumnDefinitions>
@@ -139,7 +139,7 @@
 
                 <!-- Turn the timer off when idle: Off / 5 / 10 / 15 / Custom;
                      Custom shows a minutes box left of the picker. -->
-                <Grid Margin="0,3,0,2"
+                <Grid Margin="0,1"
                       Background="Transparent"
                       ToolTip="{DynamicResource Str_Settings_TimerIdleOffTip}">
                     <Grid.ColumnDefinitions>
@@ -170,6 +170,22 @@
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
+                </Grid>
+
+                <!-- Turn the timer off on battery (laptops; no effect without a battery). -->
+                <Grid Margin="0,1"
+                      Background="Transparent"
+                      ToolTip="{DynamicResource Str_Settings_TimerOffOnBatteryTip}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{DynamicResource Str_Settings_TimerOffOnBattery}"
+                               Style="{StaticResource SettingTitleStyle}"
+                               VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <CheckBox Grid.Column="1"
+                              IsChecked="{Binding TimerOffOnBattery}"
+                              Style="{StaticResource ToggleSwitchStyle}"/>
                 </Grid>
             </StackPanel>
         </Border>
@@ -379,7 +395,7 @@
         </Grid>
         <Border Grid.Row="5" Grid.Column="0" Style="{StaticResource SettingsGroupStyle}" Margin="0">
             <StackPanel>
-                <Grid Margin="0,2,0,4">
+                <Grid Margin="0,1">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -395,7 +411,7 @@
                             CommandParameter="purge"/>
                 </Grid>
 
-                <Grid Margin="0,4">
+                <Grid Margin="0,1">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -411,7 +427,7 @@
                             CommandParameter="timer"/>
                 </Grid>
 
-                <Grid Margin="0,4,0,2">
+                <Grid Margin="0,1">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>

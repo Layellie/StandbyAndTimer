@@ -48,6 +48,16 @@ public sealed class AppSettings
     // next input. Off by default: unchanged behaviour on upgrade.
     public bool        TimerIdleOffEnabled   { get; set; }
     public int         TimerIdleOffMinutes   { get; set; } = 10;
+    // 3.0.6: switch the timer off while the laptop runs on battery.
+    public bool        TimerOffOnBattery     { get; set; }
+
+    // 3.0.6: Auto maintenance. Off by default; when on, the "safe" cleanups run
+    // the first time the app starts after AutoCleanIntervalDays calendar days
+    // (nothing runs in the background). The last run is machine-specific:
+    // not taken from an import.
+    public bool        AutoCleanEnabled      { get; set; }
+    public int         AutoCleanIntervalDays { get; set; } = 7;
+    public DateTime?   AutoCleanLastRunUtc   { get; set; }
 
     // System settings (Administrator badge): GlobalTimerResolutionRequests.
     // The registry value itself is the state; these track the one-time

@@ -65,6 +65,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty] private bool _timerIdleOffEnabled;
     [ObservableProperty] private int  _timerIdleOffMinutes = 10;
+    [ObservableProperty] private bool _timerOffOnBattery;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsIdleOffCustom))]
@@ -126,6 +127,12 @@ public sealed partial class SettingsViewModel : ObservableObject
     private string? _pendingVersion;
     private string? _pendingSha256;
 
+    // "What's new": the notes of a newer release, in the UI language, shown
+    // in a dialog with the choice to install now or later.
+    [ObservableProperty] private bool   _isUpdateNotesVisible;
+    [ObservableProperty] private string _updateNotesTitle = "";
+    [ObservableProperty] private IReadOnlyList<NoteLine> _updateNotesLines = [];
+
     public event EventHandler? SettingsChanged;
 
     // Raised after a successful ImportSettings — payload is the freshly loaded
@@ -182,10 +189,11 @@ public sealed partial class SettingsViewModel : ObservableObject
         bool autoStartEnabled, Language language, bool updateCheckEnabled, Theme theme,
         bool notifyOnPurge, bool notifyOnTimerToggle, bool notifyOnGameDetected,
         string purgeHotkey, string timerHotkey, string autoPurgeHotkey,
-        bool timerIdleOffEnabled = false, int timerIdleOffMinutes = 10)
+        bool timerIdleOffEnabled = false, int timerIdleOffMinutes = 10, bool timerOffOnBattery = false)
     {
         using (new InitScope(v => _isInitializing = v))
         {
+            TimerOffOnBattery     = timerOffOnBattery;
             TimerIdleOffEnabled   = timerIdleOffEnabled;
             TimerIdleOffMinutes   = Math.Clamp(timerIdleOffMinutes, 1, IdleOffMaxMinutes);
             SelectedIdleOffOption = IdleOffOptionFor(TimerIdleOffEnabled, TimerIdleOffMinutes);
@@ -376,6 +384,12 @@ public sealed partial class SettingsViewModel : ObservableObject
         SettingsChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    partial void OnTimerOffOnBatteryChanged(bool value)
+    {
+        if (_isInitializing) return;
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     partial void OnNotifyOnGameDetectedChanged(bool value)
     {
         if (_isInitializing) return;
@@ -526,6 +540,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             _pendingVersion  = result.LatestVersion;
             _pendingSha256   = result.ExpectedSha256;
             UpdateAvailable  = true;
+            ShowUpdateNotes(result);
         }
         else if (!string.IsNullOrWhiteSpace(result.ReleaseUrl))
         {
@@ -536,6 +551,28 @@ public sealed partial class SettingsViewModel : ObservableObject
     }
 
     private bool CanCheckUpdate() => !IsDownloading;
+
+    private void ShowUpdateNotes(UpdateCheckResult result)
+    {
+        var lines = ReleaseNotes.ToLines(ReleaseNotes.Extract(result.ReleaseNotes, SelectedLanguage));
+        if (lines.Count == 0) return;
+
+        UpdateNotesTitle = string.Format(CultureInfo.CurrentCulture,
+            _localization.GetString("Str_UpdateNotes_Title"), result.LatestVersion);
+        UpdateNotesLines     = lines;
+        IsUpdateNotesVisible = true;
+    }
+
+    [RelayCommand]
+    private void CloseUpdateNotes() => IsUpdateNotesVisible = false;
+
+    // The dialog's "Download & Install": closes it and starts the same download.
+    [RelayCommand(CanExecute = nameof(CanDownloadAndInstall))]
+    private async Task InstallFromNotesAsync()
+    {
+        IsUpdateNotesVisible = false;
+        await DownloadAndInstallAsync().ConfigureAwait(true);
+    }
 
     [RelayCommand(CanExecute = nameof(CanDownloadAndInstall))]
     private async Task DownloadAndInstallAsync()

@@ -68,6 +68,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     // Timer switched off by "turn off when idle"; the next input turns it
     // back on. A TIMER press clears it (the user is in charge then).
     private bool _timerPausedForIdle;
+    // "Turn the timer off on battery": the same pause, plus whether the user
+    // pressed TIMER (or the lock) while the battery rule applied; that stays
+    // in charge until the power source changes.
+    private bool _timerPausedForBattery;
+    private bool _timerOnByUserOnBattery;
+    private bool _onBattery;
     // Listed games running at the last tick, to spot the ones that just started.
     private readonly HashSet<string> _runningGames = new(StringComparer.OrdinalIgnoreCase);
     [ObservableProperty] private double  _actualTimerMs;
@@ -155,6 +161,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             imported.GlobalTimerSetByApp       = now.GlobalTimerSetByApp;
             imported.GlobalTimerChangedUtc     = now.GlobalTimerChangedUtc;
             imported.GlobalTimerBootValue      = now.GlobalTimerBootValue;
+            imported.AutoCleanLastRunUtc       = now.AutoCleanLastRunUtc;   // this PC's own last run
             ApplySettings(imported);
         };
         Settings.SnapshotProvider  = BuildCurrentSettings;
@@ -173,6 +180,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         Maintenance = maintenance ?? MaintenanceViewModel.Inert();
         Maintenance.SettingsChanged += (_, _) => PersistSettings();
         Maintenance.StatusRequested += (_, text) => StatusMessage = text;
+        Maintenance.AutoCleaned     += (_, bytes) => AutoMaintenanceNotification?.Invoke(this,
+            string.Format(CultureInfo.CurrentCulture, _localization.GetString("Str_Tray_NotifyAutoCleanBody"),
+                          MainViewModel.FormatSize(bytes / (1024 * 1024))));
         Maintenance.AnyGameRunning  = () => _lastSnapshot?.AnyGameRunning == true;
         // The Settings tab can also be opened from outside (tray "Settings"):
         // keep the selected tab in step with Settings.IsOpen.
@@ -202,6 +212,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         UpdateRefreshRate();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
 
+        // Power source: read now and when Windows says it changed. No polling.
+        _onBattery = ReadOnBattery();
+        Microsoft.Win32.SystemEvents.PowerModeChanged += OnPowerModeChanged;
+
         System.Diagnostics.Process.GetCurrentProcess().PriorityClass =
             System.Diagnostics.ProcessPriorityClass.High;
 
@@ -210,7 +224,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         // itself on every launch.
         if (TimerLock == TimerLockMode.Locked)
             await ActivateTimerInternalAsync(silent: true).ConfigureAwait(true);
+        await ApplyBatteryStateAsync(_onBattery, anyGameRunning: false).ConfigureAwait(true);
         ShowWindowsResolution();
+        AutoMaintenanceTask = RunAutoMaintenanceAsync();
 
         // Don't overwrite "Timer active — 0.50 ms" with "Ready".
         SetIdleStatus();
@@ -274,12 +290,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 s.AutoStartEnabled, s.Language, s.UpdateCheckEnabled, s.Theme,
                 s.NotifyOnPurge, s.NotifyOnTimerToggle, s.NotifyOnGameDetected,
                 s.PurgeHotkey, s.TimerHotkey, s.AutoPurgeHotkey,
-                s.TimerIdleOffEnabled, s.TimerIdleOffMinutes);
+                s.TimerIdleOffEnabled, s.TimerIdleOffMinutes, s.TimerOffOnBattery);
             SystemSettings.Initialize(s.GlobalTimerPromptAnswered, s.GlobalTimerSetByApp,
                               s.GlobalTimerChangedUtc, s.GlobalTimerBootValue,
                               s.AutoPurgeCooldownEnabled, s.AutoPurgeCooldownSeconds,
                               s.CloseToTrayDirectly);
             Maintenance.Initialize(s.CleanupSelection);
+            Maintenance.InitializeAuto(s.AutoCleanEnabled, s.AutoCleanIntervalDays, s.AutoCleanLastRunUtc);
         }
         SyncMonitorThresholds();
         SyncMonitorGames();
@@ -375,7 +392,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         IdleThresholdMinutes  = IdleThresholdMinutes,
         GameModeEnabled       = GameModeEnabled,
         AutoStartEnabled      = Settings.AutoStartEnabled,
-        TimerResolutionActive = TimerActive || _timerPausedForIdle,   // idle pause is not "off"
+        TimerResolutionActive = TimerActive || _timerPausedForIdle || _timerPausedForBattery,   // a pause is not "off"
         TimerLock             = TimerLock,
         TimerLocked           = TimerLock == TimerLockMode.Locked,   // for 2.2.x
         Language              = Settings.SelectedLanguage,
@@ -389,6 +406,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         AutoPurgeHotkey       = Settings.AutoPurgeHotkeyText,
         TimerIdleOffEnabled   = Settings.TimerIdleOffEnabled,
         TimerIdleOffMinutes   = Settings.TimerIdleOffMinutes,
+        TimerOffOnBattery     = Settings.TimerOffOnBattery,
         GlobalTimerPromptAnswered = SystemSettings.PromptAnswered,
         GlobalTimerSetByApp       = SystemSettings.GlobalTimerSetByApp,
         GlobalTimerChangedUtc     = SystemSettings.GlobalTimerChangedUtc,
@@ -399,6 +417,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         FirstRunCompleted     = _firstRunCompleted,
         Games                 = [.. Games],
         IgnoredGamePaths      = [.. _ignoredGamePaths],
+        AutoCleanEnabled      = Maintenance.AutoCleanEnabled,
+        AutoCleanIntervalDays = Maintenance.AutoCleanIntervalDays,
+        AutoCleanLastRunUtc   = Maintenance.AutoCleanLastRunUtc,
         CleanupSelection      = Maintenance.SelectionText
     };
 
@@ -433,6 +454,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             await HandleRunningGamesAsync(snapshot.RunningGamePaths ?? []).ConfigureAwait(true);
             await ApplyIdleStateAsync(snapshot.IdleFor, snapshot.AnyGameRunning).ConfigureAwait(true);
+            await ApplyBatteryStateAsync(_onBattery, snapshot.AnyGameRunning).ConfigureAwait(true);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -469,6 +491,86 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 _localization.GetString("Str_Status_TimerIdleBack"), ActualTimerMs);
             Logger.Info("Input after idle: timer ON");
         }
+    }
+
+    // ── Auto maintenance at start-up ─────────────────────────────────────────
+
+    /// <summary>"Auto maintenance cleaned 1.2 GB" for a tray balloon (the safe cleanups ran by themselves).</summary>
+    public event EventHandler<string>? AutoMaintenanceNotification;
+
+    /// <summary>The wait before an unattended cleanup, so it never competes with the start-up (tests skip it).</summary>
+    internal Func<TimeSpan, CancellationToken, Task> AutoMaintenanceDelay { get; set; } = Task.Delay;
+    internal Task? AutoMaintenanceTask { get; private set; }
+    private static readonly TimeSpan AutoMaintenanceWait = TimeSpan.FromSeconds(30);
+
+    // One look at start-up, not a timer: when the chosen number of days has
+    // passed, the safe cleanups run once, a little after the window is up.
+    private async Task RunAutoMaintenanceAsync()
+    {
+        try
+        {
+            if (!Maintenance.IsAutoDueNow) return;
+            await AutoMaintenanceDelay(AutoMaintenanceWait, _appCts.Token).ConfigureAwait(false);
+            await OnUiAsync(() => Maintenance.RunAutoIfDueAsync()).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            Logger.Warn($"Auto maintenance: {ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
+    // Tests set a fixed power source; the app asks Windows.
+    internal Func<bool> ReadOnBattery { get; set; } = PowerSource.IsOnBattery;
+
+    /// <summary>
+    /// "Turn the timer off on battery": unplugged turns a running timer off,
+    /// which lets the CPU sleep and saves the battery; plugged in turns it back
+    /// on. Not while a listed game runs (like the idle switch-off: a game is
+    /// played on purpose). A TIMER press on battery stays on until the power
+    /// source changes.
+    /// </summary>
+    internal async Task ApplyBatteryStateAsync(bool onBattery, bool anyGameRunning)
+    {
+        _onBattery = onBattery;
+        bool off = Settings.TimerOffOnBattery && onBattery && !anyGameRunning;
+
+        if (!off)
+        {
+            _timerOnByUserOnBattery = false;
+            if (!_timerPausedForBattery) return;
+            _timerPausedForBattery = false;
+            if (TimerActive) return;   // already back on (a game start, a lock change)
+            await ActivateTimerInternalAsync(silent: true).ConfigureAwait(true);
+            StatusMessage = string.Format(CultureInfo.CurrentCulture,
+                _localization.GetString("Str_Status_TimerBatteryBack"), ActualTimerMs);
+            Logger.Info("Power back: timer ON");
+        }
+        else if (TimerActive && !_timerPausedForBattery && !_timerOnByUserOnBattery)
+        {
+            DeactivateTimer(notify: false);
+            _timerPausedForBattery = true;
+            StatusMessage = _localization.GetString("Str_Status_TimerBatteryOff");
+            Logger.Info("On battery: timer OFF");
+        }
+    }
+
+    // True while the battery rule would keep the timer off (for the user's own switch-ons).
+    private bool BatteryRuleApplies() =>
+        Settings.TimerOffOnBattery && _onBattery && !(_lastSnapshot?.AnyGameRunning ?? false);
+
+    // Raised on the SystemEvents thread: apply on the UI thread.
+    private void OnPowerModeChanged(object? sender, Microsoft.Win32.PowerModeChangedEventArgs e)
+    {
+        if (e.Mode != Microsoft.Win32.PowerModes.StatusChange) return;
+        Application.Current?.Dispatcher.InvokeAsync(async () =>
+        {
+            try { await ApplyBatteryStateAsync(ReadOnBattery(), _lastSnapshot?.AnyGameRunning ?? false); }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                Logger.Warn($"Power change handling: {ex.GetType().Name}: {ex.Message}");
+            }
+        });
     }
 
     /// <summary>
@@ -991,17 +1093,20 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task ToggleTimerResolutionAsync()
     {
-        _timerStartedForGame = false;   // the user is in charge now
-        _timerPausedForIdle  = false;
+        _timerStartedForGame   = false;   // the user is in charge now
+        _timerPausedForIdle    = false;
+        _timerPausedForBattery = false;
         if (TimerActive)
         {
             DeactivateTimer(notify: true);
+            _timerOnByUserOnBattery = false;
             StatusMessage = _localization.GetString("Str_Status_TimerOff");
             Logger.Info("User toggled timer OFF");
         }
         else
         {
             await ActivateTimerInternalAsync(silent: false).ConfigureAwait(true);
+            _timerOnByUserOnBattery = BatteryRuleApplies();
         }
         PersistSettings();
     }
@@ -1027,6 +1132,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             case TimerLockMode.Locked when !TimerActive:
                 await ActivateTimerInternalAsync(silent: false).ConfigureAwait(true);
+                _timerOnByUserOnBattery = BatteryRuleApplies();
                 break;
             case TimerLockMode.InGame when _anyGameRunning && !TimerActive:
                 await ActivateTimerInternalAsync(silent: true).ConfigureAwait(true);
@@ -1327,6 +1433,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         return Task.CompletedTask;
     }
 
+    private static Task OnUiAsync(Func<Task> work)
+    {
+        if (Application.Current?.Dispatcher is { } d && !d.CheckAccess()) return d.InvokeAsync(work).Task.Unwrap();
+        return work();
+    }
+
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private async Task ActivateTimerInternalAsync(bool silent)
@@ -1386,6 +1498,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _timerService.ResolutionMeasured   -= OnTimerResolutionMeasured;
         _gameDetection.GameDetected        -= OnGameDetected;
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
+        Microsoft.Win32.SystemEvents.PowerModeChanged       -= OnPowerModeChanged;
 
         InstalledGamesDialog?.Dispose();
         _timerService.Dispose();

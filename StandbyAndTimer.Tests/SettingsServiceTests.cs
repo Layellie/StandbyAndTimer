@@ -61,6 +61,9 @@ public sealed class SettingsServiceTests : IDisposable
             PurgeHotkey = "Ctrl+Shift+F9", NotifyOnPurge = false,
             TimerIdleOffEnabled = true, TimerIdleOffMinutes = 25,
             AutoPurgeCooldownEnabled = true, AutoPurgeCooldownSeconds = 120, CloseToTrayDirectly = true,
+            TimerOffOnBattery = true,
+            AutoCleanEnabled = true, AutoCleanIntervalDays = 30,
+            AutoCleanLastRunUtc = new DateTime(2026, 11, 2, 17, 0, 0, DateTimeKind.Utc),
             Games =
             [
                 new GameEntry { DisplayName = "cs2", ExecutablePath = cs2, Priority = GamePriority.AboveNormal, PurgeOnExit = true },
@@ -88,6 +91,10 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.True(s.AutoPurgeCooldownEnabled);
         Assert.Equal(120, s.AutoPurgeCooldownSeconds);
         Assert.True(s.CloseToTrayDirectly);
+        Assert.True(s.TimerOffOnBattery);
+        Assert.True(s.AutoCleanEnabled);
+        Assert.Equal(30, s.AutoCleanIntervalDays);
+        Assert.Equal(new DateTime(2026, 11, 2, 17, 0, 0, DateTimeKind.Utc), s.AutoCleanLastRunUtc);
 
         Assert.Equal([cs2, val], s.Games.Select(g => g.ExecutablePath));
         Assert.True(s.Games[0].BoostPriority);

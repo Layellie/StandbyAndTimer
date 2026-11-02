@@ -31,6 +31,12 @@ dotnet test StandbyAndTimer.Tests/StandbyAndTimer.Tests.csproj -c Release
 # UI renders + view checks after XAML/style/string changes (PNGs in ui-render-out/)
 dotnet run --project tools/UiRender -c Release
 
+# Which dialog or list draws a grey keyboard-focus frame (needs the screen; fails on any)
+dotnet run --project tools/UiRender -c Release -- --focus
+
+# README screenshots (real screen, English into docs/, Turkish into docs/tr/; leave the mouse alone)
+dotnet run --project tools/UiRender -c Release -- --docs
+
 # Redraw the app icon (every size 16-256 px, vector) into StandbyAndTimer/app_icon.ico
 dotnet run --project tools/IconGen -c Release -- square StandbyAndTimer/app_icon.ico ui-render-out
 ```
@@ -110,4 +116,4 @@ The tray uses WinForms' `NotifyIcon` (`UseWindowsForms`, aliased as `WinForms` i
 - Everything needs Administrator (`app.manifest`); without elevation the native calls fail silently.
 - Since Windows 10 2004 a timer resolution request reaches only processes that request one themselves; games that never ask stay at 15.6 ms unless GlobalTimerResolutionRequests is on (Windows 11, takes effect after a restart). Windows 11 can also ignore requests of hidden windows: the app opts itself and boosted games out of that throttling.
 - An active timer keeps Windows from sleeping (`SetThreadExecutionState`); "Turn the timer off when idle" exists for that.
-- Release flow: pre-release beta first, then the final release; see the release notes of earlier versions for the format (SHA256 line + `.sha256` asset).
+- Release flow: pre-release beta first, then the final release; see the release notes of earlier versions for the format (SHA256 line + `.sha256` asset). The release body is also the in-app "what's new" text (`ReleaseNotes`): an English `## What's New in vX` section, a Turkish `## Yenilikler (vX)` section (English is shown when it is missing), then `### Verification` with the installer name and SHA256 (never shown).

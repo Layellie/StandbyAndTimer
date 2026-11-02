@@ -93,6 +93,51 @@ public sealed partial class ShaderGroupViewModel : ObservableObject
     }
 }
 
+/// <summary>
+/// One line of the auto maintenance dialog: its own tick (the main card's ticks
+/// are not touched) over a cleanup row, which supplies name, size and result.
+/// </summary>
+public sealed partial class AutoItemViewModel : ObservableObject, IDisposable
+{
+    private readonly Action _changed;
+
+    public AutoItemViewModel(CleanupRowViewModel row, bool isChecked, Action changed)
+    {
+        Row         = row;
+        _isChecked  = isChecked;
+        _changed    = changed;
+        row.PropertyChanged += OnRowChanged;
+    }
+
+    public CleanupRowViewModel Row { get; }
+    public string Id   => Row.Id;
+    public string Name => Row.Name;
+    public string Tip  => Row.Tip;
+    public string DisplayText => Row.DisplayText;
+    public bool CanClean => Row.CanClean;
+
+    [ObservableProperty] private bool _isChecked;
+
+    partial void OnIsCheckedChanged(bool value) => _changed();
+
+    private void OnRowChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        switch (e.PropertyName)
+        {
+            case nameof(CleanupRowViewModel.Name):        OnPropertyChanged(nameof(Name)); break;
+            case nameof(CleanupRowViewModel.Tip):         OnPropertyChanged(nameof(Tip)); break;
+            case nameof(CleanupRowViewModel.DisplayText): OnPropertyChanged(nameof(DisplayText)); break;
+            case nameof(CleanupRowViewModel.CanClean):
+            case nameof(CleanupRowViewModel.Scan):
+                OnPropertyChanged(nameof(CanClean));
+                _changed();
+                break;
+        }
+    }
+
+    public void Dispose() => Row.PropertyChanged -= OnRowChanged;
+}
+
 public sealed record CleanupHistoryRow(CleanupRecord Record, string Time, string What, string Freed);
 
 /// <summary>One bar of the history's all-time chart: short label, height in px, the largest one, tooltip.</summary>
@@ -172,6 +217,7 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool   _isActive;
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(CleanSelectedCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CleanAutoCommand))]
     [NotifyCanExecuteChangedFor(nameof(RescanCommand))]
     private bool _isCleaning;
     [ObservableProperty] private string _powerPlanText     = "";
@@ -398,7 +444,12 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
     private bool CanCleanSelected() => !IsCleaning && Rows.Any(r => r.IsChecked && r.CanClean);
 
     [RelayCommand(CanExecute = nameof(CanCleanSelected))]
-    private async Task CleanSelectedAsync()
+    private async Task CleanSelectedAsync() =>
+        await CleanRowsAsync(Rows.Where(r => r.IsChecked && r.CanClean).ToList(), "Str_Status_CleanDone");
+
+    // Cleans the given rows one after the other, records each in the history,
+    // says the total in the status line ("doneKey"), then rescans if the tab is shown.
+    private async Task<long> CleanRowsAsync(IReadOnlyList<CleanupRowViewModel> rows, string doneKey)
     {
         _resultCts?.Cancel();   // results of an earlier clean are replaced now
         IsCleaning = true;
@@ -407,7 +458,7 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
         long total = 0;
         try
         {
-            foreach (var row in Rows.Where(r => r.IsChecked && r.CanClean).ToList())
+            foreach (var row in rows)
             {
                 row.LastResult = null;
                 row.ResultText = _loc.GetString("Str_Maint_Cleaning");
@@ -429,14 +480,150 @@ public sealed partial class MaintenanceViewModel : ObservableObject, IDisposable
             }
             _store.Save(stats);
             RefreshHistory();
-            StatusRequested?.Invoke(this, string.Format(CultureInfo.CurrentCulture, _loc.GetString("Str_Status_CleanDone"), SizeText(total)));
+            StatusRequested?.Invoke(this, string.Format(CultureInfo.CurrentCulture, _loc.GetString(doneKey), SizeText(total)));
         }
         finally { IsCleaning = false; }
         // Rescan only while the tab is shown: selecting it again scans anyway,
         // and nothing should run while it is not shown.
         if (IsActive) await RefreshAsync(keepResults: true);
         _ = ClearResultsLaterAsync();
+        return total;
     }
+
+    // ── Auto maintenance ─────────────────────────────────────────────────────
+    // A dialog with a "safe" section (ticked) and a "review" section (unticked),
+    // and the option to run the safe section by itself: the first time the app
+    // starts after N calendar days. Nothing runs in the background.
+
+    /// <summary>The "every ..." menu: days between automatic runs.</summary>
+    public IReadOnlyList<int> AutoCleanIntervals { get; } = [1, 7, 14, 30];
+    private const int AutoCleanDefaultDays = 7;
+
+    public ObservableCollection<AutoItemViewModel> AutoSafeItems   { get; } = [];
+    public ObservableCollection<AutoItemViewModel> AutoReviewItems { get; } = [];
+
+    [ObservableProperty] private bool   _isAutoVisible;
+    [ObservableProperty] private long   _autoSelectedBytes;
+    [ObservableProperty] private string _autoCleanButtonText = "";
+
+    [ObservableProperty] private bool _autoCleanEnabled;
+    [ObservableProperty] private int  _autoCleanIntervalDays = AutoCleanDefaultDays;
+
+    /// <summary>The day the interval counts from: the last run, or the day it was switched on (local time).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AutoCleanNextText))]
+    private DateTime? _autoCleanLastRun;
+
+    public DateTime? AutoCleanLastRunUtc => AutoCleanLastRun?.ToUniversalTime();
+
+    /// <summary>"Next: 9 Nov 2026, when the app starts" while it is switched on.</summary>
+    public string AutoCleanNextText => AutoCleanEnabled && AutoCleanLastRun is { } last
+        ? string.Format(CultureInfo.CurrentCulture, _loc.GetString("Str_Auto_Next"),
+                        last.Date.AddDays(AutoCleanIntervalDays).ToString("d", CultureInfo.CurrentCulture))
+        : "";
+
+    /// <summary>Called by MainViewModel with the saved settings; applying them never saves.</summary>
+    public void InitializeAuto(bool enabled, int intervalDays, DateTime? lastRunUtc)
+    {
+        _initializing = true;
+        try
+        {
+            AutoCleanEnabled      = enabled;
+            AutoCleanIntervalDays = AutoCleanIntervals.Contains(intervalDays) ? intervalDays : AutoCleanDefaultDays;
+            AutoCleanLastRun      = lastRunUtc is { } utc
+                ? (utc.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(utc, DateTimeKind.Utc) : utc).ToLocalTime()
+                : null;
+        }
+        finally { _initializing = false; }
+        OnPropertyChanged(nameof(AutoCleanNextText));
+    }
+
+    partial void OnAutoCleanEnabledChanged(bool value)
+    {
+        OnPropertyChanged(nameof(AutoCleanNextText));
+        if (_initializing) return;
+        // Switching it on starts the interval today: nothing is cleaned until it has passed.
+        if (value) AutoCleanLastRun = Now();
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    partial void OnAutoCleanIntervalDaysChanged(int value)
+    {
+        OnPropertyChanged(nameof(AutoCleanNextText));
+        if (_initializing) return;
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Due on the calendar day N days after the last run, not N x 24 hours: "every week" means the same weekday.</summary>
+    internal static bool IsAutoDue(bool enabled, int days, DateTime? lastRun, DateTime now) =>
+        enabled && lastRun is { } last && now.Date >= last.Date.AddDays(days);
+
+    internal bool IsAutoDueNow => IsAutoDue(AutoCleanEnabled, AutoCleanIntervalDays, AutoCleanLastRun, Now());
+
+    /// <summary>Raised after an unattended run that freed something (bytes freed).</summary>
+    public event EventHandler<long>? AutoCleaned;
+
+    /// <summary>
+    /// Runs the safe cleanups when they are due, once. Skipped while a game
+    /// runs or a clean is already going (it is due again at the next start).
+    /// </summary>
+    internal async Task<bool> RunAutoIfDueAsync()
+    {
+        if (IsCleaning || !IsAutoDueNow) return false;
+        if (AnyGameRunning())
+        {
+            Logger.Info("Auto maintenance: a game runs, waiting for the next start");
+            return false;
+        }
+
+        var rows = CleanupTargetIds.AutoSafe.Select(id => Rows.FirstOrDefault(r => r.Id == id)).OfType<CleanupRowViewModel>().ToList();
+        Logger.Info($"Auto maintenance: cleaning {rows.Count} safe item(s)");
+        long freed = await CleanRowsAsync(rows, "Str_Status_AutoCleanDone");
+        AutoCleanLastRun = Now();
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+        if (freed > 0) AutoCleaned?.Invoke(this, freed);
+        return true;
+    }
+
+    [RelayCommand]
+    private async Task OpenAutoAsync()
+    {
+        AutoSafeItems.Clear();
+        AutoReviewItems.Clear();
+        foreach (string id in CleanupTargetIds.AutoSafe)
+            if (Rows.FirstOrDefault(r => r.Id == id) is { } row) AutoSafeItems.Add(NewAutoItem(row, safe: true));
+        foreach (string id in CleanupTargetIds.AutoReview)
+            if (Rows.FirstOrDefault(r => r.Id == id) is { } row) AutoReviewItems.Add(NewAutoItem(row, safe: false));
+        UpdateAutoTotal();
+        IsAutoVisible = true;
+        await RefreshAsync(keepResults: true);
+    }
+
+    [RelayCommand]
+    private void CloseAuto()
+    {
+        IsAutoVisible = false;
+        foreach (var item in AutoSafeItems.Concat(AutoReviewItems)) item.Dispose();
+        AutoSafeItems.Clear();
+        AutoReviewItems.Clear();
+    }
+
+    private AutoItemViewModel NewAutoItem(CleanupRowViewModel row, bool safe) => new(row, isChecked: safe, UpdateAutoTotal);
+
+    private void UpdateAutoTotal()
+    {
+        var ticked = AutoSafeItems.Concat(AutoReviewItems).Where(i => i.IsChecked && i.CanClean).ToList();
+        AutoSelectedBytes = ticked.Sum(i => i.Row.Scan!.Bytes);
+        AutoCleanButtonText = string.Format(CultureInfo.CurrentCulture, _loc.GetString("Str_Maint_CleanSelected"), SizeText(AutoSelectedBytes));
+        CleanAutoCommand.NotifyCanExecuteChanged();
+    }
+
+    private bool CanCleanAuto() => !IsCleaning && AutoSafeItems.Concat(AutoReviewItems).Any(i => i.IsChecked && i.CanClean);
+
+    [RelayCommand(CanExecute = nameof(CanCleanAuto))]
+    private async Task CleanAutoAsync() =>
+        await CleanRowsAsync(AutoSafeItems.Concat(AutoReviewItems).Where(i => i.IsChecked && i.CanClean).Select(i => i.Row).ToList(),
+                             "Str_Status_CleanDone");
 
     // "6 MB freed" stays a few seconds, then the rows show their new size.
     // A one-shot wait after a clean, not a timer; a newer clean restarts it.

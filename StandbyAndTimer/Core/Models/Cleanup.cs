@@ -39,4 +39,17 @@ public static class CleanupTargetIds
 
     /// <summary>Ticked when CleanupSelection was never saved.</summary>
     public static readonly IReadOnlyList<string> DefaultSelection = [UserTemp, WindowsTemp, WindowsUpdate];
+
+    /// <summary>
+    /// Auto maintenance, "safe" section: nothing there is something the user
+    /// would miss (Windows or the apps rebuild it). Also the only items that
+    /// ever run unattended. Never a shader cache: a game would rebuild those
+    /// the next time it starts, which is stutter.
+    /// </summary>
+    public static readonly IReadOnlyList<string> AutoSafe =
+        [UserTemp, WindowsTemp, WindowsLogs, CrashDumps, DeliveryOptimization, WindowsUpdate];
+
+    /// <summary>Auto maintenance, "review" section: the user ticks what to clean, every time.</summary>
+    public static readonly IReadOnlyList<string> AutoReview =
+        [RecycleBin, WindowsOld, DriverLeftovers, SystemCrashDumps];
 }

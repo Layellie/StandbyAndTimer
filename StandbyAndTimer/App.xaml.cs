@@ -139,6 +139,7 @@ public partial class App : Application
         _viewModel.PurgeNotification        += OnPurgeNotification;
         _viewModel.TimerToggledNotification += OnTimerToggledNotification;
         _viewModel.GameStartedNotification  += OnGameStartedNotification;
+        _viewModel.AutoMaintenanceNotification += OnAutoMaintenanceNotification;
         _viewModel.GameAutoDetected         += OnGameAutoDetected;
         _viewModel.SettingsPersisted        += (_, latest) => _userSettings = latest;
 
@@ -283,6 +284,7 @@ public partial class App : Application
             _viewModel.PurgeNotification        -= OnPurgeNotification;
             _viewModel.TimerToggledNotification -= OnTimerToggledNotification;
             _viewModel.GameStartedNotification  -= OnGameStartedNotification;
+            _viewModel.AutoMaintenanceNotification -= OnAutoMaintenanceNotification;
             _viewModel.GameAutoDetected         -= OnGameAutoDetected;
         }
 
@@ -442,6 +444,7 @@ public partial class App : Application
             if (_mainWindow is null) return;
             var hwnd = new System.Windows.Interop.WindowInteropHelper(_mainWindow).Handle;
             StandbyAndTimer.MainWindow.ApplyDarkTitleBar(hwnd);
+            StandbyAndTimer.MainWindow.ApplyBorderColor(hwnd);
         });
 
     // Theme.System is already resolved by EffectiveTheme; no service yet
@@ -509,6 +512,10 @@ public partial class App : Application
             args.GameName);
         _tray?.ShowBalloon(title, args.Body);
     }
+
+    // The safe cleanups ran by themselves (Auto maintenance): always say so, they deleted files.
+    private void OnAutoMaintenanceNotification(object? sender, string body) =>
+        _tray?.ShowBalloon(_localization!.GetString("Str_Tray_NotifyAutoCleanTitle"), body);
 
     private void OnTimerToggledNotification(object? sender, TimerToggledArgs args)
     {

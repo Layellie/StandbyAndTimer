@@ -9,7 +9,9 @@ public sealed record UpdateCheckResult(
     // ("SHA256: <64 hex>") or fetched from a `*.exe.sha256` companion asset.
     // Empty if the release does not publish one — in that case the update flow
     // proceeds with only TLS-level integrity from the GitHub download.
-    string ExpectedSha256)
+    string ExpectedSha256,
+    // The release body as published (Markdown); ReleaseNotes.Extract turns it into the "what's new" text.
+    string ReleaseNotes = "")
 {
     public static UpdateCheckResult None() => new(false, string.Empty, string.Empty, string.Empty, string.Empty);
 }

@@ -56,9 +56,12 @@
             <!-- Rescan: the sizes are read once on selection; this reads them again.
                  Sized and pulled up like Settings' log Refresh, so the label row keeps
                  its height and both cards line up with the other pages. -->
-            <Button Content="{DynamicResource Str_Maint_Rescan}" Command="{Binding RescanCommand}"
-                    Style="{StaticResource GhostButtonStyle}" Height="20" Padding="10,0" FontSize="10"
-                    HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-3,0,4"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-3,0,4">
+                <Button Content="{DynamicResource Str_Maint_Auto}" Command="{Binding OpenAutoCommand}"
+                        Style="{StaticResource GhostButtonStyle}" Height="20" Padding="10,0" FontSize="10" Margin="0,0,6,0"/>
+                <Button Content="{DynamicResource Str_Maint_Rescan}" Command="{Binding RescanCommand}"
+                        Style="{StaticResource GhostButtonStyle}" Height="20" Padding="10,0" FontSize="10"/>
+            </StackPanel>
         </Grid>
         <TextBlock Grid.Row="0" Grid.Column="2" Text="{DynamicResource Str_Maint_WindowsSection}" Style="{StaticResource PageSectionLabelStyle}"/>
 

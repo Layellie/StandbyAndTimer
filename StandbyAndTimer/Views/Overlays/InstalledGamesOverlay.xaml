@@ -51,6 +51,7 @@
                         <TextBlock Text="{Binding Message}" FontSize="12" Foreground="{DynamicResource AppFgDim}"
                                    HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"/>
                         <ListBox ItemsSource="{Binding Items}"
+                                 FocusVisualStyle="{x:Null}"
                                  Background="Transparent" BorderThickness="0"
                                  VirtualizingPanel.IsVirtualizing="True"
                                  VirtualizingPanel.VirtualizationMode="Recycling"

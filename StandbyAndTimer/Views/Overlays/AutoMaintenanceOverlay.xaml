@@ -1,0 +1,166 @@
+<UserControl x:Class="StandbyAndTimer.Views.Overlays.AutoMaintenanceOverlay"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:StandbyAndTimer.ViewModels"
+             FontFamily="{StaticResource AppFont}" FontSize="13">
+    <UserControl.Resources>
+        <Style x:Key="ValueTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize"          Value="12"/>
+            <Setter Property="Foreground"        Value="{DynamicResource AppFgDim}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextTrimming"      Value="CharacterEllipsis"/>
+        </Style>
+
+        <!-- One line: tick, name, size / result (same look as the cleanup card). -->
+        <DataTemplate x:Key="AutoItemTemplate" DataType="{x:Type vm:AutoItemViewModel}">
+            <Grid Margin="0,2" Background="Transparent" ToolTip="{Binding Tip}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <CheckBox IsChecked="{Binding IsChecked}"
+                          IsEnabled="{Binding CanClean}"
+                          Style="{StaticResource DarkCheckBoxStyle}"
+                          VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="{Binding Name}"
+                           TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center" Margin="6,0,8,0">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource SettingTitleStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CanClean}" Value="False">
+                                    <Setter Property="Opacity" Value="0.5"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Grid.Column="2" Text="{Binding DisplayText}"
+                           Style="{StaticResource ValueTextStyle}" MaxWidth="120"/>
+            </Grid>
+        </DataTemplate>
+
+        <!-- The interval menu: the number of days shown as its own words. -->
+        <DataTemplate x:Key="EveryTemplate">
+            <TextBlock Foreground="{DynamicResource InputFg}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Text" Value="{DynamicResource Str_Auto_Every_7}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding}" Value="1">
+                                <Setter Property="Text" Value="{DynamicResource Str_Auto_Every_1}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding}" Value="14">
+                                <Setter Property="Text" Value="{DynamicResource Str_Auto_Every_14}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding}" Value="30">
+                                <Setter Property="Text" Value="{DynamicResource Str_Auto_Every_30}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <!-- Auto maintenance (DataContext = MaintenanceViewModel). Two cards side by
+         side: SAFE (ticked) and REVIEW FIRST (unticked). Under them the option to
+         run the SAFE items by itself. Built when opened, dropped when closed. -->
+    <Border Background="{DynamicResource ModalOverlayBrush}">
+        <Border.InputBindings>
+            <MouseBinding MouseAction="LeftClick" Command="{Binding CloseAutoCommand}"/>
+        </Border.InputBindings>
+        <Border HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="{DynamicResource Surface2Bg}"
+                BorderBrush="{DynamicResource BorderColor}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource RadiusLarge}"
+                Padding="22,18,22,16"
+                Width="660"
+                MouseLeftButtonDown="DialogMouseDown">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="9" Height="9" Fill="{DynamicResource AccentPrimary}"
+                                 VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="{DynamicResource Str_Auto_Title}" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppFg}"/>
+                    </StackPanel>
+                    <TextBlock Text="{DynamicResource Str_Auto_Subtitle}" FontSize="12"
+                               Foreground="{DynamicResource AppFgDim}" Margin="17,0,0,0"/>
+                </StackPanel>
+
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource Str_Auto_SafeTitle}" Style="{StaticResource PageSectionLabelStyle}"/>
+                        <Border Style="{StaticResource SettingsGroupStyle}" Margin="0" MinHeight="196">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Str_Auto_SafeHint}" FontSize="11"
+                                           Foreground="{DynamicResource AppFgDim}" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                                <ItemsControl ItemsSource="{Binding AutoSafeItems}"
+                                              ItemTemplate="{StaticResource AutoItemTemplate}" Focusable="False"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="{DynamicResource Str_Auto_ReviewTitle}" Style="{StaticResource PageSectionLabelStyle}"/>
+                        <Border Style="{StaticResource SettingsGroupStyle}" Margin="0" MinHeight="196">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Str_Auto_ReviewHint}" FontSize="11"
+                                           Foreground="{DynamicResource AppFgDim}" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                                <ItemsControl ItemsSource="{Binding AutoReviewItems}"
+                                              ItemTemplate="{StaticResource AutoItemTemplate}" Focusable="False"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Run the SAFE items by itself: off by default. -->
+                <Grid Grid.Row="2" Margin="0,12,0,0" Background="Transparent"
+                      ToolTip="{DynamicResource Str_Auto_EnableTip}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <CheckBox IsChecked="{Binding AutoCleanEnabled}" Style="{StaticResource ToggleSwitchStyle}"
+                              VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" Text="{DynamicResource Str_Auto_Enable}"
+                               Style="{StaticResource SettingTitleStyle}" VerticalAlignment="Center" Margin="10,0,10,0"/>
+                    <TextBlock Grid.Column="2" Text="{Binding AutoCleanNextText}" FontSize="11"
+                               Foreground="{DynamicResource AppFgDim}" TextTrimming="CharacterEllipsis"
+                               VerticalAlignment="Center"/>
+                    <ComboBox Grid.Column="3" Width="120" Height="26" VerticalAlignment="Center"
+                              ItemsSource="{Binding AutoCleanIntervals}"
+                              SelectedItem="{Binding AutoCleanIntervalDays}"
+                              ItemTemplate="{StaticResource EveryTemplate}"
+                              Style="{StaticResource SettingsComboBoxStyle}"
+                              IsEnabled="{Binding AutoCleanEnabled}"/>
+                </Grid>
+
+                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+                    <Button Content="{DynamicResource Str_About_Close}" Command="{Binding CloseAutoCommand}"
+                            Style="{StaticResource GhostButtonStyle}" MinWidth="80" Height="30" Margin="0,0,8,0"/>
+                    <Button Content="{Binding AutoCleanButtonText}" Command="{Binding CleanAutoCommand}"
+                            Style="{StaticResource DarkButtonStyle}" MinWidth="160" Height="30"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Border>
+</UserControl>
