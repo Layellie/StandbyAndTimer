@@ -166,6 +166,9 @@ public static class Program
             }
         return result;
     }
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    static extern bool PrintWindow(IntPtr hwnd, IntPtr hdcBlt, uint nFlags);
+
     static void Pump()
     {
         for (int i = 0; i < 3; i++)
@@ -888,27 +891,41 @@ public static class Program
                     timer.Tick += (_, _) => { timer.Stop(); frame.Continue = false; };
                     timer.Start();
                     Dispatcher.PushFrame(frame);
-                    var tl = root.PointToScreen(new Point(0, 0));
-                    var br = root.PointToScreen(new Point(root.ActualWidth, root.ActualHeight));
-                    int cw = (int)(br.X - tl.X), ch = (int)(br.Y - tl.Y);
-                    using var shot = new System.Drawing.Bitmap(cw, ch);
+                    // The window itself (PrintWindow, full content, through DWM), not a copy of the
+                    // screen: another window in front (the user's browser) cannot land in the image.
+                    double dpi = VisualTreeHelper.GetDpi(root).DpiScaleX;
+                    int cw = (int)Math.Round(root.ActualWidth * dpi), ch = (int)Math.Round(root.ActualHeight * dpi);
+                    using var shot = new System.Drawing.Bitmap(cw, ch, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
                     using (var g = System.Drawing.Graphics.FromImage(shot))
-                        g.CopyFromScreen((int)tl.X, (int)tl.Y, 0, 0, new System.Drawing.Size(cw, ch));
-                    // Windows 11 rounds the window (8 DIPs), but the copy is a rectangle: the
-                    // four corners hold whatever is on the desktop behind the window.
-                    using var rounded = RoundWindowCorners(shot, 8 * VisualTreeHelper.GetDpi(root).DpiScaleX);
+                    {
+                        var hdc = g.GetHdc();
+                        try { PrintWindow(new System.Windows.Interop.WindowInteropHelper(w).Handle, hdc, 2 /* PW_RENDERFULLCONTENT */); }
+                        finally { g.ReleaseHdc(hdc); }
+                    }
+                    // PrintWindow includes the frame Windows draws in its default dark grey. On
+                    // screen the app gives that ring the theme's border colour (DWMWA_BORDER_COLOR,
+                    // MainWindow.ApplyBorderColor): paint it so, so the README shows what the app shows.
+                    var themeRing = ((SolidColorBrush)Application.Current.Resources["BorderColor"]).Color;
+                    var ringColor = System.Drawing.Color.FromArgb(themeRing.R, themeRing.G, themeRing.B);
+                    for (int t = 0; t < Math.Max(1, (int)Math.Round(dpi)); t++)
+                    {
+                        for (int x = 0; x < cw; x++) { shot.SetPixel(x, t, ringColor); shot.SetPixel(x, ch - 1 - t, ringColor); }
+                        for (int y = 0; y < ch; y++) { shot.SetPixel(t, y, ringColor); shot.SetPixel(cw - 1 - t, y, ringColor); }
+                    }
+                    // Windows 11 rounds the window (8 DIPs); the image is a rectangle: cut the corners.
+                    using var rounded = RoundWindowCorners(shot, 8 * dpi);
                     rounded.Save(path, System.Drawing.Imaging.ImageFormat.Png);
                     bool cornersClear = rounded.GetPixel(0, 0).A == 0 && rounded.GetPixel(cw - 1, 0).A == 0
                                      && rounded.GetPixel(0, ch - 1).A == 0 && rounded.GetPixel(cw - 1, ch - 1).A == 0
                                      && rounded.GetPixel(cw / 2, ch / 2).A == 255 && rounded.GetPixel(cw / 2, 0).A == 255 && rounded.GetPixel(0, ch / 2).A == 255;
                     if (!cornersClear) failures++;
-                    // Windows' own 1 px border takes the theme's border colour (not its dark grey default).
+                    // The outermost ring is the app's own 1 px border, in the theme's border colour.
                     var wantBorder = ((SolidColorBrush)Application.Current.Resources["BorderColor"]).Color;
                     var gotBorder = rounded.GetPixel(cw / 2, 0);
                     bool borderOk = Math.Abs(gotBorder.R - wantBorder.R) < 14 && Math.Abs(gotBorder.G - wantBorder.G) < 14 && Math.Abs(gotBorder.B - wantBorder.B) < 14;
                     if (!borderOk) failures++;
-                    Log($"  {(borderOk ? "OK  " : "FAIL")} [{tag}] window border follows the theme (#{gotBorder.R:X2}{gotBorder.G:X2}{gotBorder.B:X2}, theme #{wantBorder.R:X2}{wantBorder.G:X2}{wantBorder.B:X2}) ({Path.GetFileName(path)})");
-                    Log($"  {(cornersClear ? "OK  " : "FAIL")} [{tag}] screen copy: rounded corners transparent, middle opaque ({Path.GetFileName(path)})");
+                    Log($"  {(borderOk ? "OK  " : "FAIL")} [{tag}] outer ring has the theme colour (#{gotBorder.R:X2}{gotBorder.G:X2}{gotBorder.B:X2}, theme #{wantBorder.R:X2}{wantBorder.G:X2}{wantBorder.B:X2}) ({Path.GetFileName(path)})");
+                    Log($"  {(cornersClear ? "OK  " : "FAIL")} [{tag}] window image: rounded corners transparent, middle opaque ({Path.GetFileName(path)})");
                 }
                 string Shot(string page) => docs
                     ? Path.Combine(docsDir, page == "window" ? (tag.StartsWith("Light-") ? "screenshot-light.png" : "screenshot.png") : $"screenshot-{page}.png")
