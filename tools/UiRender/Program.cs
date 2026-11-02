@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -134,6 +135,37 @@ public static class Program
         f.SetValue(o, value);
     }
 
+    /// <summary>
+    /// A copy of the screen shot whose four corners are cut to the window's
+    /// rounded shape (anti-aliased, transparent outside), so the README images
+    /// do not show the desktop behind the window. The cut lies 1.5 px inside the
+    /// arc: right on it sits Windows' own anti-aliased rim, a light grey line.
+    /// Straight edges are left alone.
+    /// </summary>
+    internal static System.Drawing.Bitmap RoundWindowCorners(System.Drawing.Bitmap shot, double radius)
+    {
+        var result = new System.Drawing.Bitmap(shot.Width, shot.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+        using (var g = System.Drawing.Graphics.FromImage(result))
+            g.DrawImage(shot, 0, 0, shot.Width, shot.Height);
+
+        double cut = radius - 1.5;
+        int n = (int)Math.Ceiling(radius);
+        for (int py = 0; py < n; py++)
+            for (int px = 0; px < n; px++)
+            {
+                // Distance of the pixel centre from the arc's centre (radius, radius) in the top-left corner.
+                double dx = radius - (px + 0.5), dy = radius - (py + 0.5);
+                if (dx <= 0 || dy <= 0) continue;                       // not in the corner square
+                double coverage = Math.Clamp(cut - Math.Sqrt(dx * dx + dy * dy) + 0.5, 0, 1);
+                if (coverage >= 1) continue;
+                foreach (var (x, y) in new[] { (px, py), (shot.Width - 1 - px, py), (px, shot.Height - 1 - py), (shot.Width - 1 - px, shot.Height - 1 - py) })
+                {
+                    var c = result.GetPixel(x, y);
+                    result.SetPixel(x, y, System.Drawing.Color.FromArgb((int)Math.Round(c.A * coverage), c.R, c.G, c.B));
+                }
+            }
+        return result;
+    }
     static void Pump()
     {
         for (int i = 0; i < 3; i++)
@@ -724,6 +756,69 @@ public static class Program
             var aboutTabs = Walk(Walk(root).OfType<StandbyAndTimer.Views.Overlays.AboutOverlay>().Single()).OfType<TabControl>();
             var tabs = Walk(root).OfType<TabControl>().Except(aboutTabs).Single();
 
+            // --focus: which element of a dialog draws WPF's focus rectangle (the thin
+            // grey frame around a scroll area) once the keyboard has put focus on it?
+            // Focus visuals are forced on (the mouse alone does not show them).
+            if (args.Contains("--focus") && tag == "Dark-en-US")
+            {
+                typeof(KeyboardNavigation).GetProperty("AlwaysShowFocusVisual",
+                    BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)?.SetValue(null, true);
+                w.Left = 40; w.Top = 40; w.Topmost = true; w.Activate(); Pump();
+
+                int FocusFrames(string where, Action open, Action close, Func<DependencyObject?> overlay)
+                {
+                    open(); Pump();
+                    int bad = 0, tried = 0;
+                    if (overlay() is { } host)
+                        foreach (var el in Walk(host).OfType<FrameworkElement>().Where(e => e.Focusable && e.IsVisible && e.IsEnabled).ToList())
+                        {
+                            tried++;
+                            el.Focus(); Pump();
+                            if (AdornerLayer.GetAdornerLayer(el)?.GetAdorners(el) is { Length: > 0 })
+                            {
+                                bad++;
+                                Log($"  FAIL [{where}] focus frame on {el.GetType().Name} {Describe(el)}");
+                            }
+                        }
+                    else { bad++; Log($"  FAIL [{where}] dialog not found"); }
+                    Log($"  {(bad == 0 ? "OK  " : "    ")} [{where}] focusable elements tried: {tried}");
+                    close(); Pump();
+                    return bad;
+                }
+
+                var aboutTab = aboutTabs.Single();
+                failures += FocusFrames("about general", () => { vm.IsAboutVisible = true; aboutTab.SelectedIndex = 0; }, () => vm.IsAboutVisible = false,
+                    () => Walk(root).OfType<StandbyAndTimer.Views.Overlays.AboutOverlay>().Single());
+                failures += FocusFrames("about maintenance", () => { vm.IsAboutVisible = true; aboutTab.SelectedIndex = 1; }, () => { vm.IsAboutVisible = false; aboutTab.SelectedIndex = 0; },
+                    () => Walk(root).OfType<StandbyAndTimer.Views.Overlays.AboutOverlay>().Single());
+                failures += FocusFrames("purge history", () => vm.IsPurgeHistoryVisible = true, () => vm.IsPurgeHistoryVisible = false,
+                    () => Walk(root).OfType<StandbyAndTimer.Views.Overlays.PurgeHistoryOverlay>().Single());
+                failures += FocusFrames("cleanup history", () => { vm.SelectedTab = MainViewModel.MaintenanceTab; vm.Maintenance.ShowHistoryCommand.Execute(null); },
+                    () => { vm.Maintenance.CloseHistoryCommand.Execute(null); vm.SelectedTab = MainViewModel.StatusTab; },
+                    () => Walk(root).OfType<StandbyAndTimer.Views.Overlays.CleanupHistoryOverlay>().FirstOrDefault());
+                failures += FocusFrames("system settings", () => systemVm.IsOpen = true, () => systemVm.IsOpen = false,
+                    () => Walk(root).OfType<StandbyAndTimer.Views.Overlays.SystemOverlay>().Single());
+                failures += FocusFrames("shader caches", () => { vm.SelectedTab = MainViewModel.MaintenanceTab; vm.Maintenance.OpenShadersCommand.Execute(null); },
+                    () => { vm.Maintenance.CloseShadersCommand.Execute(null); vm.SelectedTab = MainViewModel.StatusTab; },
+                    () => Walk(root).OfType<StandbyAndTimer.Views.Overlays.ShaderCachesOverlay>().FirstOrDefault());
+                failures += FocusFrames("auto maintenance", () => { vm.SelectedTab = MainViewModel.MaintenanceTab; vm.Maintenance.OpenAutoCommand.ExecuteAsync(null).GetAwaiter().GetResult(); },
+                    () => { vm.Maintenance.CloseAutoCommand.Execute(null); vm.SelectedTab = MainViewModel.StatusTab; },
+                    () => Walk(root).OfType<StandbyAndTimer.Views.Overlays.AutoMaintenanceOverlay>().FirstOrDefault());
+                failures += FocusFrames("update notes", () =>
+                    {
+                        vm.Settings.UpdateNotesLines = [new("A note", NoteKind.Bullet)];
+                        vm.Settings.IsUpdateNotesVisible = true;
+                    }, () => vm.Settings.IsUpdateNotesVisible = false,
+                    () => Walk(root).OfType<StandbyAndTimer.Views.Overlays.UpdateNotesOverlay>().FirstOrDefault());
+                failures += FocusFrames("game list", () => { }, () => { },
+                    () => Walk(root).OfType<StandbyAndTimer.Views.Cards.GameModeCard>().Single());
+                failures += FocusFrames("installed games", () => vm.OpenInstalledGamesCommand.ExecuteAsync(null).GetAwaiter().GetResult(),
+                    () => vm.CloseInstalledGamesCommand.Execute(null),
+                    () => Walk(root).OfType<StandbyAndTimer.Views.Overlays.InstalledGamesOverlay>().FirstOrDefault());
+
+                w.Left = -30000; w.Top = -30000; w.Topmost = false; Pump();
+            }
+
             // A clicked tab strip or guide gets keyboard focus; WPF's default focus
             // rectangle then drew a thin grey frame around the whole content area.
             // Every tab control (main tabs, both guide tabs) must opt out of it.
@@ -772,7 +867,21 @@ public static class Program
                     using var shot = new System.Drawing.Bitmap(cw, ch);
                     using (var g = System.Drawing.Graphics.FromImage(shot))
                         g.CopyFromScreen((int)tl.X, (int)tl.Y, 0, 0, new System.Drawing.Size(cw, ch));
-                    shot.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+                    // Windows 11 rounds the window (8 DIPs), but the copy is a rectangle: the
+                    // four corners hold whatever is on the desktop behind the window.
+                    using var rounded = RoundWindowCorners(shot, 8 * VisualTreeHelper.GetDpi(root).DpiScaleX);
+                    rounded.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+                    bool cornersClear = rounded.GetPixel(0, 0).A == 0 && rounded.GetPixel(cw - 1, 0).A == 0
+                                     && rounded.GetPixel(0, ch - 1).A == 0 && rounded.GetPixel(cw - 1, ch - 1).A == 0
+                                     && rounded.GetPixel(cw / 2, ch / 2).A == 255 && rounded.GetPixel(cw / 2, 0).A == 255 && rounded.GetPixel(0, ch / 2).A == 255;
+                    if (!cornersClear) failures++;
+                    // Windows' own 1 px border takes the theme's border colour (not its dark grey default).
+                    var wantBorder = ((SolidColorBrush)Application.Current.Resources["BorderColor"]).Color;
+                    var gotBorder = rounded.GetPixel(cw / 2, 0);
+                    bool borderOk = Math.Abs(gotBorder.R - wantBorder.R) < 14 && Math.Abs(gotBorder.G - wantBorder.G) < 14 && Math.Abs(gotBorder.B - wantBorder.B) < 14;
+                    if (!borderOk) failures++;
+                    Log($"  {(borderOk ? "OK  " : "FAIL")} [{tag}] window border follows the theme (#{gotBorder.R:X2}{gotBorder.G:X2}{gotBorder.B:X2}, theme #{wantBorder.R:X2}{wantBorder.G:X2}{wantBorder.B:X2}) ({Path.GetFileName(path)})");
+                    Log($"  {(cornersClear ? "OK  " : "FAIL")} [{tag}] screen copy: rounded corners transparent, middle opaque ({Path.GetFileName(path)})");
                 }
                 string Shot(string page) => docs
                     ? Path.Combine(docsDir, page == "window" ? (tag.StartsWith("Light-") ? "screenshot-light.png" : "screenshot.png") : $"screenshot-{page}.png")

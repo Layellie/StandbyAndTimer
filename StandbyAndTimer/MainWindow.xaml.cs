@@ -38,6 +38,7 @@ public partial class MainWindow : Window
         base.OnSourceInitialized(e);
         var hwnd = new WindowInteropHelper(this).Handle;
         ApplyDarkTitleBar(hwnd);
+        ApplyBorderColor(hwnd);
         ApplyRoundedCorners(hwnd);
     }
 
@@ -52,6 +53,21 @@ public partial class MainWindow : Window
         _ = NativeMethods.DwmSetWindowAttribute(
             hwnd, NativeMethods.DWMWA_WINDOW_CORNER_PREFERENCE, ref pref, sizeof(int));
     }
+
+    // Windows 11 draws a 1 px border of its own on the outermost ring of the
+    // window, dark grey by default: a dark outline around a light theme. Give
+    // it the theme's border colour, at start-up and when the theme changes.
+    // Cosmetic only (Windows 10 refuses the attribute and keeps its border).
+    internal static void ApplyBorderColor(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero) return;
+        if (Application.Current?.Resources["BorderColor"] is not SolidColorBrush brush) return;
+        int colorRef = ColorRef(brush.Color);
+        _ = NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_BORDER_COLOR, ref colorRef, sizeof(int));
+    }
+
+    /// <summary>A COLORREF is 0x00BBGGRR.</summary>
+    internal static int ColorRef(System.Windows.Media.Color c) => c.R | (c.G << 8) | (c.B << 16);
 
     internal static void ApplyDarkTitleBar(IntPtr hwnd)
     {

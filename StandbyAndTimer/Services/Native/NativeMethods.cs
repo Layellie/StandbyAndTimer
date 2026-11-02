@@ -228,6 +228,9 @@ internal static class NativeMethods
     /// <summary>DWMWA_WINDOW_CORNER_PREFERENCE (Windows 11+); value is a DWM_WINDOW_CORNER_PREFERENCE.</summary>
     internal const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
 
+    /// <summary>DWMWA_BORDER_COLOR (Windows 11+): the colour of the window's 1 px border, a COLORREF.</summary>
+    internal const int DWMWA_BORDER_COLOR = 34;
+
     /// <summary>DWMWA_CLOAK (Windows 8+): value 1 keeps a shown window off the screen until set back to 0.</summary>
     internal const int DWMWA_CLOAK = 13;
 

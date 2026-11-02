@@ -359,6 +359,7 @@
     <!--  GAME LISTBOX                                                          -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <Style x:Key="GameListBoxStyle" TargetType="ListBox">
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Background"    Value="{DynamicResource InputBg}"/>
         <Setter Property="Foreground"    Value="{DynamicResource InputFg}"/>
         <Setter Property="BorderBrush"   Value="{DynamicResource BorderColor}"/>
@@ -665,6 +666,14 @@
         <Setter Property="FontSize"   Value="28"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource AppFg}"/>
+    </Style>
+
+    <!-- An ItemsControl only lays out rows or bars (the history charts and lists,
+         the guide's tables): it takes no keyboard focus, so WPF draws no grey focus
+         rectangle around it after a click and a key press. (ListBox and the like
+         are other types and keep their own styles.) -->
+    <Style TargetType="ItemsControl">
+        <Setter Property="Focusable" Value="False"/>
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->

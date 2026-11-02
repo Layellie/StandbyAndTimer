@@ -444,6 +444,7 @@ public partial class App : Application
             if (_mainWindow is null) return;
             var hwnd = new System.Windows.Interop.WindowInteropHelper(_mainWindow).Handle;
             StandbyAndTimer.MainWindow.ApplyDarkTitleBar(hwnd);
+            StandbyAndTimer.MainWindow.ApplyBorderColor(hwnd);
         });
 
     // Theme.System is already resolved by EffectiveTheme; no service yet
