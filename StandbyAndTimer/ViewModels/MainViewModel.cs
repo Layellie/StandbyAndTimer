@@ -180,9 +180,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         Maintenance = maintenance ?? MaintenanceViewModel.Inert();
         Maintenance.SettingsChanged += (_, _) => PersistSettings();
         Maintenance.StatusRequested += (_, text) => StatusMessage = text;
-        Maintenance.AutoCleaned     += (_, bytes) => AutoMaintenanceNotification?.Invoke(this,
-            string.Format(CultureInfo.CurrentCulture, _localization.GetString("Str_Tray_NotifyAutoCleanBody"),
-                          MainViewModel.FormatSize(bytes / (1024 * 1024))));
+        Maintenance.AutoCleaned     += (_, bytes) =>
+        {
+            if (!Settings.NotifyOnAutoClean) return;   // Settings -> Notifications; the status line still says it
+            AutoMaintenanceNotification?.Invoke(this,
+                string.Format(CultureInfo.CurrentCulture, _localization.GetString("Str_Tray_NotifyAutoCleanBody"),
+                              MainViewModel.FormatSize(bytes / (1024 * 1024))));
+        };
         Maintenance.AnyGameRunning  = () => _lastSnapshot?.AnyGameRunning == true;
         // The Settings tab can also be opened from outside (tray "Settings"):
         // keep the selected tab in step with Settings.IsOpen.
@@ -290,7 +294,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 s.AutoStartEnabled, s.Language, s.UpdateCheckEnabled, s.Theme,
                 s.NotifyOnPurge, s.NotifyOnTimerToggle, s.NotifyOnGameDetected,
                 s.PurgeHotkey, s.TimerHotkey, s.AutoPurgeHotkey,
-                s.TimerIdleOffEnabled, s.TimerIdleOffMinutes, s.TimerOffOnBattery);
+                s.TimerIdleOffEnabled, s.TimerIdleOffMinutes, s.TimerOffOnBattery, s.NotifyOnAutoClean);
             SystemSettings.Initialize(s.GlobalTimerPromptAnswered, s.GlobalTimerSetByApp,
                               s.GlobalTimerChangedUtc, s.GlobalTimerBootValue,
                               s.AutoPurgeCooldownEnabled, s.AutoPurgeCooldownSeconds,
@@ -401,6 +405,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         NotifyOnPurge         = Settings.NotifyOnPurge,
         NotifyOnTimerToggle   = Settings.NotifyOnTimerToggle,
         NotifyOnGameDetected  = Settings.NotifyOnGameDetected,
+        NotifyOnAutoClean     = Settings.NotifyOnAutoClean,
         PurgeHotkey           = Settings.PurgeHotkeyText,
         TimerHotkey           = Settings.TimerHotkeyText,
         AutoPurgeHotkey       = Settings.AutoPurgeHotkeyText,

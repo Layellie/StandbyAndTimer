@@ -668,6 +668,13 @@
         <Setter Property="Foreground" Value="{DynamicResource AppFg}"/>
     </Style>
 
+    <!-- A scroll area's clip edge, anti-aliased, leaves a light 1 px line just outside
+         its left and bottom edges on the real screen (the guide, the history lists).
+         Aliased edges: no line. (Found with the UiRender focus check, which looks for it.) -->
+    <Style TargetType="ScrollViewer">
+        <Setter Property="RenderOptions.EdgeMode" Value="Aliased"/>
+    </Style>
+
     <!-- An ItemsControl only lays out rows or bars (the history charts and lists,
          the guide's tables): it takes no keyboard focus, so WPF draws no grey focus
          rectangle around it after a click and a key press. (ListBox and the like

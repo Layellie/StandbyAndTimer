@@ -56,6 +56,7 @@ internal sealed class SettingsService : ISettingsService
                 NotifyOnPurge         = GetBool(key,     "NotifyOnPurge",        defaultValue: true),
                 NotifyOnTimerToggle   = GetBool(key,     "NotifyOnTimerToggle",  defaultValue: true),
                 NotifyOnGameDetected  = GetBool(key,     "NotifyOnGameDetected", defaultValue: true),
+                NotifyOnAutoClean     = GetBool(key,     "NotifyOnAutoClean", defaultValue: true),
 
                 AutoPurgeIdleOnly     = GetBool(key,     "AutoPurgeIdleOnly"),
                 LightPurge            = GetBool(key,     "LightPurge"),
@@ -155,6 +156,10 @@ internal sealed class SettingsService : ISettingsService
             key.SetValue("NotifyOnPurge",          settings.NotifyOnPurge          ? "1" : "0");
             key.SetValue("NotifyOnTimerToggle",    settings.NotifyOnTimerToggle    ? "1" : "0");
             key.SetValue("NotifyOnGameDetected",   settings.NotifyOnGameDetected   ? "1" : "0");
+            if (settings.NotifyOnAutoClean)   // on is the default: nothing stored, so an older key stays as it was
+                key.DeleteValue("NotifyOnAutoClean", throwOnMissingValue: false);
+            else
+                key.SetValue("NotifyOnAutoClean", "0");
             key.SetValue("AutoPurgeIdleOnly",      settings.AutoPurgeIdleOnly      ? "1" : "0");
             key.SetValue("LightPurge",             settings.LightPurge             ? "1" : "0");
             key.SetValue("DeepPurge",              settings.DeepPurge              ? "1" : "0");

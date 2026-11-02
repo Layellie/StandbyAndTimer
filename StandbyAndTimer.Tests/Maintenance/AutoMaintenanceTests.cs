@@ -278,6 +278,36 @@ public class AutoMaintenanceTests
     }
 
     [Fact]
+    public async Task The_notification_can_be_switched_off_but_the_cleanup_still_runs()
+    {
+        var (main, m, _) = MakeMain(new AppSettings
+        {
+            FirstRunCompleted = true, AutoCleanEnabled = true, AutoCleanIntervalDays = 7,
+            AutoCleanLastRunUtc = Today.AddDays(-8).ToUniversalTime(), NotifyOnAutoClean = false,
+        });
+        main.AutoMaintenanceDelay = (_, _) => Task.CompletedTask;
+        var bodies = new List<string>();
+        main.AutoMaintenanceNotification += (_, body) => bodies.Add(body);
+
+        await main.InitializeAsync();
+        await main.AutoMaintenanceTask!;
+
+        Assert.Empty(bodies);
+        Assert.Equal(Today, m.AutoCleanLastRun);                                   // it did run
+        Assert.All(m.Rows, r => Assert.Equal(1, ((FakeTarget)r.Target).Cleaned));  // and cleaned
+    }
+
+    [Fact]
+    public void The_notification_switch_is_saved()
+    {
+        var (main, _, store) = MakeMain();
+
+        main.Settings.NotifyOnAutoClean = false;
+
+        Assert.False(store.Saved[^1].NotifyOnAutoClean);
+    }
+
+    [Fact]
     public async Task Start_up_does_nothing_when_it_is_switched_off()
     {
         var (main, m, _) = MakeMain(new AppSettings { FirstRunCompleted = true });

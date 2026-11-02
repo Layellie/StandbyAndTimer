@@ -52,6 +52,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool     _notifyOnPurge        = true;
     [ObservableProperty] private bool     _notifyOnTimerToggle  = true;
     [ObservableProperty] private bool     _notifyOnGameDetected = true;
+    [ObservableProperty] private bool     _notifyOnAutoClean    = true;
     [ObservableProperty] private string   _purgeHotkeyText      = "Ctrl+Alt+P";
     [ObservableProperty] private string   _timerHotkeyText      = "Ctrl+Alt+T";
     [ObservableProperty] private string   _autoPurgeHotkeyText  = "Ctrl+Alt+O";
@@ -189,7 +190,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         bool autoStartEnabled, Language language, bool updateCheckEnabled, Theme theme,
         bool notifyOnPurge, bool notifyOnTimerToggle, bool notifyOnGameDetected,
         string purgeHotkey, string timerHotkey, string autoPurgeHotkey,
-        bool timerIdleOffEnabled = false, int timerIdleOffMinutes = 10, bool timerOffOnBattery = false)
+        bool timerIdleOffEnabled = false, int timerIdleOffMinutes = 10, bool timerOffOnBattery = false,
+        bool notifyOnAutoClean = true)
     {
         using (new InitScope(v => _isInitializing = v))
         {
@@ -204,6 +206,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             NotifyOnPurge        = notifyOnPurge;
             NotifyOnTimerToggle  = notifyOnTimerToggle;
             NotifyOnGameDetected = notifyOnGameDetected;
+            NotifyOnAutoClean    = notifyOnAutoClean;
             PurgeHotkeyText      = purgeHotkey;
             TimerHotkeyText      = timerHotkey;
             AutoPurgeHotkeyText  = autoPurgeHotkey;
@@ -391,6 +394,12 @@ public sealed partial class SettingsViewModel : ObservableObject
     }
 
     partial void OnNotifyOnGameDetectedChanged(bool value)
+    {
+        if (_isInitializing) return;
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    partial void OnNotifyOnAutoCleanChanged(bool value)
     {
         if (_isInitializing) return;
         SettingsChanged?.Invoke(this, EventArgs.Empty);

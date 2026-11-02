@@ -262,7 +262,7 @@
     <sys:String x:Key="Str_Help_Game5">Double-click a game in the list to start it. Even though the app runs as administrator, the game starts with your normal rights (like opening it from the desktop), so the Steam overlay and anti-cheat are not affected.</sys:String>
     <sys:String x:Key="Str_Help_KeysTitle">HOTKEYS AND NOTIFICATIONS</sys:String>
     <sys:String x:Key="Str_Help_Keys1">Default hotkeys: Ctrl+Alt+P purges, Ctrl+Alt+T toggles the timer, Ctrl+Alt+O toggles auto purge. To change one, click it under Settings → Hotkeys and press the new keys; Esc cancels. Hotkeys work while the app is in the background.</sys:String>
-    <sys:String x:Key="Str_Help_Keys2">Notifications appear on a purge, when the timer turns on or off, when a game is added to the list and when a listed game starts. Each one can be switched off under Settings → Notifications.</sys:String>
+    <sys:String x:Key="Str_Help_Keys2">Notifications appear on a purge, when the timer turns on or off, when a game is added to the list, when a listed game starts and when Auto maintenance has cleaned by itself. Each one can be switched off under Settings → Notifications.</sys:String>
     <sys:String x:Key="Str_Help_Keys3">Right-click the tray icon to change deep purge, Game Mode and the timer lock without opening the window.</sys:String>
     <sys:String x:Key="Str_Help_MoreTitle">SETTINGS AND MORE</sys:String>
     <sys:String x:Key="Str_Help_More1">Launch on startup: starts in the tray through Task Scheduler when you sign in to Windows.</sys:String>
@@ -322,6 +322,8 @@
     <sys:String x:Key="Str_Settings_NotifyOnTimer">Timer state notifications</sys:String>
     <sys:String x:Key="Str_Settings_NotifyOnGame">Game notifications</sys:String>
     <sys:String x:Key="Str_Settings_NotifyOnGameTip">Shows a notification when a listed game starts and when a new fullscreen game is detected.</sys:String>
+    <sys:String x:Key="Str_Settings_NotifyOnAutoClean">Auto maintenance notifications</sys:String>
+    <sys:String x:Key="Str_Settings_NotifyOnAutoCleanTip">Shows a notification when Auto maintenance has cleaned by itself at start-up and says how much it freed.</sys:String>
     <sys:String x:Key="Str_Settings_HotkeysSection">HOTKEYS</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyPurge">Manual purge</sys:String>
     <sys:String x:Key="Str_Settings_HotkeyTimer">Toggle timer</sys:String>

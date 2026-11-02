@@ -44,6 +44,7 @@ public sealed class SettingsServiceTests : IDisposable
 
         Assert.False(s.AutoPurgeEnabled);
         Assert.True(s.UpdateCheckEnabled);
+        Assert.True(s.NotifyOnAutoClean);   // new in 3.0.7: on, as the balloon always was
         Assert.Equal(TimerLockMode.Unlocked, s.TimerLock);
         Assert.Empty(s.Games);
     }
@@ -61,7 +62,7 @@ public sealed class SettingsServiceTests : IDisposable
             PurgeHotkey = "Ctrl+Shift+F9", NotifyOnPurge = false,
             TimerIdleOffEnabled = true, TimerIdleOffMinutes = 25,
             AutoPurgeCooldownEnabled = true, AutoPurgeCooldownSeconds = 120, CloseToTrayDirectly = true,
-            TimerOffOnBattery = true,
+            TimerOffOnBattery = true, NotifyOnAutoClean = false,
             AutoCleanEnabled = true, AutoCleanIntervalDays = 30,
             AutoCleanLastRunUtc = new DateTime(2026, 11, 2, 17, 0, 0, DateTimeKind.Utc),
             Games =
@@ -92,6 +93,7 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal(120, s.AutoPurgeCooldownSeconds);
         Assert.True(s.CloseToTrayDirectly);
         Assert.True(s.TimerOffOnBattery);
+        Assert.False(s.NotifyOnAutoClean);
         Assert.True(s.AutoCleanEnabled);
         Assert.Equal(30, s.AutoCleanIntervalDays);
         Assert.Equal(new DateTime(2026, 11, 2, 17, 0, 0, DateTimeKind.Utc), s.AutoCleanLastRunUtc);

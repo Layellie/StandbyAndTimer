@@ -137,6 +137,22 @@
                               Style="{StaticResource ToggleSwitchStyle}"/>
                 </Grid>
 
+                <!-- Turn the timer off on battery (laptops; no effect without a battery). -->
+                <Grid Margin="0,1"
+                      Background="Transparent"
+                      ToolTip="{DynamicResource Str_Settings_TimerOffOnBatteryTip}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{DynamicResource Str_Settings_TimerOffOnBattery}"
+                               Style="{StaticResource SettingTitleStyle}"
+                               VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <CheckBox Grid.Column="1"
+                              IsChecked="{Binding TimerOffOnBattery}"
+                              Style="{StaticResource ToggleSwitchStyle}"/>
+                </Grid>
+
                 <!-- Turn the timer off when idle: Off / 5 / 10 / 15 / Custom;
                      Custom shows a minutes box left of the picker. -->
                 <Grid Margin="0,1"
@@ -171,22 +187,6 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
                 </Grid>
-
-                <!-- Turn the timer off on battery (laptops; no effect without a battery). -->
-                <Grid Margin="0,1"
-                      Background="Transparent"
-                      ToolTip="{DynamicResource Str_Settings_TimerOffOnBatteryTip}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="{DynamicResource Str_Settings_TimerOffOnBattery}"
-                               Style="{StaticResource SettingTitleStyle}"
-                               VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <CheckBox Grid.Column="1"
-                              IsChecked="{Binding TimerOffOnBattery}"
-                              Style="{StaticResource ToggleSwitchStyle}"/>
-                </Grid>
             </StackPanel>
         </Border>
 
@@ -197,7 +197,7 @@
             <!-- Rows centred in the card: it is stretched to the General card
                  height, so top-aligned rows would leave a gap underneath. -->
             <StackPanel VerticalAlignment="Center">
-                <Grid Margin="0,2,0,3">
+                <Grid Margin="0,1">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -209,7 +209,7 @@
                               IsChecked="{Binding NotifyOnPurge}"
                               Style="{StaticResource ToggleSwitchStyle}"/>
                 </Grid>
-                <Grid Margin="0,3">
+                <Grid Margin="0,1">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -223,7 +223,7 @@
                 </Grid>
                 <!-- Covers both game balloons: a game auto-added to the list,
                      and a listed game starting. -->
-                <Grid Margin="0,3,0,2"
+                <Grid Margin="0,1"
                       Background="Transparent"
                       ToolTip="{DynamicResource Str_Settings_NotifyOnGameTip}">
                     <Grid.ColumnDefinitions>
@@ -235,6 +235,21 @@
                                VerticalAlignment="Center"/>
                     <CheckBox Grid.Column="1"
                               IsChecked="{Binding NotifyOnGameDetected}"
+                              Style="{StaticResource ToggleSwitchStyle}"/>
+                </Grid>
+                <!-- The balloon after Auto maintenance cleaned by itself. -->
+                <Grid Margin="0,1"
+                      Background="Transparent"
+                      ToolTip="{DynamicResource Str_Settings_NotifyOnAutoCleanTip}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{DynamicResource Str_Settings_NotifyOnAutoClean}"
+                               Style="{StaticResource SettingTitleStyle}"
+                               VerticalAlignment="Center"/>
+                    <CheckBox Grid.Column="1"
+                              IsChecked="{Binding NotifyOnAutoClean}"
                               Style="{StaticResource ToggleSwitchStyle}"/>
                 </Grid>
             </StackPanel>
