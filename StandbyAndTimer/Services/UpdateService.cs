@@ -63,7 +63,10 @@ internal sealed partial class UpdateService : IUpdateService
 
             Logger.Info($"UpdateCheck: current={current} latest={tag} newer={newer} " +
                         $"asset={(assetUrl.Length > 0)} sha256={(sha256.Length > 0 ? "yes" : "no")}");
-            return new UpdateCheckResult(newer, tag!, url ?? string.Empty, assetUrl, sha256);
+            string body = newer && doc.RootElement.TryGetProperty("body", out var bodyEl) && bodyEl.ValueKind == JsonValueKind.String
+                ? bodyEl.GetString() ?? string.Empty
+                : string.Empty;
+            return new UpdateCheckResult(newer, tag!, url ?? string.Empty, assetUrl, sha256, body);
         }
         catch (Exception ex)
         {

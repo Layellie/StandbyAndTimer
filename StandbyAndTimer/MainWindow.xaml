@@ -188,6 +188,23 @@
                     </Style>
                 </ContentControl.Style>
             </ContentControl>
+            <!-- "What's new" of a newer release: built when opened, dropped when closed. -->
+            <ContentControl Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="19" Focusable="False">
+                <ContentControl.Style>
+                    <Style TargetType="ContentControl">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Settings.IsUpdateNotesVisible}" Value="True">
+                                <Setter Property="Content" Value="{Binding Settings}"/>
+                                <Setter Property="ContentTemplate">
+                                    <Setter.Value>
+                                        <DataTemplate><overlays:UpdateNotesOverlay/></DataTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ContentControl.Style>
+            </ContentControl>
             <overlays:GlobalTimerPromptOverlay Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="19"/>
             <overlays:CloseConfirmationOverlay x:Name="CloseDialog"
                                                Grid.Row="0" Grid.RowSpan="3"

@@ -1,0 +1,99 @@
+<UserControl x:Class="StandbyAndTimer.Views.Overlays.UpdateNotesOverlay"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:models="clr-namespace:StandbyAndTimer.Core.Models"
+             FontFamily="{StaticResource AppFont}" FontSize="13">
+    <UserControl.Resources>
+        <Style x:Key="NoteTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize"     Value="12"/>
+            <Setter Property="LineHeight"   Value="17"/>
+            <Setter Property="Foreground"   Value="{DynamicResource AppFg}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <!-- One note line: a heading, a bullet (wrapped lines stay indented) or a paragraph. -->
+        <DataTemplate x:Key="NoteLineTemplate" DataType="{x:Type models:NoteLine}">
+            <Grid Margin="0,0,0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="14"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Ellipse x:Name="dot" Width="4" Height="4" Margin="2,7,0,0"
+                         HorizontalAlignment="Left" VerticalAlignment="Top"
+                         Fill="{DynamicResource AccentText}"/>
+                <TextBlock x:Name="text" Grid.Column="1"
+                           Text="{Binding Text}" Style="{StaticResource NoteTextStyle}"/>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Kind}" Value="Heading">
+                    <Setter TargetName="dot" Property="Visibility" Value="Collapsed"/>
+                    <Setter TargetName="text" Property="Grid.Column" Value="0"/>
+                    <Setter TargetName="text" Property="Grid.ColumnSpan" Value="2"/>
+                    <Setter TargetName="text" Property="FontWeight" Value="SemiBold"/>
+                    <Setter TargetName="text" Property="Foreground" Value="{DynamicResource AccentText}"/>
+                    <Setter TargetName="text" Property="Margin" Value="0,8,0,0"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Kind}" Value="Text">
+                    <Setter TargetName="dot" Property="Visibility" Value="Collapsed"/>
+                    <Setter TargetName="text" Property="Grid.Column" Value="0"/>
+                    <Setter TargetName="text" Property="Grid.ColumnSpan" Value="2"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <!-- "What's new" for a newer release (DataContext = SettingsViewModel):
+         the notes scroll between a fixed header and footer. Clicking the dim
+         area is "Later". Built when opened, dropped when closed (MainWindow). -->
+    <Border Background="{DynamicResource ModalOverlayBrush}">
+        <Border.InputBindings>
+            <MouseBinding MouseAction="LeftClick" Command="{Binding CloseUpdateNotesCommand}"/>
+        </Border.InputBindings>
+        <Border HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="{DynamicResource Surface2Bg}"
+                BorderBrush="{DynamicResource BorderColor}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource RadiusLarge}"
+                Padding="22,18,8,16"
+                Width="560" MaxHeight="440"
+                MouseLeftButtonDown="DialogMouseDown">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Margin="0,0,14,10">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="9" Height="9" Fill="{DynamicResource AccentPrimary}"
+                                 VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="{Binding UpdateNotesTitle}"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppFg}"/>
+                    </StackPanel>
+                    <TextBlock Text="{DynamicResource Str_UpdateNotes_Subtitle}"
+                               FontSize="12" Foreground="{DynamicResource AppFgDim}" Margin="17,0,0,0"/>
+                </StackPanel>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                    <ItemsControl ItemsSource="{Binding UpdateNotesLines}"
+                                  ItemTemplate="{StaticResource NoteLineTemplate}"
+                                  Margin="0,0,14,0" Focusable="False"/>
+                </ScrollViewer>
+
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,14,0">
+                    <Button Content="{DynamicResource Str_UpdateNotes_Later}"
+                            Command="{Binding CloseUpdateNotesCommand}"
+                            Style="{StaticResource GhostButtonStyle}"
+                            MinWidth="80" Height="30" Margin="0,0,8,0"/>
+                    <Button Content="{DynamicResource Str_Settings_DownloadInstall}"
+                            Command="{Binding InstallFromNotesCommand}"
+                            Style="{StaticResource DarkButtonStyle}"
+                            MinWidth="130" Height="30"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Border>
+</UserControl>

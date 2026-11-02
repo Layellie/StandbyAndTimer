@@ -127,6 +127,12 @@ public sealed partial class SettingsViewModel : ObservableObject
     private string? _pendingVersion;
     private string? _pendingSha256;
 
+    // "What's new": the notes of a newer release, in the UI language, shown
+    // in a dialog with the choice to install now or later.
+    [ObservableProperty] private bool   _isUpdateNotesVisible;
+    [ObservableProperty] private string _updateNotesTitle = "";
+    [ObservableProperty] private IReadOnlyList<NoteLine> _updateNotesLines = [];
+
     public event EventHandler? SettingsChanged;
 
     // Raised after a successful ImportSettings — payload is the freshly loaded
@@ -534,6 +540,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             _pendingVersion  = result.LatestVersion;
             _pendingSha256   = result.ExpectedSha256;
             UpdateAvailable  = true;
+            ShowUpdateNotes(result);
         }
         else if (!string.IsNullOrWhiteSpace(result.ReleaseUrl))
         {
@@ -544,6 +551,28 @@ public sealed partial class SettingsViewModel : ObservableObject
     }
 
     private bool CanCheckUpdate() => !IsDownloading;
+
+    private void ShowUpdateNotes(UpdateCheckResult result)
+    {
+        var lines = ReleaseNotes.ToLines(ReleaseNotes.Extract(result.ReleaseNotes, SelectedLanguage));
+        if (lines.Count == 0) return;
+
+        UpdateNotesTitle = string.Format(CultureInfo.CurrentCulture,
+            _localization.GetString("Str_UpdateNotes_Title"), result.LatestVersion);
+        UpdateNotesLines     = lines;
+        IsUpdateNotesVisible = true;
+    }
+
+    [RelayCommand]
+    private void CloseUpdateNotes() => IsUpdateNotesVisible = false;
+
+    // The dialog's "Download & Install": closes it and starts the same download.
+    [RelayCommand(CanExecute = nameof(CanDownloadAndInstall))]
+    private async Task InstallFromNotesAsync()
+    {
+        IsUpdateNotesVisible = false;
+        await DownloadAndInstallAsync().ConfigureAwait(true);
+    }
 
     [RelayCommand(CanExecute = nameof(CanDownloadAndInstall))]
     private async Task DownloadAndInstallAsync()

@@ -885,6 +885,29 @@ public static class Program
                 vm.CloseInstalledGamesCommand.Execute(null);
                 Pump();
             }
+            // "What's new" of a newer release: a long list, so the notes scroll and wrap.
+            {
+                var s = vm.Settings;
+                s.UpdateNotesTitle = string.Format(loc.GetString("Str_UpdateNotes_Title"), "v3.0.6");
+                s.UpdateNotesLines =
+                [
+                    new("Pildeyken timer'ı kapat: fişi çekince timer kapanır, takınca tekrar açılır; listedeki bir oyun çalışırken kapanmaz.", NoteKind.Bullet),
+                    new("Neler yeni notları: yeni bir sürüm bulunca notlar uygulamada gösterilir.", NoteKind.Bullet),
+                    new("Otomatik bakım: Bakım sekmesinde güvenli temizlikler tek tıkla, istenirse haftada bir.", NoteKind.Bullet),
+                    new("Düzeltmeler", NoteKind.Heading),
+                    new("Sekme kontrolünün etrafındaki ince çerçeve kaldırıldı.", NoteKind.Bullet),
+                    new("Bozuk bir Steam dosyası artık tüm oyun taramasını boşaltmıyor.", NoteKind.Bullet),
+                    new("Kendi eklediğin oyunlar açılışta listeden düşmüyor.", NoteKind.Bullet),
+                    new("Eski NVIDIA sürücülerinin shader önbelleği de temizleniyor.", NoteKind.Bullet),
+                    new("Bir junction olan temizlik klasörü artık izlenmiyor.", NoteKind.Bullet),
+                    new("Tüm ayarların yeni sürümde aynen korunur.", NoteKind.Text),
+                ];
+                s.IsUpdateNotesVisible = true; Pump();
+                Save(root, Path.Combine(outDir, $"{tag}-4-update-notes.png"));
+                failures += CheckLayout(root, $"{tag} update notes");
+                failures += CheckToolTips(root, $"{tag} update notes");
+                s.IsUpdateNotesVisible = false; Pump();
+            }
             {
                 var purge = Walk(root).OfType<StandbyAndTimer.Views.Cards.StandbyPurgeCard>().Single();
                 var cb = Walk(purge).OfType<CheckBox>().First(c => c.Style == (Style)Application.Current.Resources["DarkCheckBoxStyle"]);

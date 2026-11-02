@@ -117,6 +117,9 @@
     <sys:String x:Key="Str_Settings_UpdateNone">You are up to date</sys:String>
     <sys:String x:Key="Str_Settings_UpdateChecking">Checking…</sys:String>
     <sys:String x:Key="Str_Settings_DownloadInstall">Download &amp; Install</sys:String>
+    <sys:String x:Key="Str_UpdateNotes_Title">What's new in {0}</sys:String>
+    <sys:String x:Key="Str_UpdateNotes_Subtitle">A new version is available</sys:String>
+    <sys:String x:Key="Str_UpdateNotes_Later">Later</sys:String>
     <sys:String x:Key="Str_Settings_Downloading">Downloading… {0}%</sys:String>
     <sys:String x:Key="Str_Settings_LaunchingInstaller">Launching installer…</sys:String>
     <sys:String x:Key="Str_Settings_DownloadFailed">Download failed</sys:String>
