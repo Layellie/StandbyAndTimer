@@ -48,6 +48,8 @@ public sealed class AppSettings
     // next input. Off by default: unchanged behaviour on upgrade.
     public bool        TimerIdleOffEnabled   { get; set; }
     public int         TimerIdleOffMinutes   { get; set; } = 10;
+    // 3.0.6: switch the timer off while the laptop runs on battery.
+    public bool        TimerOffOnBattery     { get; set; }
 
     // System settings (Administrator badge): GlobalTimerResolutionRequests.
     // The registry value itself is the state; these track the one-time

@@ -65,6 +65,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty] private bool _timerIdleOffEnabled;
     [ObservableProperty] private int  _timerIdleOffMinutes = 10;
+    [ObservableProperty] private bool _timerOffOnBattery;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsIdleOffCustom))]
@@ -182,10 +183,11 @@ public sealed partial class SettingsViewModel : ObservableObject
         bool autoStartEnabled, Language language, bool updateCheckEnabled, Theme theme,
         bool notifyOnPurge, bool notifyOnTimerToggle, bool notifyOnGameDetected,
         string purgeHotkey, string timerHotkey, string autoPurgeHotkey,
-        bool timerIdleOffEnabled = false, int timerIdleOffMinutes = 10)
+        bool timerIdleOffEnabled = false, int timerIdleOffMinutes = 10, bool timerOffOnBattery = false)
     {
         using (new InitScope(v => _isInitializing = v))
         {
+            TimerOffOnBattery     = timerOffOnBattery;
             TimerIdleOffEnabled   = timerIdleOffEnabled;
             TimerIdleOffMinutes   = Math.Clamp(timerIdleOffMinutes, 1, IdleOffMaxMinutes);
             SelectedIdleOffOption = IdleOffOptionFor(TimerIdleOffEnabled, TimerIdleOffMinutes);
@@ -371,6 +373,12 @@ public sealed partial class SettingsViewModel : ObservableObject
     }
 
     partial void OnNotifyOnTimerToggleChanged(bool value)
+    {
+        if (_isInitializing) return;
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    partial void OnTimerOffOnBatteryChanged(bool value)
     {
         if (_isInitializing) return;
         SettingsChanged?.Invoke(this, EventArgs.Empty);

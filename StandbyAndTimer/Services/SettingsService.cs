@@ -63,6 +63,7 @@ internal sealed class SettingsService : ISettingsService
                 IdleThresholdMinutes  = GetInt (key,     "IdleThresholdMinutes", 5),
                 TimerIdleOffEnabled   = GetBool(key,     "TimerIdleOffEnabled"),
                 TimerIdleOffMinutes   = GetInt (key,     "TimerIdleOffMinutes", 10),
+                TimerOffOnBattery     = GetBool(key,     "TimerOffOnBattery"),
                 GlobalTimerPromptAnswered = GetBool(key, "GlobalTimerPromptAnswered"),
                 GlobalTimerSetByApp       = GetBool(key, "GlobalTimerSetByApp"),
                 GlobalTimerChangedUtc     = GetUtc (key, "GlobalTimerChangedUtc"),
@@ -157,6 +158,10 @@ internal sealed class SettingsService : ISettingsService
             key.SetValue("IdleThresholdMinutes",   settings.IdleThresholdMinutes,  RegistryValueKind.DWord);
             key.SetValue("TimerIdleOffEnabled",    settings.TimerIdleOffEnabled    ? "1" : "0");
             key.SetValue("TimerIdleOffMinutes",    settings.TimerIdleOffMinutes,   RegistryValueKind.DWord);
+            if (settings.TimerOffOnBattery)
+                key.SetValue("TimerOffOnBattery", "1");
+            else
+                key.DeleteValue("TimerOffOnBattery", throwOnMissingValue: false);
             key.SetValue("GlobalTimerPromptAnswered", settings.GlobalTimerPromptAnswered ? "1" : "0");
             key.SetValue("GlobalTimerSetByApp",       settings.GlobalTimerSetByApp       ? "1" : "0");
             key.SetValue("GlobalTimerBootValue",      settings.GlobalTimerBootValue      ? "1" : "0");
