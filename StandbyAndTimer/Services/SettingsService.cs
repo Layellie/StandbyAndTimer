@@ -64,6 +64,9 @@ internal sealed class SettingsService : ISettingsService
                 TimerIdleOffEnabled   = GetBool(key,     "TimerIdleOffEnabled"),
                 TimerIdleOffMinutes   = GetInt (key,     "TimerIdleOffMinutes", 10),
                 TimerOffOnBattery     = GetBool(key,     "TimerOffOnBattery"),
+                AutoCleanEnabled      = GetBool(key,     "AutoCleanEnabled"),
+                AutoCleanIntervalDays = GetInt (key,     "AutoCleanIntervalDays", 7),
+                AutoCleanLastRunUtc   = GetUtc (key,     "AutoCleanLastRunUtc"),
                 GlobalTimerPromptAnswered = GetBool(key, "GlobalTimerPromptAnswered"),
                 GlobalTimerSetByApp       = GetBool(key, "GlobalTimerSetByApp"),
                 GlobalTimerChangedUtc     = GetUtc (key, "GlobalTimerChangedUtc"),
@@ -162,6 +165,18 @@ internal sealed class SettingsService : ISettingsService
                 key.SetValue("TimerOffOnBattery", "1");
             else
                 key.DeleteValue("TimerOffOnBattery", throwOnMissingValue: false);
+            if (settings.AutoCleanEnabled)
+                key.SetValue("AutoCleanEnabled", "1");
+            else
+                key.DeleteValue("AutoCleanEnabled", throwOnMissingValue: false);
+            if (settings.AutoCleanIntervalDays != 7)
+                key.SetValue("AutoCleanIntervalDays", settings.AutoCleanIntervalDays, RegistryValueKind.DWord);
+            else
+                key.DeleteValue("AutoCleanIntervalDays", throwOnMissingValue: false);
+            if (settings.AutoCleanLastRunUtc is { } lastClean)
+                key.SetValue("AutoCleanLastRunUtc", lastClean.ToUniversalTime().ToString("o", CultureInfo.InvariantCulture));
+            else
+                key.DeleteValue("AutoCleanLastRunUtc", throwOnMissingValue: false);
             key.SetValue("GlobalTimerPromptAnswered", settings.GlobalTimerPromptAnswered ? "1" : "0");
             key.SetValue("GlobalTimerSetByApp",       settings.GlobalTimerSetByApp       ? "1" : "0");
             key.SetValue("GlobalTimerBootValue",      settings.GlobalTimerBootValue      ? "1" : "0");

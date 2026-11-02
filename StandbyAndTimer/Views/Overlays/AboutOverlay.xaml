@@ -223,6 +223,7 @@
                                 <ContentControl Content="{DynamicResource Str_HelpM_Temp}"      Style="{StaticResource HelpBulletStyle}"/>
                                 <ContentControl Content="{DynamicResource Str_HelpM_Update}"    Style="{StaticResource HelpBulletStyle}"/>
                                 <ContentControl Content="{DynamicResource Str_HelpM_Bin}"       Style="{StaticResource HelpBulletStyle}"/>
+                                <ContentControl Content="{DynamicResource Str_HelpM_Auto}"      Style="{StaticResource HelpBulletStyle}"/>
                                 <ContentControl Content="{DynamicResource Str_HelpM_Downloads}" Style="{StaticResource HelpBulletStyle}"/>
                                 <ContentControl Content="{DynamicResource Str_HelpM_MoreCaches}" Style="{StaticResource HelpBulletStyle}"/>
                                 <ContentControl Content="{DynamicResource Str_HelpM_Leftovers}"  Style="{StaticResource HelpBulletStyle}"/>

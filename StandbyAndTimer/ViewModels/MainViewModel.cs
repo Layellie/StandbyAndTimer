@@ -161,6 +161,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             imported.GlobalTimerSetByApp       = now.GlobalTimerSetByApp;
             imported.GlobalTimerChangedUtc     = now.GlobalTimerChangedUtc;
             imported.GlobalTimerBootValue      = now.GlobalTimerBootValue;
+            imported.AutoCleanLastRunUtc       = now.AutoCleanLastRunUtc;   // this PC's own last run
             ApplySettings(imported);
         };
         Settings.SnapshotProvider  = BuildCurrentSettings;
@@ -179,6 +180,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         Maintenance = maintenance ?? MaintenanceViewModel.Inert();
         Maintenance.SettingsChanged += (_, _) => PersistSettings();
         Maintenance.StatusRequested += (_, text) => StatusMessage = text;
+        Maintenance.AutoCleaned     += (_, bytes) => AutoMaintenanceNotification?.Invoke(this,
+            string.Format(CultureInfo.CurrentCulture, _localization.GetString("Str_Tray_NotifyAutoCleanBody"),
+                          MainViewModel.FormatSize(bytes / (1024 * 1024))));
         Maintenance.AnyGameRunning  = () => _lastSnapshot?.AnyGameRunning == true;
         // The Settings tab can also be opened from outside (tray "Settings"):
         // keep the selected tab in step with Settings.IsOpen.
@@ -222,6 +226,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             await ActivateTimerInternalAsync(silent: true).ConfigureAwait(true);
         await ApplyBatteryStateAsync(_onBattery, anyGameRunning: false).ConfigureAwait(true);
         ShowWindowsResolution();
+        AutoMaintenanceTask = RunAutoMaintenanceAsync();
 
         // Don't overwrite "Timer active — 0.50 ms" with "Ready".
         SetIdleStatus();
@@ -291,6 +296,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                               s.AutoPurgeCooldownEnabled, s.AutoPurgeCooldownSeconds,
                               s.CloseToTrayDirectly);
             Maintenance.Initialize(s.CleanupSelection);
+            Maintenance.InitializeAuto(s.AutoCleanEnabled, s.AutoCleanIntervalDays, s.AutoCleanLastRunUtc);
         }
         SyncMonitorThresholds();
         SyncMonitorGames();
@@ -411,6 +417,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         FirstRunCompleted     = _firstRunCompleted,
         Games                 = [.. Games],
         IgnoredGamePaths      = [.. _ignoredGamePaths],
+        AutoCleanEnabled      = Maintenance.AutoCleanEnabled,
+        AutoCleanIntervalDays = Maintenance.AutoCleanIntervalDays,
+        AutoCleanLastRunUtc   = Maintenance.AutoCleanLastRunUtc,
         CleanupSelection      = Maintenance.SelectionText
     };
 
@@ -481,6 +490,33 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             StatusMessage = string.Format(CultureInfo.CurrentCulture,
                 _localization.GetString("Str_Status_TimerIdleBack"), ActualTimerMs);
             Logger.Info("Input after idle: timer ON");
+        }
+    }
+
+    // ── Auto maintenance at start-up ─────────────────────────────────────────
+
+    /// <summary>"Auto maintenance cleaned 1.2 GB" for a tray balloon (the safe cleanups ran by themselves).</summary>
+    public event EventHandler<string>? AutoMaintenanceNotification;
+
+    /// <summary>The wait before an unattended cleanup, so it never competes with the start-up (tests skip it).</summary>
+    internal Func<TimeSpan, CancellationToken, Task> AutoMaintenanceDelay { get; set; } = Task.Delay;
+    internal Task? AutoMaintenanceTask { get; private set; }
+    private static readonly TimeSpan AutoMaintenanceWait = TimeSpan.FromSeconds(30);
+
+    // One look at start-up, not a timer: when the chosen number of days has
+    // passed, the safe cleanups run once, a little after the window is up.
+    private async Task RunAutoMaintenanceAsync()
+    {
+        try
+        {
+            if (!Maintenance.IsAutoDueNow) return;
+            await AutoMaintenanceDelay(AutoMaintenanceWait, _appCts.Token).ConfigureAwait(false);
+            await OnUiAsync(() => Maintenance.RunAutoIfDueAsync()).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            Logger.Warn($"Auto maintenance: {ex.GetType().Name}: {ex.Message}");
         }
     }
 
@@ -1395,6 +1431,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (Application.Current?.Dispatcher is { } d && !d.CheckAccess()) return d.InvokeAsync(action).Task;
         action();
         return Task.CompletedTask;
+    }
+
+    private static Task OnUiAsync(Func<Task> work)
+    {
+        if (Application.Current?.Dispatcher is { } d && !d.CheckAccess()) return d.InvokeAsync(work).Task.Unwrap();
+        return work();
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

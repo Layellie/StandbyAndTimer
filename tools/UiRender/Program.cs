@@ -908,6 +908,23 @@ public static class Program
                 failures += CheckToolTips(root, $"{tag} update notes");
                 s.IsUpdateNotesVisible = false; Pump();
             }
+            // Auto maintenance dialog over the Maintenance tab: safe and review sections,
+            // switched on with the interval menu and its "next" line.
+            {
+                vm.SelectedTab = MainViewModel.MaintenanceTab; Pump();
+                RefreshMaintenance();
+                var m = vm.Maintenance;
+                m.InitializeAuto(true, 14, DateTime.Now.AddDays(-3).ToUniversalTime());
+                m.OpenAutoCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+                m.AutoReviewItems[0].IsChecked = true;
+                Pump();
+                Save(root, Path.Combine(outDir, $"{tag}-4-auto-maintenance.png"));
+                failures += CheckLayout(root, $"{tag} auto maintenance");
+                failures += CheckToolTips(root, $"{tag} auto maintenance");
+                m.CloseAutoCommand.Execute(null);
+                m.InitializeAuto(false, 7, null);
+                vm.SelectedTab = MainViewModel.StatusTab; Pump();
+            }
             {
                 var purge = Walk(root).OfType<StandbyAndTimer.Views.Cards.StandbyPurgeCard>().Single();
                 var cb = Walk(purge).OfType<CheckBox>().First(c => c.Style == (Style)Application.Current.Resources["DarkCheckBoxStyle"]);
