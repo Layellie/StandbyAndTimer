@@ -724,6 +724,16 @@ public static class Program
             var aboutTabs = Walk(Walk(root).OfType<StandbyAndTimer.Views.Overlays.AboutOverlay>().Single()).OfType<TabControl>();
             var tabs = Walk(root).OfType<TabControl>().Except(aboutTabs).Single();
 
+            // A clicked tab strip or guide gets keyboard focus; WPF's default focus
+            // rectangle then drew a thin grey frame around the whole content area.
+            // Every tab control (main tabs, both guide tabs) must opt out of it.
+            foreach (var tc in Walk(root).OfType<TabControl>())
+            {
+                bool noFrame = tc.FocusVisualStyle is null;
+                if (!noFrame) failures++;
+                Log($"  {(noFrame ? "OK  " : "FAIL")} [{tag}] tab control draws no focus frame ({(aboutTabs.Contains(tc) ? "guide" : "main")})");
+            }
+
             // Real on-screen capture (hardware render path, through DWM): the
             // offscreen RenderTargetBitmap path is software-only and cannot
             // show GPU edge/opacity-layer artifacts.
