@@ -137,6 +137,22 @@
                               Style="{StaticResource ToggleSwitchStyle}"/>
                 </Grid>
 
+                <!-- Turn the timer off on battery (laptops; no effect without a battery). -->
+                <Grid Margin="0,1"
+                      Background="Transparent"
+                      ToolTip="{DynamicResource Str_Settings_TimerOffOnBatteryTip}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{DynamicResource Str_Settings_TimerOffOnBattery}"
+                               Style="{StaticResource SettingTitleStyle}"
+                               VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <CheckBox Grid.Column="1"
+                              IsChecked="{Binding TimerOffOnBattery}"
+                              Style="{StaticResource ToggleSwitchStyle}"/>
+                </Grid>
+
                 <!-- Turn the timer off when idle: Off / 5 / 10 / 15 / Custom;
                      Custom shows a minutes box left of the picker. -->
                 <Grid Margin="0,1"
@@ -170,22 +186,6 @@
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-                </Grid>
-
-                <!-- Turn the timer off on battery (laptops; no effect without a battery). -->
-                <Grid Margin="0,1"
-                      Background="Transparent"
-                      ToolTip="{DynamicResource Str_Settings_TimerOffOnBatteryTip}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="{DynamicResource Str_Settings_TimerOffOnBattery}"
-                               Style="{StaticResource SettingTitleStyle}"
-                               VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <CheckBox Grid.Column="1"
-                              IsChecked="{Binding TimerOffOnBattery}"
-                              Style="{StaticResource ToggleSwitchStyle}"/>
                 </Grid>
             </StackPanel>
         </Border>

@@ -782,6 +782,33 @@ public static class Program
                         }
                     else { bad++; Log($"  FAIL [{where}] dialog not found"); }
                     Log($"  {(bad == 0 ? "OK  " : "    ")} [{where}] focusable elements tried: {tried}");
+
+                    // A scroll area's clip edge, anti-aliased, can leave a light 1 px line just
+                    // outside its left and bottom edges on the real screen (the software render
+                    // does not show it). Compare the ring right outside with the one beside it.
+                    if (overlay() is { } scrollHost)
+                    {
+                        var frame = new DispatcherFrame();
+                        var wait = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
+                        wait.Tick += (_, _) => { wait.Stop(); frame.Continue = false; };
+                        wait.Start(); Dispatcher.PushFrame(frame);
+                        var origin = root.PointToScreen(new Point(0, 0));
+                        int sw = (int)root.ActualWidth, sh = (int)root.ActualHeight;
+                        using var shot = new System.Drawing.Bitmap(sw, sh);
+                        using (var gg = System.Drawing.Graphics.FromImage(shot))
+                            gg.CopyFromScreen((int)origin.X, (int)origin.Y, 0, 0, new System.Drawing.Size(sw, sh));
+                        foreach (var sv in Walk(scrollHost).OfType<ScrollViewer>().Where(v => v.IsVisible && v.ActualHeight > 40 && v.ActualWidth > 100))
+                        {
+                            var o = sv.TranslatePoint(new Point(0, 0), root);
+                            int x0 = (int)o.X, y0 = (int)o.Y, x1 = x0 + (int)sv.ActualWidth, y1 = y0 + (int)sv.ActualHeight;
+                            if (x0 < 3 || y1 + 3 >= sh) continue;
+                            int hitsL = 0, totL = 0, hitsB = 0, totB = 0;
+                            for (int y = y0 + 8; y < y1 - 2; y++) { totL++; if (shot.GetPixel(x0 - 1, y).R - shot.GetPixel(x0 - 3, y).R > 10) hitsL++; }
+                            for (int x = x0 + 2; x < Math.Min(x1 - 20, sw - 1); x++) { totB++; if (shot.GetPixel(x, y1).R - shot.GetPixel(x, y1 + 2).R > 10) hitsB++; }
+                            bool line = hitsL > totL / 2 || hitsB > totB / 2;
+                            if (line) { bad++; Log($"  FAIL [{where}] light line outside a scroll area at ({x0},{y0}) {sv.ActualWidth:0}x{sv.ActualHeight:0}: left {hitsL}/{totL}, bottom {hitsB}/{totB}"); }
+                        }
+                    }
                     close(); Pump();
                     return bad;
                 }
