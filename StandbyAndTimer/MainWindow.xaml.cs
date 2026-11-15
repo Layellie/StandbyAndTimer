@@ -142,6 +142,8 @@ public partial class MainWindow : Window
     internal void ShowFromOffscreen()
     {
         _offscreen = false;
+        // A drive may have been plugged in (or pulled) since the list was last seen.
+        _ = _vm.RefreshMissingGamesAsync();
 
         // A hidden start runs the whole process in software (App.OnStartup);
         // the first show brings the GPU back for good.

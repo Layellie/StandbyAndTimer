@@ -76,7 +76,11 @@ Services/                   ← implementations; the only layer that touches Win
 Infrastructure/AppBootstrapper.cs ← Microsoft.Extensions.DependencyInjection, all singletons
 
 ViewModels/
-  MainViewModel             ← status page, timer lock / idle-off logic, game list; owns persistence
+  MainViewModel             ← status page; owns persistence. One class in four files:
+                              MainViewModel.cs (state, settings, the once-a-second tick),
+                              .Timer.cs (TIMER button, lock, idle / battery pauses),
+                              .Games.cs (running games, per-game rules, add / remove / launch),
+                              .Purge.cs (clearable, purge button, purge history)
   SettingsViewModel         ← Settings tab (also export / import, updates, hotkey rebinding)
   SystemViewModel           ← System settings panel behind the Administrator badge (settings that
                               change Windows) + the one-time GlobalTimer question
@@ -99,6 +103,10 @@ App.xaml.cs                 ← single instance, DI, tray, hotkeys, notification
 - Machine-specific state (System settings) is not taken from a settings import.
 - `PerformanceCounter`s are created lazily on the monitor thread (their constructor blocked start-up for seconds on the UI thread).
 - Game processes are matched by exe name; only PIDs are kept, `Process` objects are disposed at once.
+- What runs while the app sits in the tray is kept to three things: the 1 s monitor loop, the 3 s fullscreen poll, and the 50 ms timer watchdog (only while the timer is on). The tray tooltip and menu are refreshed when the mouse reaches the icon or the menu opens, not on a timer. The monitor's per-second work allocates next to nothing (`RunningGames.Take(only)`, `MemoryLists.TryReadTotals`); keep it that way.
+- The process list comes from the short query of Windows 11 24H2+ (`SystemBasicProcessInformation`, names and PIDs only), checked against the app's own PID on first use, with the full `SystemProcessInformation` class as the fallback on older Windows.
+- The app's own process stays at Normal priority; only the timer watchdog thread is raised (MMCSS). `TieredPGO` and concurrent GC are off in the csproj (measured in the tray; the comment there has the numbers).
+- The app is elevated, so: a game's path is read with `PROCESS_QUERY_LIMITED_INFORMATION` (never `Process.MainModule`); a process that refuses the boost is tried once; `SafeFolderCleaner` holds each folder open while walking it and refuses a root below a link inside the profile / ProgramData; nothing from the network is handed to `ShellExecute` (pages open through `explorer.exe`, by full path).
 - The single-file bundle is **not compressed**: a compressed bundle is unpacked into private memory at every start (220 vs 143 MB measured). Inno Setup compresses the installer.
 - Settings-page layout is fixed (760x520, no ScrollViewer): run UiRender after any XAML change; it fails on anything clipped or outside its card.
 

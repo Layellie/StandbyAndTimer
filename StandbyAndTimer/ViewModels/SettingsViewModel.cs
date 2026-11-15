@@ -648,12 +648,41 @@ public sealed partial class SettingsViewModel : ObservableObject
     {
         try
         {
-            Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
+            if (ReleasePageStartInfo(url) is not { } psi)
+            {
+                Logger.Warn($"Not opened, not a page of this project: '{url}'");
+                return;
+            }
+            using var p = Process.Start(psi);
         }
         catch (Exception ex)
         {
             Logger.Warn($"Failed to open URL '{url}': {ex.Message}");
         }
+    }
+
+    private const string ProjectPagePrefix = "/Layellie/StandbyAndTimer/";
+
+    /// <summary>
+    /// How the release page is opened, or null when <paramref name="url"/> is
+    /// not an https page of this project on github.com. The address comes
+    /// from the network (the releases answer) and this process is elevated:
+    /// handed to ShellExecute as it was, the browser started elevated too, and
+    /// any other string (a path, a command) would have been run. Now only the
+    /// project's own pages pass, and explorer.exe (the running, non-elevated
+    /// shell) opens them, the same way the Windows settings pages are opened.
+    /// </summary>
+    internal static ProcessStartInfo? ReleasePageStartInfo(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            || uri.Scheme != Uri.UriSchemeHttps
+            || !uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase)
+            || !uri.AbsolutePath.StartsWith(ProjectPagePrefix, StringComparison.OrdinalIgnoreCase)
+            || url.Contains('"'))
+            return null;
+
+        string explorer = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe");
+        return new ProcessStartInfo(explorer, $"\"{uri.AbsoluteUri}\"") { UseShellExecute = false };
     }
 
     [RelayCommand]

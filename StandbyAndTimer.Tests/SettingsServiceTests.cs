@@ -153,6 +153,47 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal([cs2], _service.Load().Games.Select(g => g.ExecutablePath));
     }
 
+    // A game on a drive that is not there right now (USB disk unplugged, a
+    // drive that mounts after logon while the app auto-starts) is not an
+    // uninstalled game: dropping it erased it and its rules at the next save.
+    [Fact]
+    public void Games_on_a_drive_that_is_not_there_are_kept_with_their_rules()
+    {
+        char letter = "ZYXWVUTSRQPONMLKJIHGFED".First(c => !Directory.Exists($@"{c}:\"));
+        string away = $@"{letter}:\Games\Away\away.exe";
+        string cs2  = Exe("cs2");
+        using (var key = Key())
+        {
+            key.SetValue("GamePaths", $"{cs2};{away}");
+            key.SetValue("PurgeOnStartGamePaths", away);
+        }
+
+        var loaded = _service.Load();
+        Assert.Equal([cs2, away], loaded.Games.Select(g => g.ExecutablePath));
+        Assert.True(loaded.Games[1].PurgeOnStart);
+        Assert.False(loaded.Games[0].IsMissing);
+        Assert.True(loaded.Games[1].IsMissing);    // the list shows it dimmed
+
+        _service.Save(loaded);
+        using (var key = Key())
+        {
+            Assert.Equal($"{cs2};{away}", key.GetValue("GamePaths"));
+            Assert.Equal(away, key.GetValue("PurgeOnStartGamePaths"));
+        }
+    }
+
+    [Theory]
+    [InlineData(@"C:\Games\x.exe", true, true)]     // the file is there
+    [InlineData(@"C:\Games\x.exe", false, false)]   // gone from a drive that is there: uninstalled
+    [InlineData(@"Q:\Games\x.exe", false, true)]    // the drive itself is away
+    [InlineData(@"relative\x.exe", false, false)]   // no drive to wait for
+    public void A_saved_game_is_kept_when_its_file_or_only_its_drive_is_missing(string path, bool fileExists, bool kept)
+    {
+        bool driveExists(string root) => root.StartsWith('C');
+
+        Assert.Equal(kept, SettingsService.KeepSavedGame(path, _ => fileExists, driveExists));
+    }
+
     [Theory]
     [InlineData("7")]          // a number outside the enum
     [InlineData("-1")]

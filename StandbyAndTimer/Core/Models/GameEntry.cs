@@ -89,6 +89,32 @@ public sealed class GameEntry : INotifyPropertyChanged
         set => Set(ref _timerInGame, value);
     }
 
+    // ── What the app found out about the game in this session (never saved) ──
+
+    private bool _isMissing;
+    private bool _boostRefused;
+
+    /// <summary>
+    /// The exe is not there right now: the drive is not connected, or the
+    /// file was moved or deleted. The entry and its rules are kept; the list
+    /// shows it dimmed.
+    /// </summary>
+    public bool IsMissing
+    {
+        get => _isMissing;
+        set { if (_isMissing != value) { _isMissing = value; Raise(); } }
+    }
+
+    /// <summary>
+    /// The running game did not let its priority be changed (anti-cheat
+    /// protected games do not). The timer and purge rules still apply.
+    /// </summary>
+    public bool BoostRefused
+    {
+        get => _boostRefused;
+        set { if (_boostRefused != value) { _boostRefused = value; Raise(); } }
+    }
+
     /// <summary>True when a per-game switch is not at its default; drives the list row marker.</summary>
     public bool HasCustomRules =>
         _priority != GamePriority.High || !_allowAutoPurge || _purgeOnStart || _purgeOnExit || !_timerInGame;

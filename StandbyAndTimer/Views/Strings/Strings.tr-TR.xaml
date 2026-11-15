@@ -80,6 +80,8 @@
     <sys:String x:Key="Str_Game_AutoTag">OTO</sys:String>
     <sys:String x:Key="Str_Game_AutoTagTip">Tam ekranda algılanıp otomatik eklendi. Silersen bir daha eklenmez.</sys:String>
     <sys:String x:Key="Str_Game_CustomTagTip">Bu oyunun kendi ayarları var: öncelik, oto temizlik, bir kez temizleme ya da timer varsayılandan farklı.</sys:String>
+    <sys:String x:Key="Str_Game_MissingTip">Şu an bulunamıyor: sürücü bağlı değil ya da dosya taşınmış / silinmiş. Oyun ve ayarları duruyor.</sys:String>
+    <sys:String x:Key="Str_Game_BoostRefusedTip">Oyun önceliğinin değiştirilmesine izin vermedi (anti-cheat kullanan oyunlarda olağan). Timer ve temizlik kuralları yine geçerli.</sys:String>
     <sys:String x:Key="Str_Game_PriorityLabel">Öncelik</sys:String>
     <sys:String x:Key="Str_Game_PriorityTip">Oyun Modu'nun bu oyuna vereceği CPU önceliği. Yüksek: en büyük pay. Normalin üstü: oyun yine öne geçer ama Discord, OBS ve ses daha az sıkışır (ses cızırtısı ya da yayın takılması olursa dene). Dokunma: uygulama bu oyuna hiç dokunmaz (öncelik, çekirdek, EcoQoS); Process Lasso gibi bir araç kullanıyorsan seç. Oyun Modu açık olmalı; değişiklik oyunun bir sonraki açılışında geçerli olur.</sys:String>
     <sys:String x:Key="Str_GamePriority_High">Yüksek</sys:String>
@@ -165,6 +167,7 @@
     <sys:String x:Key="Str_Status_GameLaunching">{0} başlatılıyor…</sys:String>
     <sys:String x:Key="Str_Status_GameLaunchFailed">{0} başlatılamadı; ayrıntı log'da</sys:String>
     <sys:String x:Key="Str_Status_GameMissing">{0} bulunamadı (dosya taşınmış ya da silinmiş)</sys:String>
+    <sys:String x:Key="Str_Status_BoostRefused">{0}: öncelik değiştirilemedi (oyun izin vermiyor)</sys:String>
     <sys:String x:Key="Str_PurgeKind_Normal">Normal</sys:String>
     <sys:String x:Key="Str_PurgeKind_Light">Hafif</sys:String>
     <sys:String x:Key="Str_PurgeKind_Deep">Derin</sys:String>
@@ -305,6 +308,7 @@
     <sys:String x:Key="Str_GameNotify_Boost">Yüksek öncelik</sys:String>
     <sys:String x:Key="Str_GameNotify_AboveNormal">Normalin üstü öncelik</sys:String>
     <sys:String x:Key="Str_GameNotify_NoBoost">Öncelik değiştirilmedi</sys:String>
+    <sys:String x:Key="Str_GameNotify_BoostRefused">Öncelik değiştirilemedi (oyun izin vermedi)</sys:String>
     <sys:String x:Key="Str_GameNotify_TimerOn">Timer açık ({0:F2} ms)</sys:String>
     <sys:String x:Key="Str_GameNotify_TimerOff">Timer kapalı</sys:String>
     <sys:String x:Key="Str_GameNotify_PurgeOn">Oto temizlik açık</sys:String>

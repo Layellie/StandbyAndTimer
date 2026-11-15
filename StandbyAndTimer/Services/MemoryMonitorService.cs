@@ -40,8 +40,33 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
     public bool AutoPurgeOnlyInGames     { get; set; }
     public IReadOnlyList<string> GamePaths            { get; set; } = [];
     public IReadOnlyList<string> AboveNormalGamePaths { get; set; } = [];
-    public IReadOnlyList<string> WatchedGamePaths     { get; set; } = [];
     public IReadOnlyList<string> NoAutoPurgeGamePaths { get; set; } = [];
+
+    public IReadOnlyList<string> WatchedGamePaths
+    {
+        get => _watched.Paths;
+        set => _watched = Watched.From(value);
+    }
+
+    /// <summary>
+    /// The watched list as each tick needs it, worked out once when the list
+    /// changes (not every second): each path with its exe name, and the names
+    /// as the set the process snapshot looks for. Swapped as one object, so a
+    /// tick never sees half of a change.
+    /// </summary>
+    private sealed record Watched(IReadOnlyList<string> Paths, (string Path, string Name)[] Games, HashSet<string> Names)
+    {
+        public static readonly Watched None = From([]);
+
+        public static Watched From(IReadOnlyList<string> paths)
+        {
+            var games = paths.Select(p => (p, Path.GetFileNameWithoutExtension(p))).ToArray();
+            return new Watched(paths, games,
+                               new HashSet<string>(games.Select(g => g.Item2), StringComparer.OrdinalIgnoreCase));
+        }
+    }
+
+    private volatile Watched _watched = Watched.None;
 
     // Tests can inject a deterministic clock to verify Smart Cooldown gating.
     internal Func<DateTime> UtcNow { get; set; } = () => DateTime.UtcNow;
@@ -136,12 +161,38 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
     {
         // Which listed games run right now: one process snapshot per tick,
         // and only when there is a list to check. Game boost reuses it.
-        var watched = WatchedGamePaths;
-        ProcessSnapshot? processes = watched.Count > 0 ? RunningGames.Take() : null;
-        List<string> running = processes is not null ? RunningGames.Match(watched, processes.Names) : [];
+        // The snapshot holds the listed names alone (boosted games are among them).
+        var watched = _watched;
+        ProcessSnapshot? processes = watched.Games.Length > 0 ? RunningGames.Take(watched.Names) : null;
+        List<string> running = [];
+        if (processes is { Names.Count: > 0 })
+            foreach (var (path, name) in watched.Games)
+                if (processes.Names.Contains(name)) running.Add(path);
+
+        // Game boost first, so the snapshot can say which running game refused
+        // it and the "game started" notification is right the first time. A
+        // failure here must not cost the tick its snapshot (the window's
+        // numbers and the timer rules hang on it).
+        IReadOnlyCollection<string> refused = [];
+        if (GameModeEnabled && GamePaths.Count > 0)
+        {
+            try
+            {
+                await _processService.CheckAndOptimizeAsync(BoostTargets(GamePaths, running),
+                                                            processes is null ? null : processes.PidsOf,
+                                                            processes is null ? null : processes.Contains,
+                                                            AboveNormalGamePaths)
+                                     .ConfigureAwait(false);
+                refused = _processService.RefusedPaths ?? [];
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                Logger.Warn($"Game boost: {ex.GetType().Name}: {ex.Message}");
+            }
+        }
 
         TimeSpan idleFor = _idleMonitor.TimeSinceLastInput;   // idle gate below + timer idle-off (view model)
-        var snapshot = ReadSnapshot() with { RunningGamePaths = running, IdleFor = idleFor };
+        var snapshot = ReadSnapshot() with { RunningGamePaths = running, IdleFor = idleFor, BoostRefusedPaths = refused };
         SnapshotUpdated?.Invoke(this, snapshot);
 
         // Idle gate: when AutoPurgeIdleOnly is on, suppress the purge
@@ -164,13 +215,6 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
             if (await _purgeService.PurgeAsync(PurgeTrigger.Auto).ConfigureAwait(false))
                 _lastAutoPurgeUtc = nowUtc;
         }
-
-        if (GameModeEnabled && GamePaths.Count > 0)
-            await _processService.CheckAndOptimizeAsync(BoostTargets(GamePaths, running),
-                                                        processes is null ? null : processes.PidsOf,
-                                                        processes is null ? null : processes.Contains,
-                                                        AboveNormalGamePaths)
-                                 .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -245,7 +289,7 @@ internal sealed class MemoryMonitorService : IMemoryMonitorService
     {
         if (!_nativeListsFailed)
         {
-            if (MemoryLists.TryRead(out var lists)) return (lists.StandbyMb, lists.StandbyLowMb, lists.ModifiedMb);
+            if (MemoryLists.TryReadTotals(out long standby, out long low, out long modified)) return (standby, low, modified);
             _nativeListsFailed = true;
             Logger.Warn("MemoryMonitor: SystemMemoryListInformation query failed, using performance counters");
         }

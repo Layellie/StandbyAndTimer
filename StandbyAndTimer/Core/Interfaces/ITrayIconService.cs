@@ -33,10 +33,17 @@ public interface ITrayIconService : IDisposable
     /// <summary>Invoked when the user picks "Purge Standby Now" from the tray menu.</summary>
     event EventHandler? PurgeRequested;
 
+    /// <summary>
+    /// The tooltip or the menu is about to be seen (the mouse reached the
+    /// icon, the menu opens): App answers with <see cref="Refresh"/>. Nothing
+    /// refreshes the tray on a timer.
+    /// </summary>
+    event EventHandler? RefreshRequested;
+
     /// <summary>Builds the NotifyIcon, attaches the dark menu, and shows it.</summary>
     void Initialize(System.Drawing.Icon baseIcon, System.Drawing.Icon? activeIcon);
 
-    /// <summary>Re-renders the menu labels + tooltip + active/idle icon. Cheap; safe to call on every tick.</summary>
+    /// <summary>Re-renders the menu labels + tooltip + active/idle icon.</summary>
     void Refresh(TrayState state);
 
     /// <summary>Re-renders just the menu labels — call when language changes.</summary>

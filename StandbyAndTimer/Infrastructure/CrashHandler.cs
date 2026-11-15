@@ -48,25 +48,30 @@ internal sealed class CrashHandler
         TryEmergencyRestore();
     }
 
-    private void OnDispatcherUnhandledException(object? sender, DispatcherUnhandledExceptionEventArgs e)
-    {
-        Logger.Error("DispatcherUnhandledException", e.Exception);
-        TryEmergencyRestore();
+    private void OnDispatcherUnhandledException(object? sender, DispatcherUnhandledExceptionEventArgs e) =>
+        e.Handled = HandleUiException(e.Exception, details => new CrashReporterWindow(details).ShowDialog());
 
-        // Show the crash reporter dialog and mark the exception handled — the
-        // alternative (let WPF show its default fatal error popup and exit)
-        // gives the user nothing to act on. Our window has Copy + Open-Issue
-        // buttons so the report actually reaches us. If the reporter itself
-        // fails to display, fall through to the default fatal path.
+    /// <summary>
+    /// A UI-thread exception: show the crash reporter and carry on (true), so
+    /// the user gets Copy / Open-Issue buttons instead of WPF's fatal popup.
+    /// The app keeps running then, and so does the timer: releasing it here
+    /// left the timer off while the window still showed it as on. Only when
+    /// the reporter itself cannot be shown does the default fatal path follow
+    /// (false), and the timer is released first.
+    /// </summary>
+    internal bool HandleUiException(Exception exception, Action<string> showReporter)
+    {
+        Logger.Error("DispatcherUnhandledException", exception);
         try
         {
-            var reporter = new CrashReporterWindow(FormatCrash(e.Exception));
-            reporter.ShowDialog();
-            e.Handled = true;
+            showReporter(FormatCrash(exception));
+            return true;
         }
         catch (Exception ex2)
         {
             Logger.Error("CrashReporter failed to show", ex2);
+            TryEmergencyRestore();
+            return false;
         }
     }
 

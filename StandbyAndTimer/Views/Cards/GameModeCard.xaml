@@ -154,14 +154,42 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
+                            <!-- A game whose exe is not there right now (drive
+                                 unplugged, file moved) stays in the list with
+                                 its rules, dimmed like every "not found" row. -->
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsMissing}" Value="True">
+                                            <Setter Property="Opacity" Value="0.5"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
                             <Image Source="{Binding ExecutablePath, Converter={StaticResource GameIconConv}}"
                                    Width="16" Height="16"
                                    Margin="0,0,8,0"/>
                             <TextBlock Grid.Column="1"
                                        Text="{Binding DisplayName}"
-                                       ToolTip="{Binding ExecutablePath}"
                                        TextTrimming="CharacterEllipsis"
-                                       VerticalAlignment="Center"/>
+                                       VerticalAlignment="Center">
+                                <!-- The path, plus what the app found out in
+                                     this session: not found, or the game
+                                     refused the priority change. -->
+                                <TextBlock.ToolTip>
+                                    <ToolTip DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                        <StackPanel MaxWidth="440">
+                                            <TextBlock Text="{Binding ExecutablePath}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{DynamicResource Str_Game_MissingTip}"
+                                                       TextWrapping="Wrap" Margin="0,4,0,0"
+                                                       Visibility="{Binding IsMissing, Converter={StaticResource BoolToVis}}"/>
+                                            <TextBlock Text="{DynamicResource Str_Game_BoostRefusedTip}"
+                                                       TextWrapping="Wrap" Margin="0,4,0,0"
+                                                       Visibility="{Binding BoostRefused, Converter={StaticResource BoolToVis}}"/>
+                                        </StackPanel>
+                                    </ToolTip>
+                                </TextBlock.ToolTip>
+                            </TextBlock>
                             <Border Grid.Column="2"
                                     Style="{StaticResource MutedBadgeStyle}"
                                     Padding="5,0"

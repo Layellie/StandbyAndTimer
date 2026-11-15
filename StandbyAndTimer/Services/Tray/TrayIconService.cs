@@ -46,6 +46,20 @@ internal sealed class TrayIconService : ITrayIconService
     public event EventHandler? DeepPurgeToggleRequested;
     public event EventHandler? GameModeToggleRequested;
     public event EventHandler? TimerLockCycleRequested;
+    public event EventHandler? RefreshRequested;
+
+    // The mouse over the icon raises MouseMove many times a second; one
+    // refresh a second keeps the tooltip's RAM line current while it is read.
+    private const long HoverRefreshMs = 1_000;
+    private long _lastHoverRefreshMs = long.MinValue;
+
+    /// <summary>The mouse is over the tray icon (the tooltip follows): ask for fresh numbers, at most once a second.</summary>
+    internal void OnHover(long nowMs)
+    {
+        if (_lastHoverRefreshMs != long.MinValue && nowMs - _lastHoverRefreshMs < HoverRefreshMs) return;
+        _lastHoverRefreshMs = nowMs;
+        RefreshRequested?.Invoke(this, EventArgs.Empty);
+    }
 
     public TrayIconService(ILocalizationService localization)
     {
@@ -75,6 +89,10 @@ internal sealed class TrayIconService : ITrayIconService
                 ToggleRequested?.Invoke(this, EventArgs.Empty);
         };
         _notifyIcon.DoubleClick += (_, _) => ToggleRequested?.Invoke(this, EventArgs.Empty);
+        // Fresh tooltip and labels when they are about to be looked at,
+        // instead of a timer that rebuilt them every 3 seconds.
+        _notifyIcon.MouseMove += (_, _) => OnHover(Environment.TickCount64);
+        menu.Opening += (_, _) => RefreshRequested?.Invoke(this, EventArgs.Empty);
 
         RefreshLabels();
     }
