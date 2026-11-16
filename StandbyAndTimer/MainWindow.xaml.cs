@@ -145,11 +145,6 @@ public partial class MainWindow : Window
         // A drive may have been plugged in (or pulled) since the list was last seen.
         _ = _vm.RefreshMissingGamesAsync();
 
-        // A hidden start runs the whole process in software (App.OnStartup);
-        // the first show brings the GPU back for good.
-        if (RenderOptions.ProcessRenderMode == RenderMode.SoftwareOnly)
-            RenderOptions.ProcessRenderMode = RenderMode.Default;
-        SetRenderMode(RenderMode.Default);
         Opacity       = 1;
         ShowInTaskbar = true;
 
@@ -165,8 +160,28 @@ public partial class MainWindow : Window
             Top  = (area.Height - ActualHeight) / 2;
         }
 
-        if (!IsVisible) ShowCloaked();
+        // The window comes back in software rendering (HideOffscreen left it
+        // there) and takes the GPU once it is on screen: see UseGpu.
+        if (!IsVisible) ShowCloaked(onScreen: UseGpu);
+        else            UseGpu();
         Activate();
+    }
+
+    /// <summary>
+    /// Switches rendering to the GPU, after the window is on screen. The
+    /// first frame of every show is drawn in software: setting up Direct3D
+    /// before the show kept the window back (measured, open from tray:
+    /// 266 ms with the GPU first, 166 ms with the first frame in software;
+    /// a 760x520 window of text and boxes draws in a few milliseconds
+    /// either way). While it is shown the window is rendered by the GPU as
+    /// before; hidden, it gives the GPU back (HideOffscreen).
+    /// </summary>
+    internal void UseGpu()
+    {
+        if (_offscreen) return;   // hidden again meanwhile
+        if (RenderOptions.ProcessRenderMode == RenderMode.SoftwareOnly)
+            RenderOptions.ProcessRenderMode = RenderMode.Default;
+        SetRenderMode(RenderMode.Default);
     }
 
     // ── Show without an empty frame ──────────────────────────────────────────

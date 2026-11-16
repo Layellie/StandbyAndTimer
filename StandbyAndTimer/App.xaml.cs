@@ -217,10 +217,12 @@ public partial class App : Application
     private void CreateWindow(bool startHidden)
     {
         // Started hidden (auto-start): no GPU until the window is first
-        // shown (MainWindow.ShowFromOffscreen switches back). Otherwise WPF
+        // shown (MainWindow.UseGpu, once it is on screen). Otherwise WPF
         // sets up Direct3D at start-up and the graphics driver keeps its
         // memory and threads while the window is never on screen. Measured:
-        // 110 MB / 51 threads -> 71 MB / 28 threads in the tray.
+        // 110 MB / 51 threads -> 71 MB / 28 threads in the tray. A visible
+        // start keeps the GPU from the beginning: starting it in software
+        // too made no difference there (625 against 619 ms).
         if (startHidden)
             System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
         // Window / taskbar icon: none set, so WPF takes the exe's own icon
