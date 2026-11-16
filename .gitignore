@@ -34,6 +34,7 @@ installer/dist/
 
 # ── Tooling local state ──────────────────────────────────────────────────────
 .claude/
+docs/superpowers/
 
 # UiRender output (tools/UiRender)
 ui-render-out/

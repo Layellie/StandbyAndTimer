@@ -1,7 +1,8 @@
 <#
 .SYNOPSIS
-    Publishes StandbyAndTimer as a self-contained single-file binary and
-    compiles the Inno Setup installer.
+    Publishes StandbyAndTimer self-contained (the exe with its DLLs in one
+    folder) and compiles the Inno Setup installer, which packs that folder
+    into one setup exe.
 
 .PARAMETER Version
     Version string written to the assembly and the installer filename.
@@ -28,7 +29,7 @@ param(
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
 
-# --- Step 1: dotnet publish (self-contained, single-file) -------------------
+# --- Step 1: dotnet publish (self-contained folder) -------------------------
 Write-Host ""
 Write-Host "[1/2] Publishing self-contained build (Version=$Version)..." -ForegroundColor Cyan
 
@@ -38,7 +39,7 @@ if (Test-Path $publishDir) {
 }
 
 $csproj = Join-Path $root "StandbyAndTimer\StandbyAndTimer.csproj"
-& dotnet publish $csproj -p:PublishProfile=win-x64-single -p:Version=$Version --nologo
+& dotnet publish $csproj -p:PublishProfile=win-x64 -p:Version=$Version --nologo
 if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish failed with exit code $LASTEXITCODE"
 }
@@ -47,8 +48,9 @@ $publishedExe = Join-Path $publishDir "StandbyAndTimer.exe"
 if (-not (Test-Path $publishedExe)) {
     throw "Expected published binary not found: $publishedExe"
 }
-$sizeMb = [math]::Round((Get-Item $publishedExe).Length / 1MB, 1)
-Write-Host "      Published: $publishedExe  ($sizeMb MB)"
+$publishedFiles = Get-ChildItem $publishDir -Recurse -File
+$sizeMb = [math]::Round(($publishedFiles | Measure-Object Length -Sum).Sum / 1MB, 1)
+Write-Host "      Published: $publishDir  ($($publishedFiles.Count) files, $sizeMb MB)"
 
 # --- Step 2: locate ISCC.exe -----------------------------------------------
 Write-Host ""

@@ -3,7 +3,7 @@
 ; Prerequisites:
 ;   1) Publish first:
 ;        dotnet publish StandbyAndTimer\StandbyAndTimer.csproj ^
-;          -p:PublishProfile=win-x64-single
+;          -p:PublishProfile=win-x64
 ;   2) Install Inno Setup 6:  https://jrsoftware.org/isdl.php
 ;   3) Compile this script:
 ;        "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\Setup.iss
@@ -60,9 +60,19 @@ Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 Name: "desktopicon";  Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 Name: "autostart";    Description: "Launch on Windows startup (recommended)"; GroupDescription: "Startup:"; Flags: unchecked
 
+[InstallDelete]
+; DLLs of the version being replaced (the app is a folder of files since
+; 3.0.9; up to 3.0.8 it was one exe, which the new exe overwrites). Only
+; the DLLs next to the exe: a library that a later version no longer ships
+; must not stay behind. {app}\updates holds the running installer and is
+; left alone.
+Type: files; Name: "{app}\*.dll"
+
 [Files]
-Source: "{#SourceDir}\{#AppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-; If the publish output ever produces additional files (debug pdb, etc), add them here.
+; Everything the publish step produced: the exe, its DLLs and the language
+; folders of the .NET libraries. build-installer.ps1 empties the publish
+; folder first, so nothing stale is packed.
+Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Registry]
 ; Mark the per-user settings hive for deletion on uninstall. `dontcreatekey` keeps

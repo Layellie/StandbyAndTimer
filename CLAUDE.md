@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Working notes for this repository: build commands, the architecture and the decisions behind it.
 
 ## Project Overview
 
@@ -107,7 +107,8 @@ App.xaml.cs                 ← single instance, DI, tray, hotkeys, notification
 - The process list comes from the short query of Windows 11 24H2+ (`SystemBasicProcessInformation`, names and PIDs only), checked against the app's own PID on first use, with the full `SystemProcessInformation` class as the fallback on older Windows.
 - The app's own process stays at Normal priority; only the timer watchdog thread is raised (MMCSS). `TieredPGO` and concurrent GC are off in the csproj (measured in the tray; the comment there has the numbers).
 - The app is elevated, so: a game's path is read with `PROCESS_QUERY_LIMITED_INFORMATION` (never `Process.MainModule`); a process that refuses the boost is tried once; `SafeFolderCleaner` holds each folder open while walking it and refuses a root below a link inside the profile / ProgramData; nothing from the network is handed to `ShellExecute` (pages open through `explorer.exe`, by full path).
-- The single-file bundle is **not compressed**: a compressed bundle is unpacked into private memory at every start (220 vs 143 MB measured). Inno Setup compresses the installer.
+- The app is published as a **folder** (exe + DLLs, `PublishProfile=win-x64`), not as a single-file bundle (it was one up to 3.0.8). A bundle is processed by the host before any code runs (measured: visible start-up 1266 ms as a bundle, 624 ms as a folder) and it unpacks its native DLLs to `%TEMP%\.net`, a user-writable folder this elevated app then loaded them from. Inno Setup packs the folder into one setup exe; `[InstallDelete]` removes the previous version's DLLs.
+- Rendering: a hidden start (`-hidden`, Windows start-up) runs in software so Direct3D is never set up while the app only sits in the tray. Every show from the tray draws its first frame in software and takes the GPU once the window is on screen (`MainWindow.UseGpu`, called by `ShowCloaked`); setting the GPU up before the show kept the window back (measured, open from tray: 277 ms -> 175 ms). A visible start keeps the GPU from the beginning (software first gave nothing there). Hidden again, the window gives the GPU back (`HideOffscreen`).
 - Settings-page layout is fixed (760x520, no ScrollViewer): run UiRender after any XAML change; it fails on anything clipped or outside its card.
 
 ## NuGet Packages
