@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using System.IO;
 using StandbyAndTimer.Core.Interfaces;
 using StandbyAndTimer.Services.Native;
 
@@ -39,7 +39,16 @@ internal sealed class GameDetectionService : IGameDetectionService
         // Video players and presentations
         "vlc", "mpc-hc", "mpc-hc64", "mpc-be", "mpc-be64", "potplayer", "potplayermini",
         "potplayermini64", "wmplayer", "microsoft.media.player", "video.ui", "powerpnt",
+        // Picture viewers and desktop apps that were added as games on a real PC
+        "photos", "claude",
     };
+
+    /// <summary>
+    /// Whether detection never reports a process of this name. The view model
+    /// also uses it at start-up, so an entry detection added before the name
+    /// was on this list leaves the Game Mode list again (never one the user added).
+    /// </summary>
+    internal static bool IsIgnoredProcess(string processName) => IgnoredProcessNames.Contains(processName);
 
     // A fullscreen window must still be fullscreen (same exe) on the NEXT
     // poll before it is reported — momentary overlays such as the Snipping
@@ -53,7 +62,22 @@ internal sealed class GameDetectionService : IGameDetectionService
 
     public event EventHandler<string>? GameDetected;
 
-    public IReadOnlySet<string> KnownGamePaths { get; set; } = new HashSet<string>();
+    // The process in front that is already decided (listed, ignored, reported,
+    // unreadable). While it stays fullscreen in front (a whole gaming session,
+    // one poll every 3 s) it is not opened again.
+    private uint _settledPid;
+
+    private IReadOnlySet<string> _knownGamePaths = new HashSet<string>();
+
+    public IReadOnlySet<string> KnownGamePaths
+    {
+        get => _knownGamePaths;
+        set
+        {
+            _knownGamePaths = value;
+            _settledPid = 0;   // the list changed: decide again
+        }
+    }
 
     public Task StartAsync(CancellationToken ct)
     {
@@ -98,28 +122,57 @@ internal sealed class GameDetectionService : IGameDetectionService
         _ = NativeMethods.GetWindowThreadProcessId(hwnd, out uint pid);
         if (pid == 0) return;
 
-        // Process.GetProcessById opens a kernel handle — `using` releases it
-        // immediately so we don't leak handles to every fullscreen window we
-        // sample. MainModule.FileName can throw Access Denied for protected
-        // processes (anti-cheat, system services); we treat that as "skip".
-        string? exePath;
-        string  procName;
+        if (Observe(pid, ImagePath) is not { } exePath) return;
+
+        GameDetected?.Invoke(this, exePath);
+        Logger.Info($"GameDetection: fullscreen process detected — {exePath}");
+    }
+
+    /// <summary>
+    /// One poll that found process <paramref name="pid"/> fullscreen in front.
+    /// Returns the exe path to report now, else null. The path is looked up
+    /// only until the process is decided.
+    /// </summary>
+    internal string? Observe(uint pid, Func<uint, string?> pathOf)
+    {
+        if (pid == _settledPid) return null;
+
+        string? exePath = pathOf(pid);
+        bool report = false;
+        if (exePath is null) _pendingPath = null;   // not the candidate's second poll in a row
+        else report = ShouldReport(exePath, RunningGames.ShortName(Path.GetFileName(exePath)));
+        // No candidate waiting for its second poll: this process is decided.
+        if (_pendingPath is null) _settledPid = pid;
+        return report ? exePath : null;
+    }
+
+    /// <summary>
+    /// Full path of a process's exe, or null (exited, or it refuses even this).
+    /// Asks with PROCESS_QUERY_LIMITED_INFORMATION: Process.MainModule, used
+    /// before, opens the process for reading its memory and lists its modules
+    /// (measured 353 µs against 12 µs), and anti-cheat protected games refuse
+    /// that, so they were never detected.
+    /// </summary>
+    internal static string? ImagePath(uint pid)
+    {
+        IntPtr process = NativeMethods.OpenProcess(NativeMethods.PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
+        if (process == IntPtr.Zero) return null;
         try
         {
-            using var p = Process.GetProcessById((int)pid);
-            procName = p.ProcessName;
-            exePath  = p.MainModule?.FileName;
+            var buffer = new char[MaxPathChars];
+            int length = buffer.Length;
+            return NativeMethods.QueryFullProcessImageName(process, 0, buffer, ref length)
+                ? new string(buffer, 0, length)
+                : null;
         }
-        catch
+        finally
         {
-            return;
+            NativeMethods.CloseHandle(process);
         }
-
-        if (!ShouldReport(exePath, procName)) return;
-
-        GameDetected?.Invoke(this, exePath!);
-        Logger.Info($"GameDetection: fullscreen process detected — {procName} ({exePath})");
     }
+
+    // Longest path Windows can return (long-path aware apps).
+    private const int MaxPathChars = 32_768;
 
     /// <summary>
     /// Decision for one poll that found <paramref name="exePath"/> fullscreen
@@ -150,7 +203,11 @@ internal sealed class GameDetectionService : IGameDetectionService
     }
 
     /// <summary>A poll where nothing is fullscreen: the pending candidate resets.</summary>
-    internal void OnNotFullscreen() => _pendingPath = null;
+    internal void OnNotFullscreen()
+    {
+        _pendingPath = null;
+        _settledPid  = 0;
+    }
 
     private static bool IsFullscreen(IntPtr hwnd)
     {

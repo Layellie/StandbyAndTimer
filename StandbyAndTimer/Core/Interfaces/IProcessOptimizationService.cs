@@ -16,6 +16,12 @@ public interface IProcessOptimizationService
                                Func<int, bool>? isRunning = null,
                                IReadOnlyCollection<string>? aboveNormalPaths = null);
 
+    /// <summary>
+    /// The listed paths whose running process refused the change (anti-cheat
+    /// protected games do). Empty again once that process has exited.
+    /// </summary>
+    IReadOnlyCollection<string> RefusedPaths { get; }
+
     /// <summary>Clears the set of known-optimized PIDs (e.g. on settings reset).</summary>
     void Clear();
 }

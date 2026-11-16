@@ -14,6 +14,9 @@ public sealed record MemorySnapshot(long TotalMb, long FreeMb, long StandbyMb,
     /// <summary>The modified page list: what a deep purge adds to the standby list before purging it.</summary>
     public long ModifiedMb { get; init; }
 
+    /// <summary>Running listed games that refused the priority change at this tick (anti-cheat protected ones do).</summary>
+    public IReadOnlyCollection<string> BoostRefusedPaths { get; init; } = [];
+
     /// <summary>
     /// What a purge of <paramref name="kind"/> would free now: light = the
     /// priority-0 standby pages, normal = the whole standby list, deep = the

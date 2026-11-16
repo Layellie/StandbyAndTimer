@@ -24,27 +24,43 @@ internal static class MemoryLists
     // PageCountByPriority[8] (standby), RepurposedPagesByPriority[8],
     // ModifiedPageCountPageFile: 22 ULONG_PTRs.
     internal const int Longs = 22;
-    private const int Zero = 0, Free = 1, Modified = 2, ModifiedNoWrite = 3, StandbyStart = 5;
+    private const int Zero = 0, Free = 1, Modified = 2, ModifiedNoWrite = 3, StandbyStart = 5, Priorities = 8;
+
+    private static long Mb(long pages) => pages * Environment.SystemPageSize / (1024 * 1024);
+
+    // Into the caller's stack buffer: nothing is allocated.
+    private static bool Query(Span<long> pages) =>
+        IntPtr.Size == 8
+        && NativeMethods.NtQuerySystemInformation(NativeMethods.SystemMemoryListInformation,
+               ref MemoryMarshal.GetReference(pages), Longs * sizeof(long), out _) == 0;
 
     public static bool TryRead([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out MemoryListInfo? info)
     {
         info = null;
-        if (IntPtr.Size != 8) return false;
-        var buffer = new long[Longs];
-        var handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
-        try
-        {
-            if (NativeMethods.NtQuerySystemInformation(NativeMethods.SystemMemoryListInformation,
-                    handle.AddrOfPinnedObject(), Longs * sizeof(long), out _) != 0)
-                return false;
-        }
-        finally { handle.Free(); }
+        Span<long> pages = stackalloc long[Longs];
+        if (!Query(pages)) return false;
 
-        long Mb(long pages) => pages * Environment.SystemPageSize / (1024 * 1024);
-        var standby = new long[8];
-        for (int i = 0; i < 8; i++) standby[i] = Mb(buffer[StandbyStart + i]);
-        info = new MemoryListInfo(Mb(buffer[Zero]), Mb(buffer[Free]),
-                                  Mb(buffer[Modified] + buffer[ModifiedNoWrite]), standby);
+        var standby = new long[Priorities];
+        for (int i = 0; i < Priorities; i++) standby[i] = Mb(pages[StandbyStart + i]);
+        info = new MemoryListInfo(Mb(pages[Zero]), Mb(pages[Free]),
+                                  Mb(pages[Modified] + pages[ModifiedNoWrite]), standby);
+        return true;
+    }
+
+    /// <summary>
+    /// The three numbers the monitor needs every second (the standby list,
+    /// its priority-0 part, the modified list; the same values as
+    /// <see cref="TryRead"/>), without allocating anything.
+    /// </summary>
+    public static bool TryReadTotals(out long standbyMb, out long standbyLowMb, out long modifiedMb)
+    {
+        standbyMb = standbyLowMb = modifiedMb = 0;
+        Span<long> pages = stackalloc long[Longs];
+        if (!Query(pages)) return false;
+
+        for (int i = 0; i < Priorities; i++) standbyMb += Mb(pages[StandbyStart + i]);
+        standbyLowMb = Mb(pages[StandbyStart]);
+        modifiedMb   = Mb(pages[Modified] + pages[ModifiedNoWrite]);
         return true;
     }
 }

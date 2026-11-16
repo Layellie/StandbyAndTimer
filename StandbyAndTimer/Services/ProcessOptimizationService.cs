@@ -13,6 +13,18 @@ internal sealed class ProcessOptimizationService : IProcessOptimizationService
     // the set. Only PIDs are stored — no Process handles kept alive between calls.
     private readonly ConcurrentDictionary<int, byte> _optimizedPids = new();
 
+    // PIDs that refused (anti-cheat protected games deny the handle). Tried
+    // and logged once; before, every monitor tick tried again, once a second
+    // for the whole session. Forgotten when the process exits.
+    // PID -> the listed path it was found for (for RefusedPaths).
+    private readonly ConcurrentDictionary<int, string> _deniedPids = new();
+
+    public IReadOnlyCollection<string> RefusedPaths =>
+        _deniedPids.IsEmpty ? [] : _deniedPids.Values.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+
+    /// <summary>What is done to one game process (tests swap it; the app changes the real process).</summary>
+    internal Action<Process, ProcessPriorityClass, long> Apply { get; set; } = Boost;
+
     public Task CheckAndOptimizeAsync(IReadOnlyList<string> executablePaths,
                                       Func<string, IReadOnlyList<int>>? pidsOf = null,
                                       Func<int, bool>? isRunning = null,
@@ -44,18 +56,13 @@ internal sealed class ProcessOptimizationService : IProcessOptimizationService
                 {
                     try
                     {
-                        p.PriorityClass = priority;
-                        // affinityMask is bounded by ProcessorCount (≤ 64). On a
-                        // 64-CPU host the top bit is set, which makes the signed
-                        // IntPtr cast nominally overflow — but we *want* the bit
-                        // pattern preserved, so suppress CA2020 here rather than
-                        // wrapping in checked() (which would throw) or unchecked()
-                        // (which the analyzer still flags).
-#pragma warning disable CA2020
-                        p.ProcessorAffinity = (IntPtr)affinityMask;
-#pragma warning restore CA2020
-                        ApplyTimerResolutionOptOut(p);
+                        Apply(p, priority, affinityMask);
                         _optimizedPids.TryAdd(p.Id, 0);
+                    }
+                    catch (System.ComponentModel.Win32Exception ex)
+                    {
+                        if (_deniedPids.TryAdd(p.Id, path))
+                            Logger.Info($"Game boost: {procName} (PID {p.Id}) refused the change, left as it is ({ex.Message})");
                     }
                     catch { /* process may exit between enumeration and access */ }
                 }
@@ -64,7 +71,13 @@ internal sealed class ProcessOptimizationService : IProcessOptimizationService
 
         // Prune PIDs whose processes have since exited (the caller's snapshot
         // answers that without opening a handle).
-        foreach (int pid in _optimizedPids.Keys)
+        Prune(_optimizedPids, isRunning);
+        Prune(_deniedPids, isRunning);
+    }
+
+    private static void Prune<T>(ConcurrentDictionary<int, T> pids, Func<int, bool>? isRunning)
+    {
+        foreach (int pid in pids.Keys)
         {
             bool exited;
             if (isRunning is not null) exited = !isRunning(pid);
@@ -73,8 +86,23 @@ internal sealed class ProcessOptimizationService : IProcessOptimizationService
                 try   { using var p = Process.GetProcessById(pid); exited = p.HasExited; }
                 catch { exited = true; }
             }
-            if (exited) _optimizedPids.TryRemove(pid, out _);
+            if (exited) pids.TryRemove(pid, out _);
         }
+    }
+
+    // Priority class, all cores, and the opt-out from Windows 11's background throttling.
+    private static void Boost(Process p, ProcessPriorityClass priority, long affinityMask)
+    {
+        p.PriorityClass = priority;
+        // affinityMask is bounded by ProcessorCount (≤ 64). On a 64-CPU host
+        // the top bit is set, which makes the signed IntPtr cast nominally
+        // overflow — but we *want* the bit pattern preserved, so suppress
+        // CA2020 here rather than wrapping in checked() (which would throw)
+        // or unchecked() (which the analyzer still flags).
+#pragma warning disable CA2020
+        p.ProcessorAffinity = (IntPtr)affinityMask;
+#pragma warning restore CA2020
+        ApplyTimerResolutionOptOut(p);
     }
 
     // Processes to optimize for one exe name, skipping PIDs already done.
@@ -86,14 +114,14 @@ internal sealed class ProcessOptimizationService : IProcessOptimizationService
         {
             foreach (var p in Process.GetProcessesByName(procName))
             {
-                if (_optimizedPids.ContainsKey(p.Id)) { p.Dispose(); continue; }
+                if (IsHandled(p.Id)) { p.Dispose(); continue; }
                 yield return p;
             }
             yield break;
         }
         foreach (int pid in pidsOf(procName))
         {
-            if (_optimizedPids.ContainsKey(pid)) continue;
+            if (IsHandled(pid)) continue;
             Process? p = null;
             try { p = Process.GetProcessById(pid); }
             catch { /* exited since the snapshot */ }
@@ -127,5 +155,11 @@ internal sealed class ProcessOptimizationService : IProcessOptimizationService
         }
     }
 
-    public void Clear() => _optimizedPids.Clear();
+    private bool IsHandled(int pid) => _optimizedPids.ContainsKey(pid) || _deniedPids.ContainsKey(pid);
+
+    public void Clear()
+    {
+        _optimizedPids.Clear();
+        _deniedPids.Clear();
+    }
 }

@@ -20,6 +20,8 @@ public sealed class MemoryMonitorTests
             return Task.CompletedTask;
         }
 
+        public IReadOnlyCollection<string> RefusedPaths => [];
+
         public void Clear() { }
     }
 

@@ -45,8 +45,18 @@ internal static class NativeMethods
         int     SystemInformationLength,
         out int ReturnLength);
 
+    /// <summary>The same call for a fixed-size answer made of ULONG_PTRs, written into the caller's (stack) buffer.</summary>
+    [DllImport("ntdll.dll")]
+    internal static extern int NtQuerySystemInformation(
+        int      SystemInformationClass,
+        ref long SystemInformation,
+        int      SystemInformationLength,
+        out int  ReturnLength);
+
     internal const int SystemProcessInformation    = 5;
     internal const int SystemMemoryListInformation = 80;   // query: SYSTEM_MEMORY_LIST_INFORMATION
+    /// <summary>Windows 11 24H2+: a chain of SYSTEM_BASIC_PROCESS_INFORMATION entries (PID, parent, image name; no threads).</summary>
+    internal const int SystemBasicProcessInformation = 252;
     internal const int STATUS_INFO_LENGTH_MISMATCH = unchecked((int)0xC0000004);
 
     // ── kernel32.dll ─────────────────────────────────────────────────────────
@@ -77,6 +87,38 @@ internal static class NativeMethods
 
     [DllImport("kernel32.dll")]
     internal static extern IntPtr GetCurrentProcess();
+
+    /// <summary>
+    /// Opens a file or, with FILE_FLAG_BACKUP_SEMANTICS, a folder. With
+    /// FILE_FLAG_OPEN_REPARSE_POINT a link is opened itself, not its target.
+    /// </summary>
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "CreateFileW", SetLastError = true)]
+    internal static extern Microsoft.Win32.SafeHandles.SafeFileHandle CreateFile(
+        string lpFileName, uint dwDesiredAccess, uint dwShareMode, IntPtr lpSecurityAttributes,
+        uint dwCreationDisposition, uint dwFlagsAndAttributes, IntPtr hTemplateFile);
+
+    internal const uint FILE_LIST_DIRECTORY          = 0x0001;
+    internal const uint FILE_READ_ATTRIBUTES         = 0x0080;
+    internal const uint FILE_SHARE_READ              = 0x0001;
+    internal const uint FILE_SHARE_WRITE             = 0x0002;
+    internal const uint OPEN_EXISTING                = 3;
+    internal const uint FILE_FLAG_BACKUP_SEMANTICS   = 0x02000000;
+    internal const uint FILE_FLAG_OPEN_REPARSE_POINT = 0x00200000;
+
+    /// <summary>Opens a process; close the handle with <see cref="CloseHandle"/>. Zero when it is gone or refuses.</summary>
+    [DllImport("kernel32.dll", SetLastError = true)]
+    internal static extern IntPtr OpenProcess(uint dwDesiredAccess, [MarshalAs(UnmanagedType.Bool)] bool bInheritHandle, uint dwProcessId);
+
+    /// <summary>
+    /// The least access there is: enough for the image path, granted also by
+    /// protected (anti-cheat) processes, and it cannot read the process's memory.
+    /// </summary>
+    internal const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+
+    /// <summary>Full path of a process's exe (dwFlags 0 = Win32 path). lpdwSize: buffer size in, length out (chars).</summary>
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "QueryFullProcessImageNameW", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool QueryFullProcessImageName(IntPtr hProcess, uint dwFlags, [Out] char[] lpExeName, ref int lpdwSize);
 
     /// <summary>
     /// (SIZE_T)-1 for both sizes empties the system file cache's working set

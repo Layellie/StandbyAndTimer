@@ -197,4 +197,107 @@ public sealed class SafeFolderCleanerTests : IDisposable
         Assert.True(File.Exists(outside));
         Assert.True(Directory.Exists(root));           // the link itself is not deleted either
     }
+
+    // %LOCALAPPDATA%\NVIDIA\DXCache: the root is a real folder, but the folder
+    // above it is a link, so the root really lies somewhere else.
+    [Fact]
+    public void A_root_below_a_junction_is_never_touched()
+    {
+        string outside = File_("outside/DXCache/keep.bin", 100);
+        Junction(Path.Combine(_dir, "NVIDIA"), Path.Combine(_dir, "outside"));
+        string root = Path.Combine(_dir, "NVIDIA", "DXCache");
+
+        var scan = SafeFolderCleaner.Scan([root], null, Now, default);
+        var result = SafeFolderCleaner.Clean([root], null, Now, default);
+
+        Assert.Equal(0, scan.Bytes);
+        Assert.Equal(Core.Models.CleanupResult.Nothing, result);
+        Assert.True(File.Exists(outside));
+    }
+
+    [Fact]
+    public void Folders_above_a_trusted_base_are_not_checked()
+    {
+        // The base stands for the user profile: a profile that was moved with
+        // a link (done by an administrator) still gets cleaned.
+        File_("outside/base/cache/old.bin", 100);
+        Junction(Path.Combine(_dir, "moved"), Path.Combine(_dir, "outside"));
+        string viaLink = Path.Combine(_dir, "moved", "base");
+
+        Assert.True(SafeFolderCleaner.HasLinkAbove(Path.Combine(viaLink, "cache"), [_dir]));
+        Assert.False(SafeFolderCleaner.HasLinkAbove(Path.Combine(viaLink, "cache"), [viaLink]));
+    }
+
+    // A Steam library moved to another drive with a junction (D:\Games ->
+    // E:\Games) is common. Such a root lies under none of the folders the
+    // check protects, so it is cleaned as before; its own folder still must
+    // not be a link.
+    [Fact]
+    public void A_root_outside_every_trusted_base_is_cleaned_through_a_link_above_it()
+    {
+        File_("elsewhere/SteamLibrary/steamapps/shadercache/old.bin", 100);
+        Junction(Path.Combine(_dir, "Games"), Path.Combine(_dir, "elsewhere"));
+        string root = Path.Combine(_dir, "Games", "SteamLibrary", "steamapps", "shadercache");
+
+        Assert.False(SafeFolderCleaner.HasLinkAbove(root, [Path.Combine(_dir, "some-other-base")]));
+        Assert.False(SafeFolderCleaner.HasLinkAbove(root, []));
+    }
+
+    // The swap a user-level program can try against the elevated cleaner:
+    // replace a folder by a link to somewhere else after the cleaner looked
+    // at it and before it lists what is inside.
+    [Fact]
+    public void A_folder_cannot_be_swapped_for_a_junction_while_it_is_being_cleaned()
+    {
+        string root = Path.Combine(_dir, "root");
+        string sub = Path.Combine(root, "sub");
+        File_("root/sub/old.bin", 10);
+        string outside = File_("outside/keep.bin", 100);
+        bool swapped = false;
+
+        SafeFolderCleaner.Clean([root], null, Now, onEnter: entered =>
+        {
+            if (!entered.Equals(sub, StringComparison.OrdinalIgnoreCase)) return;
+            try
+            {
+                Directory.Move(sub, sub + "-moved");
+                Junction(sub, Path.Combine(_dir, "outside"));
+                swapped = true;
+            }
+            catch (IOException) { }                    // held by the cleaner: cannot be renamed
+            catch (UnauthorizedAccessException) { }
+        }, ct: default);
+
+        Assert.False(swapped);
+        Assert.True(File.Exists(outside));
+    }
+
+    [Fact]
+    public void A_pinned_folder_cannot_be_renamed_and_a_junction_is_not_pinned()
+    {
+        string real = Path.Combine(_dir, "real");
+        Directory.CreateDirectory(real);
+        Junction(Path.Combine(_dir, "link"), real);
+
+        Assert.Null(SafeFolderCleaner.Pin(Path.Combine(_dir, "link")));
+        using (var pin = SafeFolderCleaner.Pin(real))
+        {
+            Assert.NotNull(pin);
+            Assert.ThrowsAny<IOException>(() => Directory.Move(real, real + "-2"));
+        }
+        Directory.Move(real, real + "-2");             // released: free again
+    }
+
+    [Fact]
+    public void A_very_long_path_is_still_cleaned()
+    {
+        string deep = string.Join('/', Enumerable.Repeat("a-rather-long-folder-name-0123456789", 9));
+        File_($"root/{deep}/old.bin", 10);
+        string root = Path.Combine(_dir, "root");
+
+        var result = SafeFolderCleaner.Clean([root], null, Now, default);
+
+        Assert.Equal(new Core.Models.CleanupResult(10, 1, 0), result);
+        Assert.Empty(Directory.EnumerateFileSystemEntries(root));
+    }
 }

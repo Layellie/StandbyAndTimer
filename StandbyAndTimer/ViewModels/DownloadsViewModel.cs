@@ -131,11 +131,21 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         RevealInExplorer(row.Entry.Path);
     }
 
+    /// <summary>
+    /// Explorer with one file selected. Windows' own explorer.exe by its full
+    /// path: this process is elevated, and a bare name handed to the shell is
+    /// also looked up in the current directory (the other launchers in the
+    /// app use full paths for the same reason).
+    /// </summary>
+    internal static ProcessStartInfo ExplorerSelectStartInfo(string path) =>
+        new(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe"),
+            $"/select,\"{path}\"") { UseShellExecute = false };
+
     internal static bool OpenExplorerSelect(string path)
     {
         try
         {
-            using var p = Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") { UseShellExecute = true });
+            using var p = Process.Start(ExplorerSelectStartInfo(path));
             return true;
         }
         catch (Exception ex)

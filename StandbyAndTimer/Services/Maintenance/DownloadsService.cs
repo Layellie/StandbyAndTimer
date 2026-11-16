@@ -51,7 +51,7 @@ internal sealed class DownloadsService : IDownloadsService
             if (a.HasFlag(FileAttributes.Hidden) && a.HasFlag(FileAttributes.System)) continue;   // desktop.ini
 
             long bytes = info is FileInfo f ? f.Length
-                       : SafeFolderCleaner.Scan([info.FullName], null, DateTime.UtcNow, ct).Bytes;
+                       : SafeFolderCleaner.SizeOf(info.FullName, ct);
             list.Add(new DownloadEntry(info.FullName, info.Name, info is DirectoryInfo, bytes, info.LastWriteTime));
         }
         return list;

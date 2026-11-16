@@ -80,6 +80,8 @@
     <sys:String x:Key="Str_Game_AutoTag">AUTO</sys:String>
     <sys:String x:Key="Str_Game_AutoTagTip">Detected fullscreen and added automatically. Remove it and it will not be added again.</sys:String>
     <sys:String x:Key="Str_Game_CustomTagTip">This game has its own rules: priority, auto purge, purge once or the timer differ from the defaults.</sys:String>
+    <sys:String x:Key="Str_Game_MissingTip">Not found right now: the drive is not connected, or the file was moved or deleted. The game and its rules are kept.</sys:String>
+    <sys:String x:Key="Str_Game_BoostRefusedTip">The game did not allow its priority to be changed (usual with anti-cheat). The timer and purge rules still apply.</sys:String>
     <sys:String x:Key="Str_Game_PriorityLabel">Priority</sys:String>
     <sys:String x:Key="Str_Game_PriorityTip">The CPU priority Game Mode gives this game. High: the biggest share. Above normal: the game still comes first, but Discord, OBS and audio are squeezed less (try it if sound crackles or a stream stutters). Don't change: the app never touches this game (priority, cores, EcoQoS); pick it if a tool like Process Lasso manages it. Needs Game Mode on; takes effect the next time the game starts.</sys:String>
     <sys:String x:Key="Str_GamePriority_High">High</sys:String>
@@ -165,6 +167,7 @@
     <sys:String x:Key="Str_Status_GameLaunching">Starting {0}…</sys:String>
     <sys:String x:Key="Str_Status_GameLaunchFailed">Could not start {0}; details in the log</sys:String>
     <sys:String x:Key="Str_Status_GameMissing">{0} not found (the file was moved or deleted)</sys:String>
+    <sys:String x:Key="Str_Status_BoostRefused">{0}: the priority could not be changed (the game does not allow it)</sys:String>
     <sys:String x:Key="Str_PurgeKind_Normal">Normal</sys:String>
     <sys:String x:Key="Str_PurgeKind_Light">Light</sys:String>
     <sys:String x:Key="Str_PurgeKind_Deep">Deep</sys:String>
@@ -305,6 +308,7 @@
     <sys:String x:Key="Str_GameNotify_Boost">High priority</sys:String>
     <sys:String x:Key="Str_GameNotify_AboveNormal">Above normal priority</sys:String>
     <sys:String x:Key="Str_GameNotify_NoBoost">Priority left alone</sys:String>
+    <sys:String x:Key="Str_GameNotify_BoostRefused">Priority not changed (the game refused)</sys:String>
     <sys:String x:Key="Str_GameNotify_TimerOn">Timer on ({0:F2} ms)</sys:String>
     <sys:String x:Key="Str_GameNotify_TimerOff">Timer off</sys:String>
     <sys:String x:Key="Str_GameNotify_PurgeOn">Auto purge on</sys:String>

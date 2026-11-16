@@ -38,7 +38,6 @@ public partial class App : Application
     private ITrayIconService?       _tray;
     private MainViewModel?          _viewModel;
     private MainWindow?             _mainWindow;
-    private DispatcherTimer?        _tooltipTicker;
     private EventWaitHandle?        _showWindowSignal;
     private CancellationTokenSource? _showWindowSignalCts;
 
@@ -52,35 +51,83 @@ public partial class App : Application
     private System.Drawing.Icon?  _iconBase;
     private System.Drawing.Icon?  _iconActive;
 
+    // ── Start-up ─────────────────────────────────────────────────────────────
+    // OnStartup lists the steps in order; each step is a method below it.
+    // The order matters: the crash handlers come first, the saved theme and
+    // language before the window exists, the window before hotkeys (they
+    // need its handle), and the view model's own start last, in the
+    // background, so the window is on screen as early as possible.
+
+    // Start-up timing in the log: "startup + N ms (total N ms) — step".
+    private readonly Stopwatch _startupClock = new();
+    private long _lastStartupMark;
+
+    private void Mark(string step)
+    {
+        long now = _startupClock.ElapsedMilliseconds;
+        Logger.Info($"  startup +{now - _lastStartupMark,4} ms (total {now,5} ms) — {step}");
+        _lastStartupMark = now;
+    }
+
     protected override async void OnStartup(StartupEventArgs e)
     {
-        var sw = Stopwatch.StartNew();
-        long prev = 0;
-        void Mark(string step)
-        {
-            long now = sw.ElapsedMilliseconds;
-            Logger.Info($"  startup +{now - prev,4} ms (total {now,5} ms) — {step}");
-            prev = now;
-        }
+        _startupClock.Start();
 
-        // ── 0a. DLL planting hardening ───────────────────────────────────────
+        // 0. DLL planting hardening, then the crash handlers (the timer must
+        //    be released on exit).
         HardenDllSearchPath();
-
-        // ── 0b. Crash handlers (timer must be released on exit) ──────────────
         _crashHandler.Install();
         _crashHandler.AttachToDispatcher(this);
-
         Logger.Info($"=== Application starting (PID {Environment.ProcessId}) ===");
         Mark("crash handlers + hardening");
 
-        // ── 1. Single-instance guard ──────────────────────────────────────────
-        // Primary acquires the mutex AND owns the named EventWaitHandle the
-        // listener thread blocks on. A secondary launch opens that handle by
-        // name, grants foreground rights (ASFW_ANY) so the primary's
-        // SetForegroundWindow call isn't muted by the foreground-lock
-        // timeout, signals it, then exits silently — no "already running"
-        // dialog. The primary listener dispatches to the UI thread and
-        // surfaces the window from offscreen / tray.
+        // 1. One instance. A second launch asks the first to show its window
+        //    and leaves.
+        if (!BecomeTheSingleInstance())
+        {
+            Current.Shutdown();
+            return;
+        }
+        base.OnStartup(e);
+        Mark("single-instance + base.OnStartup");
+
+        // 2. No Windows power throttling / EcoQoS for this process.
+        DisablePowerThrottling();
+        Mark("DisablePowerThrottling");
+
+        // 3. Services and the view model.
+        ResolveServices();
+
+        // 4. The saved language and theme, before the window is created.
+        AppSettings saved = ApplySavedLanguageAndTheme();
+        SubscribeToViewModelAndTray();
+
+        // 5. The window (hidden with "-hidden": the auto-start), the tray,
+        //    the listener for second launches, the hotkeys.
+        bool startHidden = e.Args.Contains("-hidden");
+        CreateWindow(startHidden);
+        ShowWindowAndTray(startHidden);
+        StartShowWindowListener(_showWindowSignal!, _showWindowSignalCts!.Token);
+        RegisterHotkeys(saved);
+
+        // 6. The rest runs while the window is already up.
+        _ = InitializeViewModelAsync();
+        if (saved.UpdateCheckEnabled)
+            _ = SilentUpdateCheckAsync();
+        DeleteOldInstallersInBackground();
+    }
+
+    /// <summary>
+    /// Single-instance guard. The primary acquires the mutex AND owns the
+    /// named EventWaitHandle the listener thread blocks on. A secondary launch
+    /// opens that handle by name, grants foreground rights (ASFW_ANY) so the
+    /// primary's SetForegroundWindow call isn't muted by the foreground-lock
+    /// timeout, signals it, then exits silently: no "already running" dialog.
+    /// The primary listener dispatches to the UI thread and surfaces the
+    /// window from offscreen / tray. Returns false in a secondary launch.
+    /// </summary>
+    private bool BecomeTheSingleInstance()
+    {
         _singleInstanceMutex = new Mutex(true, AppConstants.SingleInstanceMutexName, out bool isNewInstance);
         _ownsSingleInstanceMutex = isNewInstance;
         if (!isNewInstance)
@@ -99,21 +146,16 @@ public partial class App : Application
             {
                 Logger.Warn($"Single-instance signal: {ex.Message}");
             }
-            Current.Shutdown();
-            return;
+            return false;
         }
 
         _showWindowSignal    = new EventWaitHandle(false, EventResetMode.AutoReset, AppConstants.ShowWindowSignalName);
         _showWindowSignalCts = new CancellationTokenSource();
+        return true;
+    }
 
-        base.OnStartup(e);
-        Mark("single-instance + base.OnStartup");
-
-        // ── 2. Disable Windows Power Throttling / EcoQoS for this process ────
-        DisablePowerThrottling();
-        Mark("DisablePowerThrottling");
-
-        // ── 3. Build DI container ─────────────────────────────────────────────
+    private void ResolveServices()
+    {
         _services = AppBootstrapper.Build();
         _crashHandler.SetServices(_services);
         Mark("DI container build");
@@ -123,96 +165,117 @@ public partial class App : Application
         _themeService = _services.GetRequiredService<IThemeService>();
         _tray         = _services.GetRequiredService<ITrayIconService>();
         Mark("resolve viewmodel + services");
+    }
 
-        // ── 4. Apply persisted language + theme before window is created ─────
-        var savedSettings = _services.GetRequiredService<ISettingsService>().Load();
+    /// <summary>Loads the settings and applies the language and theme (the defaults, English and Dark, are already in place).</summary>
+    private AppSettings ApplySavedLanguageAndTheme()
+    {
+        var savedSettings = _services!.GetRequiredService<ISettingsService>().Load();
         _userSettings = savedSettings;
         if (savedSettings.Language != Core.Models.Language.English)
-            _localization.SetLanguage(savedSettings.Language);
+            _localization!.SetLanguage(savedSettings.Language);
         if (savedSettings.Theme != Core.Models.Theme.Dark)
-            _themeService.SetTheme(savedSettings.Theme);
+            _themeService!.SetTheme(savedSettings.Theme);
         Mark("settings + apply language/theme");
+        return savedSettings;
+    }
 
-        _localization.LanguageChanged       += OnLanguageChanged;
-        _themeService.ThemeChanged          += OnThemeChanged;
-        _viewModel.PropertyChanged          += OnViewModelPropertyChanged;
-        _viewModel.PurgeNotification        += OnPurgeNotification;
-        _viewModel.TimerToggledNotification += OnTimerToggledNotification;
-        _viewModel.GameStartedNotification  += OnGameStartedNotification;
-        _viewModel.AutoMaintenanceNotification += OnAutoMaintenanceNotification;
-        _viewModel.GameAutoDetected         += OnGameAutoDetected;
-        _viewModel.SettingsPersisted        += (_, latest) => _userSettings = latest;
+    private void SubscribeToViewModelAndTray()
+    {
+        var viewModel = _viewModel!;
+        var tray      = _tray!;
 
-        _tray.ShowRequested        += (_, _) => ShowMainWindow();
-        _tray.SettingsRequested    += (_, _) => ShowSettings();
-        _tray.ToggleRequested      += (_, _) => ToggleMainWindow();
-        _tray.ExitRequested        += (_, _) => Shutdown();
-        _tray.TimerToggleRequested += (_, _) => _viewModel.ToggleTimerResolutionCommand.Execute(null);
-        _tray.PurgeRequested       += (_, _) => _viewModel.ManualPurgeCommand.Execute(null);
+        _localization!.LanguageChanged      += OnLanguageChanged;
+        _themeService!.ThemeChanged         += OnThemeChanged;
+        viewModel.PropertyChanged           += OnViewModelPropertyChanged;
+        viewModel.PurgeNotification         += OnPurgeNotification;
+        viewModel.TimerToggledNotification  += OnTimerToggledNotification;
+        viewModel.GameStartedNotification   += OnGameStartedNotification;
+        viewModel.AutoMaintenanceNotification += OnAutoMaintenanceNotification;
+        viewModel.GameAutoDetected          += OnGameAutoDetected;
+        viewModel.SettingsPersisted         += (_, latest) => _userSettings = latest;
+
+        tray.ShowRequested        += (_, _) => ShowMainWindow();
+        tray.SettingsRequested    += (_, _) => ShowSettings();
+        tray.ToggleRequested      += (_, _) => ToggleMainWindow();
+        tray.ExitRequested        += (_, _) => Shutdown();
+        tray.TimerToggleRequested += (_, _) => viewModel.ToggleTimerResolutionCommand.Execute(null);
+        tray.PurgeRequested       += (_, _) => viewModel.ManualPurgeCommand.Execute(null);
         // Tray quick settings: the same setters as the window, then refresh the labels now.
-        _tray.AutoPurgeToggleRequested += (_, _) => { _viewModel.ToggleAutoPurgeCommand.Execute(null); RefreshTray(); };
-        _tray.DeepPurgeToggleRequested += (_, _) => { _viewModel.DeepPurge = !_viewModel.DeepPurge; RefreshTray(); };
-        _tray.GameModeToggleRequested  += (_, _) => { _viewModel.GameModeEnabled = !_viewModel.GameModeEnabled; RefreshTray(); };
-        _tray.TimerLockCycleRequested  += async (_, _) => { await _viewModel.ToggleTimerLockCommand.ExecuteAsync(null); RefreshTray(); };
+        tray.AutoPurgeToggleRequested += (_, _) => { viewModel.ToggleAutoPurgeCommand.Execute(null); RefreshTray(); };
+        tray.DeepPurgeToggleRequested += (_, _) => { viewModel.DeepPurge = !viewModel.DeepPurge; RefreshTray(); };
+        tray.GameModeToggleRequested  += (_, _) => { viewModel.GameModeEnabled = !viewModel.GameModeEnabled; RefreshTray(); };
+        tray.TimerLockCycleRequested  += async (_, _) => { await viewModel.ToggleTimerLockCommand.ExecuteAsync(null); RefreshTray(); };
 
-        // ── 5. Build window and tray ──────────────────────────────────────────
+        // The tray's tooltip (with its RAM line) and menu labels are refreshed
+        // when the mouse reaches the icon or the menu opens, and when a state
+        // they show changes (OnViewModelPropertyChanged). A timer used to
+        // rebuild them every 3 seconds for as long as the app ran.
+        tray.RefreshRequested += (_, _) => RefreshTray();
+    }
+
+    private void CreateWindow(bool startHidden)
+    {
         // Started hidden (auto-start): no GPU until the window is first
         // shown (MainWindow.ShowFromOffscreen switches back). Otherwise WPF
         // sets up Direct3D at start-up and the graphics driver keeps its
         // memory and threads while the window is never on screen. Measured:
         // 110 MB / 51 threads -> 71 MB / 28 threads in the tray.
-        bool startHidden = e.Args.Contains("-hidden");
         if (startHidden)
             System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
         // Window / taskbar icon: none set, so WPF takes the exe's own icon
         // (every size, no decoding); Icon="/app_icon.ico" decoded all eight
         // images first (~65 ms measured).
-        _mainWindow = new MainWindow(_viewModel);
+        _mainWindow = new MainWindow(_viewModel!);
         _mainWindow.MinimizedToTrayOnClose += OnMinimizedToTrayOnClose;
-        // The saved theme was applied in step 4, before ThemeChanged was
-        // subscribed, so hand the tray its starting palette explicitly.
-        _tray.ApplyTheme(EffectiveTheme());
+        // The saved theme was applied before ThemeChanged was subscribed, so
+        // hand the tray its starting palette explicitly.
+        _tray!.ApplyTheme(EffectiveTheme());
         Mark("window");
+    }
 
-        // Tray icon + menu: ~60 ms on the UI thread (WinForms menu font on
-        // first use, icon variants). Set up once the window is on screen, or
-        // right away when starting hidden. Until then the tray service skips
-        // refreshes and balloons.
-        void InitTray()
-        {
-            if (_tray is null || _iconActive is not null) return;
-            // Tray: grey while the timer is off, the lime app icon while it is on.
-            _iconActive = AppIconLoader.LoadAppIcon();
-            _iconBase   = AppIconLoader.BuildIdleIcon(_iconActive);
-            _tray.Initialize(_iconBase, _iconActive);
-            RefreshTray();
-            Mark("tray");
-        }
-
-        // Show the window FIRST so the user gets immediate visual feedback,
-        // then kick off the (potentially-slow) viewmodel initialisation in
-        // parallel.
+    /// <summary>
+    /// Shows the window FIRST, so the user gets immediate visual feedback;
+    /// the tray icon follows once the window is on screen (or right away
+    /// when starting hidden).
+    /// </summary>
+    private void ShowWindowAndTray(bool startHidden)
+    {
         if (startHidden)
         {
-            _mainWindow.HideOffscreen();
+            _mainWindow!.HideOffscreen();
             InitTray();
         }
         else
-            _mainWindow.ShowCloaked(onScreen: InitTray);
+            _mainWindow!.ShowCloaked(onScreen: InitTray);
         Mark("window shown");
+    }
 
-        // Background listener for second-launch "show me" pulses. Started
-        // only after MainWindow exists so the dispatched ShowMainWindow()
-        // call actually has a window to surface.
-        StartShowWindowListener(_showWindowSignal!, _showWindowSignalCts!.Token);
+    // Tray icon + menu: ~60 ms on the UI thread (WinForms menu font on first
+    // use, icon variants). Until it has run, the tray service skips refreshes
+    // and balloons.
+    private void InitTray()
+    {
+        if (_tray is null || _iconActive is not null) return;
+        // Tray: grey while the timer is off, the lime app icon while it is on.
+        _iconActive = AppIconLoader.LoadAppIcon();
+        _iconBase   = AppIconLoader.BuildIdleIcon(_iconActive);
+        _tray.Initialize(_iconBase, _iconActive);
+        RefreshTray();
+        Mark("tray");
+    }
 
-        // Hotkeys require the HWND to exist, which is guaranteed after Show()
-        // (and after HideOffscreen, which creates it without showing the window).
-        // Each binding dispatches back to the UI thread; the command itself
-        // does the dispatcher hop work.
-        var hotkeys = _services.GetRequiredService<IHotkeyService>();
-        hotkeys.AttachTo(_mainWindow.WindowHandle);
-        var vm = _viewModel;
+    /// <summary>
+    /// Hotkeys require the HWND to exist, which is guaranteed after Show()
+    /// (and after HideOffscreen, which creates it without showing the
+    /// window). Each binding dispatches back to the UI thread; the command
+    /// itself does the dispatcher hop work.
+    /// </summary>
+    private void RegisterHotkeys(AppSettings savedSettings)
+    {
+        var hotkeys = _services!.GetRequiredService<IHotkeyService>();
+        hotkeys.AttachTo(_mainWindow!.WindowHandle);
+        var vm = _viewModel!;
         Action HandlerFor(string id) => id switch
         {
             SettingsViewModel.HotkeyIdPurge     => () => vm.ManualPurgeCommand.Execute(null),
@@ -229,34 +292,27 @@ public partial class App : Application
             HandlerFor(SettingsViewModel.HotkeyIdAutoPurge));
 
         // Settings → Hotkeys rebinding goes through the same registration path.
-        _viewModel.Settings.RegisterHotkey   = (id, text) => RegisterHotkeyFromSetting(hotkeys, id, text, HandlerFor(id));
-        _viewModel.Settings.UnregisterHotkey = hotkeys.Unregister;
+        vm.Settings.RegisterHotkey   = (id, text) => RegisterHotkeyFromSetting(hotkeys, id, text, HandlerFor(id));
+        vm.Settings.UnregisterHotkey = hotkeys.Unregister;
         Mark("hotkeys registered");
+    }
 
-        // Live tooltip updater — every 3 s, refresh icon and text. Cheap.
-        _tooltipTicker = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
-        _tooltipTicker.Tick += (_, _) => RefreshTray();
-        _tooltipTicker.Start();
-
-        _ = InitializeViewModelAsync(sw);
-
-        if (savedSettings.UpdateCheckEnabled)
-            _ = SilentUpdateCheckAsync();
-
-        // Installers downloaded by in-app updates; off the UI thread. The one
-        // that just started us is still running for a few seconds, so retry.
-        // %TEMP% held them up to 2.4.0-beta3; DownloadDirectory since.
+    // Installers downloaded by in-app updates; off the UI thread. The one
+    // that just started us is still running for a few seconds, so retry.
+    // %TEMP% held them up to 2.4.0-beta3; DownloadDirectory since.
+    private static void DeleteOldInstallersInBackground()
+    {
         foreach (string dir in new[] { UpdateService.DownloadDirectory, Path.GetTempPath() })
             _ = Task.Run(() => UpdateService.DeleteDownloadedInstallersAsync(
                 dir, TimeSpan.FromSeconds(10), maxAttempts: 6));
     }
 
-    private async Task InitializeViewModelAsync(Stopwatch sw)
+    private async Task InitializeViewModelAsync()
     {
         try
         {
             await _viewModel!.InitializeAsync().ConfigureAwait(true);
-            Logger.Info($"  startup    background  (total {sw.ElapsedMilliseconds,5} ms) — ViewModel.InitializeAsync done");
+            Logger.Info($"  startup    background  (total {_startupClock.ElapsedMilliseconds,5} ms) — ViewModel.InitializeAsync done");
             RefreshTray();
         }
         catch (Exception ex)
@@ -268,9 +324,6 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         Logger.Info("=== Application exiting ===");
-
-        _tooltipTicker?.Stop();
-        _tooltipTicker = null;
 
         if (_localization is not null)
             _localization.LanguageChanged -= OnLanguageChanged;
@@ -454,9 +507,14 @@ public partial class App : Application
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(MainViewModel.TimerActive)
-            || e.PropertyName == nameof(MainViewModel.PurgeCount)
-            || e.PropertyName == nameof(MainViewModel.AutoPurgeEnabled))
+        // Everything the icon and the menu labels show (the tooltip's RAM
+        // numbers are fetched when the mouse reaches the icon).
+        if (e.PropertyName is nameof(MainViewModel.TimerActive)
+                           or nameof(MainViewModel.PurgeCount)
+                           or nameof(MainViewModel.AutoPurgeEnabled)
+                           or nameof(MainViewModel.DeepPurge)
+                           or nameof(MainViewModel.GameModeEnabled)
+                           or nameof(MainViewModel.TimerLock))
             Dispatcher.InvokeAsync(RefreshTray);
     }
 
@@ -513,7 +571,8 @@ public partial class App : Application
         _tray?.ShowBalloon(title, args.Body);
     }
 
-    // The safe cleanups ran by themselves (Auto maintenance): always say so, they deleted files.
+    // The safe cleanups ran by themselves (Auto maintenance). MainViewModel raises
+    // this only while Settings -> Notifications -> Auto maintenance is on.
     private void OnAutoMaintenanceNotification(object? sender, string body) =>
         _tray?.ShowBalloon(_localization!.GetString("Str_Tray_NotifyAutoCleanTitle"), body);
 

@@ -29,6 +29,27 @@ public class ProcessSnapshotTests
         Assert.Contains(Process.GetCurrentProcess().ProcessName, names);
     }
 
+    // Windows 11 24H2 and later answer a short query (names and PIDs only,
+    // no threads); older builds refuse it and keep the full one.
+    [Fact]
+    public void The_short_query_sees_the_same_processes_as_the_full_one()
+    {
+        var before = RunningGames.TakeFull();
+        var basic  = RunningGames.TakeBasic();
+        var after  = RunningGames.TakeFull();
+        Assert.NotNull(before);
+        Assert.NotNull(after);
+        if (basic is null) return;   // not available on this Windows
+
+        var stable = before.Names.Where(after.Names.Contains).ToList();
+        var missing = stable.Where(n => !basic.Names.Contains(n)).ToList();
+        Assert.True(missing.Count == 0, $"missing: {string.Join(", ", missing.Take(5))}");
+
+        string self = Process.GetCurrentProcess().ProcessName;
+        Assert.Contains(Environment.ProcessId, basic.PidsOf(self));
+        Assert.Equal(after.PidsOf("System"), basic.PidsOf("System"));
+    }
+
     [Fact]
     public void Repeated_reads_reuse_the_buffer_and_stay_correct()
     {

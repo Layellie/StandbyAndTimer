@@ -62,6 +62,26 @@ public sealed class DownloadsTests : IDisposable
         finally { Directory.Delete(Path.Combine(_dir, "link")); Directory.Delete(outside, true); }
     }
 
+    // Some people move Downloads to another drive with a junction
+    // (C:\Users\me\Downloads -> D:\Downloads). The folders in it still show
+    // their size: nothing is deleted here, so the cleanup rows' rule against
+    // roots below a link does not apply.
+    [Fact]
+    public async Task A_downloads_folder_that_is_itself_a_junction_still_shows_folder_sizes()
+    {
+        Make("real/photos/a.jpg", 100);
+        Make("real/setup.exe", 300);
+        string link = Path.Combine(_dir, "Downloads");
+        using (var p = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe",
+                   $"/c mklink /J \"{link}\" \"{Path.Combine(_dir, "real")}\"") { CreateNoWindow = true, UseShellExecute = false })!)
+            p.WaitForExit();
+
+        var list = await new DownloadsService(link).ListAsync(default);
+
+        Assert.Equal(100, list.Single(e => e.Name == "photos").Bytes);
+        Assert.Equal(300, list.Single(e => e.Name == "setup.exe").Bytes);
+    }
+
     [Fact]
     public async Task Moving_reports_the_entries_that_failed()
     {
