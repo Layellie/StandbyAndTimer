@@ -79,6 +79,8 @@ dotnet run --project StandbyAndTimer/StandbyAndTimer.csproj   # run as administr
 
 [MIT](LICENSE). Copyright © 2026 LAYE77IE.
 
+Made by Samet Kaşmer · [layellie.dev](https://layellie.dev)
+
 ---
 
 <a id="türkçe"></a>
@@ -149,3 +151,5 @@ dotnet run --project StandbyAndTimer/StandbyAndTimer.csproj   # yönetici olarak
 ## Lisans
 
 [MIT](LICENSE). Telif hakkı © 2026 LAYE77IE.
+
+Geliştiren: Samet Kaşmer · [layellie.dev](https://layellie.dev)
